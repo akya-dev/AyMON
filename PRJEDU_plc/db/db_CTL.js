@@ -16,6 +16,9 @@
 
 function start(evt)
 {
+    // the step the program starts in began now - STEP_MS is local, so it
+    // comes up 0 and "in step for" would count from 1970
+    set(evt, "STEP_MS", 0.0 + Time.GetTimeMs());
     evt.Log(4, "PLC: filling line - remote I/O on 127.0.0.1:1503, scan " + get(evt, "T_SCAN", "evt_per") + " s");
     evt.Log(4, "PLC: HMI on http://127.0.0.1:8093/ - press START");
     return 0;
