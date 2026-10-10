@@ -1,0 +1,145 @@
+<%
+// PRJEDU_oee: a printable shift report, written by the engine from
+// log\oee.db on every request - a server page (.ayp) beside the live page.
+//
+//   report.ayp          the last finished shift
+//   report.ayp?no=7     shift #7
+//
+// It needs nothing the MES does not already have: the database the MES
+// writes, and the MES's own helpers (main.reason_of, main.pct) for the
+// reason names and the percentages. The live page (index.html) talks MQTT;
+// this one is plain HTML - print it, save it, mail the link.
+//
+// The shift number comes from the browser, so it goes into the query as a
+// BOUND PARAMETER (SQL.prepare + SQL.parameter), never into the SQL text.
+
+var con = SQL.attach('CN_SQL');
+if (!con) {
+    res.status = 503;
+    res.type = "text/plain; charset=utf-8";
+    res.write("the database is not open\n");
+    return;
+}
+
+// the shifts there are, newest first, for the list on the left
+var shifts = [];
+var rs = SQL.exec_direct(con, "SELECT no, name, start, oee FROM shift ORDER BY no DESC LIMIT 30");
+if (rs) {
+    while (SQL.fetch(rs))
+        shifts.push({ no: SQL.getdata(rs, 1), name: SQL.getdata(rs, 2), start: SQL.getdata(rs, 3), oee: SQL.getdata(rs, 4) });
+    SQL.close(rs);
+}
+
+var want = parseInt("" + req.getForm("no"));
+if (isNaN(want) && shifts.length > 0) want = shifts[0].no;
+
+// the shift itself
+var s = null;
+rs = SQL.prepare(con, "SELECT no, name, start, end, planned_s, run_s, down_s, minor_s, total, good, scrap, a, p, q, oee" +
+                      " FROM shift WHERE no = ?");
+if (rs) {
+    SQL.parameter(rs, 1, want);
+    SQL.execute(rs);
+    if (SQL.fetch(rs))
+        s = { no: SQL.getdata(rs, 1), name: SQL.getdata(rs, 2), start: SQL.getdata(rs, 3), end: SQL.getdata(rs, 4),
+              planned: SQL.getdata(rs, 5), run: SQL.getdata(rs, 6), down: SQL.getdata(rs, 7), minor: SQL.getdata(rs, 8),
+              total: SQL.getdata(rs, 9), good: SQL.getdata(rs, 10), scrap: SQL.getdata(rs, 11),
+              a: SQL.getdata(rs, 12), p: SQL.getdata(rs, 13), q: SQL.getdata(rs, 14), oee: SQL.getdata(rs, 15) };
+    SQL.close(rs);
+}
+
+// its stops, and downtime by reason
+var stops = [], byr = [];
+if (s != null) {
+    rs = SQL.prepare(con, "SELECT start, dur_s, reason, kind, by FROM stop WHERE shift = ? ORDER BY sid");
+    if (rs) {
+        SQL.parameter(rs, 1, want);
+        SQL.execute(rs);
+        while (SQL.fetch(rs))
+            stops.push({ start: SQL.getdata(rs, 1), dur: SQL.getdata(rs, 2), reason: SQL.getdata(rs, 3),
+                         kind: SQL.getdata(rs, 4), by: SQL.getdata(rs, 5) });
+        SQL.close(rs);
+    }
+    rs = SQL.prepare(con, "SELECT reason, round(sum(dur_s), 1), count(*) FROM stop" +
+                          " WHERE shift = ? AND kind = 'down' GROUP BY reason ORDER BY 2 DESC");
+    if (rs) {
+        SQL.parameter(rs, 1, want);
+        SQL.execute(rs);
+        while (SQL.fetch(rs))
+            byr.push({ reason: SQL.getdata(rs, 1), s: SQL.getdata(rs, 2), n: SQL.getdata(rs, 3) });
+        SQL.close(rs);
+    }
+}
+SQL.disconnect(con);          // the link goes back to the pool now, not when the page ends
+-%>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shift report<%= s ? " #" + s.no : "" %> - PRJEDU_oee</title>
+<style>
+  body { font: 14px/1.4 system-ui, sans-serif; margin: 2em; color: #222; display: flex; gap: 3em; }
+  nav { min-width: 11em; } nav a { display: block; text-decoration: none; padding: 2px 0; }
+  nav a.on { font-weight: bold; }
+  h1 { font-size: 1.5em; margin: 0 0 .2em; } .muted { color: #777; }
+  table { border-collapse: collapse; margin: .6em 0 1.4em; }
+  th, td { padding: .25em .9em .25em 0; border-bottom: 1px solid #ddd; text-align: left; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .kpi { display: flex; gap: 2em; margin: 1em 0; } .kpi div { font-size: 1.6em; } .kpi span { font-size: 12px; color: #777; display: block; }
+  @media print { nav, .noprint { display: none; } body { margin: 0; } }
+</style>
+</head>
+<body>
+<nav>
+  <b>Shifts</b>
+<% for (var i = 0; i < shifts.length; i++) { var x = shifts[i]; -%>
+  <a href="report.ayp?no=<%= x.no %>" class="<%= x.no == want ? "on" : "" %>"><%= x.name %> #<%= x.no %> - <%= main.pct(x.oee) %> %</a>
+<% } -%>
+</nav>
+<main>
+<% if (s == null && shifts.length == 0) { -%>
+  <h1>No finished shift yet</h1>
+  <p class="muted">A shift lasts eight minutes here (SHIFT_S); this page lists it when it ends.
+  The running shift is on the <a href="/">live page</a>.</p>
+<% } else if (s == null) { res.status = 404; -%>
+  <h1>No shift #<%= req.getForm("no") %></h1>
+  <p class="muted">Pick one on the left.</p>
+<% } else { -%>
+  <h1>Shift <%= s.name %> #<%= s.no %></h1>
+  <div class="muted"><%= s.start %> - <%= s.end %></div>
+  <div class="kpi">
+    <div><%= main.pct(s.oee) %> %<span>OEE</span></div>
+    <div><%= main.pct(s.a) %> %<span>availability</span></div>
+    <div><%= main.pct(s.p) %> %<span>performance</span></div>
+    <div><%= main.pct(s.q) %> %<span>quality</span></div>
+  </div>
+  <table>
+    <tr><td>planned production time</td><td class="n"><%= s.planned %> s</td></tr>
+    <tr><td>downtime</td><td class="n"><%= s.down %> s</td></tr>
+    <tr><td>run time</td><td class="n"><%= s.run %> s</td></tr>
+    <tr><td>minor stops (in run time)</td><td class="n"><%= s.minor %> s</td></tr>
+    <tr><td>parts: all / good / bad</td><td class="n"><%= s.total %> / <%= s.good %> / <%= s.scrap %></td></tr>
+  </table>
+
+  <b>Downtime by reason</b>
+  <table>
+    <tr><th>reason</th><th class="n">s</th><th class="n">stops</th></tr>
+<% for (var i = 0; i < byr.length; i++) { var r = byr[i]; -%>
+    <tr><td><%= main.reason_of(evt, r.reason).name %></td><td class="n"><%= r.s %></td><td class="n"><%= r.n %></td></tr>
+<% } -%>
+  </table>
+
+  <b>Every stop</b> <span class="muted">(<%= stops.length %>)</span>
+  <table>
+    <tr><th>at</th><th class="n">s</th><th>kind</th><th>reason</th><th>named by</th></tr>
+<% for (var i = 0; i < stops.length; i++) { var t = stops[i]; -%>
+    <tr><td><%= t.start %></td><td class="n"><%= t.dur %></td><td><%= t.kind %></td>
+        <td><%= main.reason_of(evt, t.reason).name %></td><td><%= t.by %></td></tr>
+<% } -%>
+  </table>
+<% } -%>
+  <p class="muted noprint">Written by the engine from log\oee.db at <%= Time.GetTimeStr(0) %> -
+  <a href="javascript:print()">print</a> - <a href="/">live page</a></p>
+</main>
+</body>
+</html>

@@ -124,6 +124,14 @@ no login has nothing to apply it to, and an engine with a login and no
 in as four different users to see the same plant through four different
 windows.
 
+**A server page (`.ayp`) is not a back door.** It runs with the role of the
+session that asked for it — Guest (0) until that session logs in — so
+everything it reads or writes meets the same `xdb_acl`. A public page shows
+only what Guest may read; `PRJEDU_pages`' `access.ayp` reads an element
+closed to role 0 and gets nothing. Give Guest read rights to exactly what an
+anonymous page should show, and check every value a form sends on the server
+(`tank.ayp` there shows how).
+
 ---
 
 ## TLS

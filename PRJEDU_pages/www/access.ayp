@@ -1,0 +1,22 @@
+<%
+// PRJEDU_pages: what a page may see. A page runs with the VISITOR's role,
+// and nobody logs in here: role 0, Guest. MNT_CODE's xdb_acl gives Guest
+// no rights, so it reads as empty here - while a script of the engine
+// itself (role 9, System) reads it fine: start() could log it.
+var title = "Access";
+var refresh = 0;
+var code = evt.GetValue("id('MNT_CODE')/@val");
+var lvl = evt.GetValue("id('T1_LVL')/@val");
+-%>
+<%@ include file="part/head.ayp" %>
+<h1>What this page may read</h1>
+<table>
+  <tr><th>Value</th><th>xdb_acl</th><th>Read by this page</th></tr>
+  <tr><td>T1_LVL</td><td>(none: open)</td><td><%= lvl %></td></tr>
+  <tr><td>MNT_CODE</td><td>0xFFFFFFF0 (nothing for role 0)</td>
+      <td><%= code == null ? "(nothing - not readable for this visitor)" : code %></td></tr>
+</table>
+<p>Your role: <b><%= ses.user_role %></b>. A page is not a back door: it reads and writes
+with the rights of whoever asked for it, through the same xdb_acl as MQTT, MCP and
+the telnet shell (docs/06_Access_and_Safety.md).</p>
+<%@ include file="part/foot.ayp" %>

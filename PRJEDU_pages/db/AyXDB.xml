@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_pages - AyMON example: web pages the ENGINE writes.
+
+     A file under the web root whose name ends in .ayp is a SERVER PAGE: a
+     template the engine runs on every request, in its own script language,
+     with the same evt.GetValue / evt.SetValue every script uses. The
+     syntax is the one ASP, JSP and EJS users know:
+
+        <% code %>       <%= value, HTML-escaped %>      <%- value, as is %>
+
+     No JavaScript in the browser, no API to design, no build step: the
+     page IS the program that reads the plant.
+
+       FARM/S00  three tanks, each filled by a pump that a level controller
+                 switches on and off between two set points; alarms on the
+                 levels; and the web listener whose root is ..\www
+
+     One connection and two documents: inside the FREE edition.
+
+     Run:  run.bat,  then open  http://127.0.0.1:8115/
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="S01">
+	<config>
+		<doc id="FARM/S00" sta="0x0300" src="%DB%/db_FARM.xml" desc="three tanks, their controllers, and the pages" />
+	</config>
+	<data>
+	</data>
+</xdb>

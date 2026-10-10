@@ -294,6 +294,32 @@ script, because `PRO.snmp` is a manager and does not answer. Reach for it when
 the protocol is not one the engine knows — and expect to keep the parsing
 small; a format that turns out to matter belongs in a plug-in later.
 
+## Script can also write a web page
+
+A file under an HTTP connection's `pro_http_root` whose name ends in `.ayp`
+is a **server page**: the engine runs it on every request and answers with
+what it writes. It is a script with HTML around it, in the syntax ASP, JSP
+and EJS use:
+
+```html
+<% var t = main.tank(evt, "T1"); -%>
+<p><%= t.name %>: <%= t.level %> %</p>     <!-- <%= %> escapes, <%- %> does not -->
+<% if (t.alarm > 0) { %><p class="alarm"><%= t.text %></p><% } %>
+```
+
+A page sees `evt`, `req` (`req.getForm("sp")` reads a form field), `res`
+(`res.status`, `res.type`, `res.header`, `res.redirect`), `ses` and your
+modules by name — `main.tank()` above is an ordinary function in the
+document's script. Everything in this guide holds inside a page: typed
+arithmetic, `evt.GetValue` addresses, `return` to stop early. Statements need
+their `;` (there are no automatic semicolons). A page that fails answers
+**500** and logs why, with the template's line number; its source is never
+sent.
+
+`PRJEDU_pages` is built this way, and `PRJEDU_oee` adds a printable shift
+report (`www\report.ayp`) to an existing project. A page runs with the
+visitor's rights — see `06_Access_and_Safety.md`.
+
 ## Calling Python
 
 A Python script (`language="Python"`) runs on the engine's one Python thread.

@@ -8,7 +8,7 @@ seen working.
 |---|---|
 | [01_The_Element_Tree.md](01_The_Element_Tree.md) | You want to talk to a real device. `<con>` / `<dev>` / `<bi>` / `<io>`, addresses, `sta`, how a value gets from the wire into the tree. |
 | [02_Timers_and_Events.md](02_Timers_and_Events.md) | You want something to happen on its own. Threads, `evt_*`, why a write runs a chain of functions. |
-| [03_Scripting.md](03_Scripting.md) | You want to write the logic. Where script lives, how XML calls it, and the six places the language is **not** JavaScript. |
+| [03_Scripting.md](03_Scripting.md) | You want to write the logic. Where script lives, how XML calls it, the six places the language is **not** JavaScript, and web pages written in script (`.ayp`). |
 | [04_Licensing.md](04_Licensing.md) | You want to know what is free, what is not, and why the replication example runs anyway. |
 | [05_Connections_and_Protocols.md](05_Connections_and_Protocols.md) | You want to reach something outside the engine. Transports and protocols, who dials and who asks, one port for several services, polled against subscribed, and what to do about a protocol AyMON does not speak. |
 | [06_Access_and_Safety.md](06_Access_and_Safety.md) | You are about to let something in. The three gates — `con_acl`, the login, `xdb_acl` — TLS, and what the examples deliberately leave open. |
@@ -28,6 +28,7 @@ PRJEDU_snmp     →  05_Connections_and_Protocols
 PRJEDU_net      →  05_Connections_and_Protocols  →  04_Licensing
 PRJEDU_opcua    →  05_Connections_and_Protocols  →  06_Access_and_Safety
 PRJEDU_web      →  05_Connections_and_Protocols  →  06_Access_and_Safety
+PRJEDU_pages    →  03_Scripting          →  06_Access_and_Safety
 PRJEDU_telnet   →  06_Access_and_Safety
 PRJEDU_hardening → 06_Access_and_Safety
 PRJEDU_mcp      →  06_Access_and_Safety   →  04_Licensing

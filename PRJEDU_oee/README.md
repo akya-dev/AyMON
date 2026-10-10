@@ -111,6 +111,18 @@ The page's history table and the "last 10 shifts" Pareto are queries on it;
 **Download CSV** writes the history for a spreadsheet. A restart of the
 engine begins a new shift — the half-shift in memory is not kept.
 
+**Shift report (printable)** opens `www\report.ayp`: one finished shift — the
+four numbers, the time accounting, downtime by reason and every stop — as plain
+HTML, ready to print or to mail as a link (`report.ayp?no=7`). It is a
+**server page**: the engine runs the file on each request, reads `log\oee.db`
+with the same `SQL.*` calls the MES uses and names the reasons with the MES's
+own `main.reason_of()`. Nothing else in the project changed for it — no
+connection, no script function, no MQTT topic; the web listener that sends
+`index.html` runs `report.ayp` too. The shift number from the address goes
+into the query as a bound parameter, never into the SQL text, and
+`report.ayp?no=999` is a 404. How pages work: `PRJEDU_pages` (engine
+4.3.4.588 or later).
+
 ## What it measured
 
 On a Windows 11 laptop, engine 4.3.4.467, two full eight-minute shifts with

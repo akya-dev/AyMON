@@ -1,0 +1,28 @@
+<%
+// PRJEDU_pages: the overview. The engine runs this file on every request;
+// the browser gets plain HTML and reloads it every two seconds.
+var title = "Overview";
+var refresh = 2;
+-%>
+<%@ include file="part/head.ayp" %>
+<h1>Tanks</h1>
+<table>
+  <tr><th>Tank</th><th>Level</th><th></th><th>Pump</th><th>Controller</th><th>State</th></tr>
+<%
+var ids = main.tanks();
+for (var i = 0; i < ids.length; i++) {
+    var t = main.tank(evt, ids[i]);
+-%>
+  <tr class="a<%= t.alarm %>">
+    <td><a href="tank.ayp?id=<%= t.id %>"><%= t.name %></a></td>
+    <td class="num"><%= t.level %> %</td>
+    <td><div class="bar"><div style="width:<%= t.level %>%"></div></div></td>
+    <td><%= t.pump == 1 ? "running" : "off" %></td>
+    <td class="num"><%= t.lo %> .. <%= t.hi %> %</td>
+    <td><%= t.text %></td>
+  </tr>
+<% } -%>
+</table>
+<p class="hint">Click a tank to change its set points. Look at this page's source in the
+browser: no script, no data call - the values are in the HTML.</p>
+<%@ include file="part/foot.ayp" %>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_pages / FARM/S00 - a small tank farm and the pages that show it.
+
+       1  <thr> + a timer       the simulation and the level controllers
+       2  three tanks           level (with alarms), pump, two set points
+       3  one closed value      MNT_CODE: no rights for Guest - the pages
+                                cannot show it, and say so
+       4  <con> CN_WEB          the web listener; its root is ..\www, where
+                                the .ayp pages are
+
+     The pages run with the VISITOR's rights. Nobody logs in here, so every
+     page acts as Guest (role 0): it may read and write what xdb_acl leaves
+     open to Guest, and nothing else (docs\06_Access_and_Safety.md).
+     ===================================================================== -->
+<xdb id="FARM/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/FARM.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100">
+	<config>
+		<!-- The script holds the simulation AND the helpers the pages call:
+		     a page reaches main.tank(evt, id) the way any script does. -->
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_FARM.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<!-- 1 - the clock: one step of the simulation and the controllers a second -->
+		<thr id="TH_MAIN" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+		<var id="SIM" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="TH_MAIN" evt_per="1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.step]"
+		     val="0" val_typ="0x0104" desc="simulation steps so far"/>
+
+		<!-- 2 - THE TANKS. Each one is four values:
+		       Tn_LVL    level in %, rounded, clamped and watched by four limits
+		                 (ATR.rou, ATR.lmt, ALM.onlvl - the alarm is state in 'sta')
+		       Tn_PUMP   1 = the filling pump runs
+		       Tn_SP_HI  the controller stops the pump at this level
+		       Tn_SP_LO  ... and starts it again at this one
+		     The set points are what the page lets a visitor change.
+		     T3's desc carries an '&' and a '<': the pages print it with
+		     <%= %>, which escapes it - look at the page source. -->
+		<var id="T1_LVL" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x1142" sta_fnc="[EVT.sta]"
+		     val="40" val_typ="0x1308" val_fnc="[ATR.rou,ATR.lmt,ALM.onlvl]"
+		     val_min="0" val_max="100" val_rou="0.1" val_unt="%"
+		     val_alm_onlhi_alm="95" val_alm_onlhi_wrn="88" val_alm_onllo_wrn="12" val_alm_onllo_alm="5"
+		     desc="Raw water"/>
+		<var id="T1_PUMP"  xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" val="0"  val_typ="0x0104" desc="Raw water - pump"/>
+		<var id="T1_SP_HI" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" val="80" val_typ="0x0308" desc="Raw water - stop the pump at"/>
+		<var id="T1_SP_LO" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" val="30" val_typ="0x0308" desc="Raw water - start the pump at"/>
+
+		<var id="T2_LVL" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x1142" sta_fnc="[EVT.sta]"
+		     val="65" val_typ="0x1308" val_fnc="[ATR.rou,ATR.lmt,ALM.onlvl]"
+		     val_min="0" val_max="100" val_rou="0.1" val_unt="%"
+		     val_alm_onlhi_alm="95" val_alm_onlhi_wrn="88" val_alm_onllo_wrn="12" val_alm_onllo_alm="5"
+		     desc="Treated water"/>
+		<var id="T2_PUMP"  xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" val="0"  val_typ="0x0104" desc="Treated water - pump"/>
+		<var id="T2_SP_HI" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" val="85" val_typ="0x0308" desc="Treated water - stop the pump at"/>
+		<var id="T2_SP_LO" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" val="40" val_typ="0x0308" desc="Treated water - start the pump at"/>
+
+		<var id="T3_LVL" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x1142" sta_fnc="[EVT.sta]"
+		     val="20" val_typ="0x1308" val_fnc="[ATR.rou,ATR.lmt,ALM.onlvl]"
+		     val_min="0" val_max="100" val_rou="0.1" val_unt="%"
+		     val_alm_onlhi_alm="95" val_alm_onlhi_wrn="88" val_alm_onllo_wrn="12" val_alm_onllo_alm="5"
+		     desc="Oil &amp; grease &lt;sump&gt;"/>
+		<var id="T3_PUMP"  xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" val="0"  val_typ="0x0104" desc="Oil &amp; grease - pump"/>
+		<var id="T3_SP_HI" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" val="60" val_typ="0x0308" desc="Oil &amp; grease - stop the pump at"/>
+		<var id="T3_SP_LO" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" val="15" val_typ="0x0308" desc="Oil &amp; grease - start the pump at"/>
+
+		<!-- 3 - A VALUE CLOSED TO GUEST.
+		     xdb_acl gives every role four bits (read, write, new, delete), one
+		     nibble each: 0x76543210 = role 7 .. role 0. 0xFFFFFFF0 = every
+		     right for roles 1..7, NONE for role 0 (Guest). A page run by an
+		     anonymous visitor reads it as empty - access.ayp shows that. -->
+		<var id="MNT_CODE" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="4711" xdb_acl="0xFFFFFFF0" desc="maintenance code - not for visitors"/>
+
+		<!-- 4 - THE WEB LISTENER. pro_http_root is where the pages are;
+		     pro_http_index="index.ayp" makes a page the start page. Files
+		     that are not .ayp (style.css) are sent as they are. -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the web listener"
+		     con_host="127.0.0.1" con_port="8115" con_mod="SERVER" con_ses="8"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.ayp"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

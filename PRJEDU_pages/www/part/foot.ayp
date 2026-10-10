@@ -1,0 +1,7 @@
+</main>
+<footer>
+  Written by the engine at <%= Time.GetTimeStr(0) %>, for a visitor with role <%= ses.user_role %>
+  - this page is <a href="https://github.com/akya-dev/AyMON/tree/main/PRJEDU_pages/www">a template</a>, not a file.
+</footer>
+</body>
+</html>

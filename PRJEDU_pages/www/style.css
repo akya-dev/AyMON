@@ -1,0 +1,16 @@
+body { font: 15px/1.4 system-ui, sans-serif; margin: 0; color: #222; background: #f6f7f9; }
+header { display: flex; gap: 2em; align-items: center; padding: .6em 1.2em; background: #2b3a55; color: #fff; }
+header a { color: #cfe0ff; margin-right: 1em; text-decoration: none; }
+main { padding: 1em 1.2em; max-width: 60em; }
+footer { padding: 1em 1.2em; color: #777; font-size: 12px; }
+table { border-collapse: collapse; background: #fff; }
+th, td { padding: .35em .8em; border-bottom: 1px solid #e3e5ea; text-align: left; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.bar { width: 12em; height: .8em; background: #e3e5ea; }
+.bar div { height: 100%; background: #4a7bd0; }
+tr.a1, p.a1 { background: #fff6d6; }
+tr.a2, tr.a3, p.a2, p.a3 { background: #ffe0dc; }
+.big { font-size: 1.4em; padding: .3em .5em; display: inline-block; }
+.ok { color: #1a7f37; } .err { color: #c0392b; }
+.hint { color: #666; font-size: 13px; }
+form label { margin-right: 1em; }

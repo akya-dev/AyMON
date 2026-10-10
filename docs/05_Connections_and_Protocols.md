@@ -76,6 +76,13 @@ and one certificate instead of four. A linked connection inherits the
 listener's TLS, which is why `CN_APIS` and `CN_LIVES` in `PRJEDU_web` carry no
 `con_ssl_*` of their own.
 
+The listener itself does more than send files. A file under its
+`pro_http_root` ending in `.ayp` is a **server page**, run by the engine on
+each request (`03_Scripting.md`): the same listener that sends `index.html`
+can answer `report.ayp` with HTML written from the plant or a database, with
+no extra connection and no API in between. `PRJEDU_pages` is a whole site of
+them; `PRJEDU_oee` has one beside its live page.
+
 ---
 
 ## Asking, and being told

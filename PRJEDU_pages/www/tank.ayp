@@ -1,0 +1,48 @@
+<%
+// PRJEDU_pages: one tank, and a form that changes its set points.
+//
+// Three things every page that takes input must do, all here:
+//   1 never put request text into an address: main.tank() checks the id
+//     against the list first; an unknown one is answered 404
+//   2 check the values on the SERVER (main.set_points), whatever the form
+//     in the browser allows
+//   3 after a POST, REDIRECT (POST/redirect/GET): a reload then repeats
+//     the GET, not the write
+var id = req.getForm("id");
+var t = main.tank(evt, id);
+if (t == null) {
+    res.status = 404;
+    res.type = "text/plain; charset=utf-8";
+    res.write("no such tank\n");
+    return;
+}
+var err = "";
+if (req.method == "POST") {
+    err = main.set_points(evt, id, req.getForm("hi"), req.getForm("lo"));
+    if (err == "") {
+        res.redirect("tank.ayp?id=" + id + "&saved=1", 303);
+        return;
+    }
+    t = main.tank(evt, id);
+}
+var title = t.name;
+var refresh = 0;
+-%>
+<%@ include file="part/head.ayp" %>
+<h1><%= t.name %></h1>
+<p class="big a<%= t.alarm %>"><%= t.level %> % - pump <%= t.pump == 1 ? "running" : "off" %> - <%= t.text %></p>
+<% if (req.getForm("saved") == "1") { -%>
+<p class="ok">Saved. The controller uses the new set points from its next step.</p>
+<% } -%>
+<% if (err != "") { -%>
+<p class="err">Not saved: <%= err %>.</p>
+<% } -%>
+<form method="post" action="tank.ayp">
+  <input type="hidden" name="id" value="<%= t.id %>">
+  <label>Start the pump at <input name="lo" value="<%= t.lo %>" size="5"> %</label>
+  <label>stop it at <input name="hi" value="<%= t.hi %>" size="5"> %</label>
+  <button>Save</button>
+</form>
+<p class="hint">Try a stop level of 99, or text instead of a number: the page says why
+not, and nothing is written. The limits are in main.set_points() (db\db_FARM.js).</p>
+<%@ include file="part/foot.ayp" %>

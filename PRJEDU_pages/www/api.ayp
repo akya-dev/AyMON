@@ -1,0 +1,10 @@
+<%@ page type="application/json" %><%
+// PRJEDU_pages: the same data for a program - curl, a spreadsheet, another
+// engine. It uses the same main.tank() as the HTML pages, so the two can
+// never disagree. <%- writes JSON.stringify's text as it is (<%= would
+// escape the quotes into &quot;).
+var out = [];
+var ids = main.tanks();
+for (var i = 0; i < ids.length; i++) out.push(main.tank(evt, ids[i]));
+-%>
+<%- JSON.stringify({ time: Time.GetTimeStr(0), tanks: out }) %>
