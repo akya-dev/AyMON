@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_hardening - THE SOLUTION'S ROOT: the same engine, running
+     db_PLT_solution.xml instead of db_PLT.xml.
+
+     (The original description:) harden a plant that was delivered
+     with a weak configuration, for a security course.
+
+     PLT/S00 is a small plant - a tank, a pump, a high-level trip, a
+     recipe - with a page and live values on 127.0.0.1:8101. It works.
+     It was also set up in a hurry: its access configuration has seven
+     weaknesses. The task is to find them and fix them in db_PLT.xml.
+
+     Two tools help, both on the page:
+       SELF-CHECK   the plant reads its own configuration and names what
+                    it can see there (main.self_check, every 5 s)
+       ACCESS TEST  the page logs in as four identities - no user name,
+                    a monitor, an operator, an engineer - and tries what
+                    each may and may not do
+     A weakness is fixed when both say so.
+
+     db_PLT_solution.xml is one way to fix all seven; AyXDB_solution.xml
+     runs it (run_solution.bat). Try it yourself first.
+
+     Two connections, two documents: inside the FREE edition.
+
+     Run:  run.bat,  then open  http://127.0.0.1:8101/
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="S01">
+	<config>
+		<doc id="PLT/S00" sta="0x0300" src="%DB%/db_PLT_solution.xml" desc="the plant, hardened" />
+	</config>
+	<data>
+	</data>
+</xdb>

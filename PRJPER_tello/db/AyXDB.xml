@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJPER_tello - AyMON example: fly a DJI / Ryze Tello drone, or the
+     simulated one that comes with this example.
+
+     One engine, two documents, real Tello SDK packets on loopback sockets:
+
+       SIM/S00   the DRONE. A Tello written in script: it answers the text
+                 commands of the Tello SDK on UDP 8889, flies a little
+                 physics model and streams its state to UDP 8890, ten times
+                 a second - the same ports and the same text as the real one.
+       TEL/S00   the GROUND STATION. It sends the commands, reads the state
+                 into <var> points with alarms, owns the safety rules
+                 (battery, height, lost link) and serves a web page to fly
+                 from: http://127.0.0.1:8090/
+
+     With a real Tello: join its Wi-Fi, set sta="0x0000" on SIM/S00 below and
+     point TEL/S00 at 192.168.10.1 - the README says where.
+
+     Six connections: exactly the FREE edition's limit.
+
+     Run:  run.bat,  then open  http://127.0.0.1:8090/
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="S01">
+	<config>
+		<doc id="SIM/S00" sta="0x0300" src="%DB%/db_SIM.xml" desc="the drone - a Tello in script" />
+		<doc id="TEL/S00" sta="0x0300" src="%DB%/db_TEL.xml" desc="the ground station and its web page" />
+	</config>
+	<data>
+	</data>
+</xdb>

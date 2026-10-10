@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJPER_adsb - AyMON example: the aircraft overhead, from the messages
+     they broadcast (ADS-B), on a map.
+
+     A cheap USB radio (an RTL-SDR stick, about 25 $) and a decoder such as
+     dump1090 or readsb hear the ADS-B messages every airliner sends, and
+     serve them as text lines - the "SBS-1" or BaseStation format - on TCP
+     port 30003. This example is the other end of that port:
+
+       SRC/S00   the RECEIVER, simulated: a dump1090 in script. It flies a
+                 dozen aircraft around a point and serves their messages
+                 on 127.0.0.1:30003, as the real one does.
+       TRK/S00   the TRACKER. It reads the lines, keeps one element per
+                 aircraft - created when it is first heard, deleted when it
+                 has not been heard for a minute - works out distance and
+                 bearing, raises an alarm on an emergency squawk, and
+                 serves the map: http://127.0.0.1:8097/
+
+     With a real receiver: switch SRC/S00 off below (sta="0x0000") and
+     point the tracker at your dump1090 - the README says where.
+
+     Run:  run.bat,  then open  http://127.0.0.1:8097/
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="S01">
+	<config>
+		<doc id="SRC/S00" sta="0x0300" src="%DB%/db_SRC.xml" desc="the receiver - a dump1090 in script" />
+		<doc id="TRK/S00" sta="0x0300" src="%DB%/db_TRK.xml" desc="the tracker, and its map" />
+	</config>
+	<data>
+	</data>
+</xdb>

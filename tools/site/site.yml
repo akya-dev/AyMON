@@ -1,0 +1,55 @@
+# Site settings. build.py adds docs_dir, site_dir and nav (from the folders)
+# and writes the full config into _build/mkdocs.yml. To move the site to a
+# domain of its own (e.g. aymon.akya.ca) change site_url here, or set
+# SITE_URL in the workflow.
+site_name: AyMON — learn by running it
+site_description: Runnable example projects and short guides for the AyMON industrial monitoring and automation engine.
+site_url: https://akya-dev.github.io/AyMON/
+repo_url: https://github.com/akya-dev/AyMON
+repo_name: akya-dev/AyMON
+edit_uri: ""
+copyright: Copyright © 2026 Şenol Erçetin — licensed exclusively to AKYA Canada Inc.
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle:
+        icon: material/weather-night
+        name: Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Light mode
+
+markdown_extensions:
+  - admonition
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.details
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/akya-dev/AyMON

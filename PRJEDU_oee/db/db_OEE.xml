@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     OEE/S00 - the MES: from seven registers to OEE.
+
+     OEE (overall equipment effectiveness) asks how much of the time a
+     machine was PLANNED to produce went into GOOD parts at IDEAL speed:
+
+         shift time
+          - planned stops (the break)           = planned production time
+          - downtime (breakdowns, changeover,
+            waiting, ...)                        = run time
+          - performance loss (minor stops,
+            running slow)                        = ideal time of what was made
+          - quality loss (bad parts)             = fully productive time
+
+         availability  A = run time / planned production time
+         performance   P = ideal time / run time
+         quality       Q = good parts / all parts
+         OEE           = A x P x Q  =  fully productive time / planned time
+
+     The last equality is the check: the MES computes OEE both ways and
+     shows both. With ONE product they are equal to the last digit. With
+     two they drift a little apart, and that is not an error: Q counts
+     PARTS, while fully productive time weighs every good part by its own
+     ideal cycle - a bad B part (2.5 s) costs more time than a bad A part
+     (2.0 s). The time formula is the exact one.
+
+     WHAT THE MES KNOWS - only the registers, twice a second:
+       * running or not, and a reason when the machine knows one
+       * two counters (all parts, bad parts) that wrap at 65536: the MES
+         counts the DIFFERENCE since the last poll, modulo 65536
+       * the product - its ideal cycle is master data kept HERE
+         (PRODUCTS), not something the machine says
+     Everything else it has to be told or has to decide:
+       * a stop shorter than MINOR_S is a MINOR STOP: it stays in run
+         time and shows up as performance loss (the six big losses
+         count it there)
+       * a stop the machine gives no reason for waits for the OPERATOR,
+         who says why on the page (REASONS: the ones marked by="operator")
+       * the planned break comes from the shift plan (BREAK_AT_S,
+         BREAK_S); the MES holds the machine for it through register 6
+       * no answer from the machine for POLL_LOST_S is downtime too:
+         reason 99, no signal
+
+     THE RECORD: SQLite, log\oee.db. Every stop is a row (stop), every
+     finished shift is a row (shift). A restart of the engine begins a
+     new shift - the half-shift in memory is not kept.
+
+     WHO MAY WRITE. xdb_acl="0xFF111111": the page reads everything and
+     writes one thing here, REASON_SET (why a stop happened). The
+     machine's world buttons are written to LINE/S00.
+     ===================================================================== -->
+<xdb id="OEE/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/OEE.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFF111111">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_OEE.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+
+		<!-- MASTER DATA: the ideal cycle of each product. The machine
+		     reports which product it makes; how fast that SHOULD go is
+		     the MES's knowledge. Set one wrong and performance goes over
+		     100 % (or stays low for no reason). -->
+		<list id="PRODUCTS" desc="products and their ideal cycles">
+			<item id="P1" code="1" name="A" ideal_ms="2000"/>
+			<item id="P2" code="2" name="B" ideal_ms="2500"/>
+		</list>
+
+		<!-- THE REASON CATALOGUE. 'loss' is where the time goes in the
+		     waterfall; by="machine" reasons come from register 1, by="operator"
+		     ones are offered on the page for stops the machine could not name. -->
+		<list id="REASONS" desc="why the line stopped">
+			<item id="R0"  code="0"  loss="unassigned" by="mes"      name="not assigned yet"/>
+			<item id="R10" code="10" loss="breakdown"  by="machine"  name="hydraulic pressure low"/>
+			<item id="R11" code="11" loss="breakdown"  by="machine"  name="motor overload"/>
+			<item id="R12" code="12" loss="breakdown"  by="machine"  name="sensor fault"/>
+			<item id="R20" code="20" loss="waiting"    by="operator" name="material missing"/>
+			<item id="R21" code="21" loss="waiting"    by="operator" name="operator away"/>
+			<item id="R22" code="22" loss="other"      by="operator" name="quality check"/>
+			<item id="R23" code="23" loss="breakdown"  by="operator" name="jam (long)"/>
+			<item id="R29" code="29" loss="other"      by="operator" name="other"/>
+			<item id="R30" code="30" loss="setup"      by="machine"  name="changeover"/>
+			<item id="R90" code="90" loss="planned"    by="mes"      name="planned break"/>
+			<item id="R99" code="99" loss="other"      by="mes"      name="no signal from the line"/>
+		</list>
+	</config>
+
+	<data>
+		<thr id="TH_MES" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- ================================================================
+		     THE MACHINE'S REGISTERS - a Modbus TCP master, as in PRJEDU_plc
+		     ================================================================ -->
+		<con id="CN_PLC" xdb_fnc="[CON.tcp,PRO.modbus]" desc="Modbus TCP master to the line"
+		     con_host="" con_port="" con_mod="CLIENT" pro_role="MASTER" pro_mod="TCP"
+		     con_way="FULL" con_ses="4" con_clr="1" con_tmo="1.0" con_comdly="0" con_rct="2"
+		     pro_tmo="0.5" pro_try="1" pro="1" pro_typ="0xD411" pro_fnc="[]"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]" evt_thr="CN_PLC"/>
+
+		<dev id="LINE" pro_adr="1" pro_con="CN_PLC" con_host="127.0.0.1" con_port="1505"
+		     desc="the line" sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+			<!-- ONE request twice a second: registers 0..6. main.on_poll,
+			     last in the block's pro_fnc, notes when the machine last
+			     answered. -->
+			<bi id="MB_BLK" xdb_fnc="[XDB.evt]" desc="holding registers 0..6"
+			    sta="0x0302" sta_typ="0x1142" sta_fnc="[EVT.sta,PRO.sta]"
+			    evt="0" evt_typ="0x1204" evt_fnc="[PRO.pol]" evt_cfg="0x0002"
+			    evt_per="0.5" evt_thr=""
+			    pro_typ="0xD412" pro="" pro_fnc="[PRO.inp,main.on_poll]"
+			    pro_adr="0" pro_ado="0" pro_len="7" pro_fni="3">
+				<io id="I_STATE"    pro="0" pro_typ="0x1102" pro_adr="0" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x0104" desc="0 stopped, 1 running, 2 held"/>
+				<io id="I_REASON"   pro="0" pro_typ="0x1102" pro_adr="1" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x0104" desc="the reason the machine gives"/>
+				<io id="I_TOTAL"    pro="0" pro_typ="0x1102" pro_adr="2" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x0104" desc="all parts, 16-bit counter"/>
+				<io id="I_SCRAP"    pro="0" pro_typ="0x1102" pro_adr="3" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x0104" desc="bad parts, 16-bit counter"/>
+				<io id="I_SCRAP_SU" pro="0" pro_typ="0x1102" pro_adr="4" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x0104" desc="bad in startup, 16-bit counter"/>
+				<io id="I_PRODUCT"  pro="0" pro_typ="0x1102" pro_adr="5" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x0104" desc="1 = A, 2 = B"/>
+				<!-- the hold register: read back by every poll, written with
+				     function 6 when main.tick writes its 'pro' -->
+				<io id="Q_HOLD" pro="0" pro_typ="0x1102" pro_adr="6" pro_ado="6" pro_fnc="[PRO.out]" pro_fno="6"
+				    sta="0x0302" sta_typ="0x1142" desc="1 = hold the line (planned stop)"/>
+			</bi>
+		</dev>
+
+		<!-- ================================================================
+		     THE RECORD - SQLite, one file, nothing to install (PRJEDU_sqlite)
+		     ================================================================ -->
+		<con id="CN_SQL" xdb_fnc="[CON.sqlite,PRO.sql]" desc="stops and shifts"
+		     con_host="%PRJ%/log/oee.db"
+		     con_mod="CLIENT" con_pool="2" con_ses="0" con_clr="1"
+		     con_tmo="5" con_comdly="1" con_rcvdly="100" con_rct="2"
+		     con_keeptmo="0" con_idletmo="0"
+		     pro_role="MASTER" pro_tmo="10" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- ================================================================
+		     THE SHIFT PLAN
+		     ================================================================ -->
+		<var id="SHIFT_S"    sta="0x0303" val="480" val_typ="0x0104" val_unt="s" desc="a shift - eight minutes here, eight hours on a real line"/>
+		<var id="BREAK_AT_S" sta="0x0303" val="240" val_typ="0x0104" val_unt="s" desc="the planned break starts this far into the shift"/>
+		<var id="BREAK_S"    sta="0x0303" val="30"  val_typ="0x0104" val_unt="s" desc="and lasts this long"/>
+		<var id="MINOR_S"    sta="0x0303" val="5"   val_typ="0x0104" val_unt="s" desc="a stop shorter than this is a minor stop (performance loss)"/>
+		<var id="POLL_LOST_S" sta="0x0303" val="2"  val_typ="0x0104" val_unt="s" desc="no answer from the line for this long is downtime (no signal)"/>
+		<var id="CNT_MAX"    sta="0x0303" val="100" val_typ="0x0104" desc="a counter that moves more than this in one poll was reset, not counted"/>
+
+		<!-- twice a second: time, counters, stops, OEE -->
+		<var id="T_TICK" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_MES" evt_per="0.5" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.tick]" desc="the MES tick"/>
+
+		<!-- ================================================================
+		     THE MES'S OWN STATE. Times are whole MILLISECONDS: integer sums
+		     cannot drift, and the ratios are taken once at the end.
+		     ================================================================ -->
+		<var id="POLL_MS"        sta="0x0303" val="0"  val_typ="0x0208" desc="when the line last answered"/>
+		<var id="SHIFT_NO"       sta="0x0303" val="0"  val_typ="0x0104" desc="the running shift"/>
+		<var id="SHIFT_NAME"     sta="0x0303" val=""   val_typ="0x0401" desc="A, B or C"/>
+		<var id="SHIFT_START_MS" sta="0x0303" val="0"  val_typ="0x0208" desc="when it began"/>
+		<var id="SHIFT_START_TS" sta="0x0303" val=""   val_typ="0x0401"/>
+		<var id="ACC"      sta="0x0303" val="{}" val_typ="0x0401" desc="this shift's sums, JSON, ms and counts"/>
+		<var id="OPEN"     sta="0x0303" val=""   val_typ="0x0401" desc="the stop in progress, JSON ('' = running)"/>
+		<var id="LAST_CNT" sta="0x0303" val=""   val_typ="0x0401" desc="the counters at the last poll, JSON"/>
+		<var id="REASON_DONE" sta="0x0303" val="" val_typ="0x0401" desc="the last REASON_SET request handled"/>
+
+		<!-- ================================================================
+		     WHAT THE PAGE READS
+		     ================================================================ -->
+		<var id="LIVE"       sta="0x0303" val="{}" val_typ="0x0401" desc="the running shift: time, losses, A P Q OEE, JSON"/>
+		<var id="STOPS"      sta="0x0303" val="[]" val_typ="0x0401" desc="this shift's stops, JSON"/>
+		<var id="PARETO"     sta="0x0303" val="[]" val_typ="0x0401" desc="this shift's downtime by reason, JSON"/>
+		<var id="PARETO_ALL" sta="0x0303" val="[]" val_typ="0x0401" desc="downtime by reason over the last ten shifts, from the database"/>
+		<var id="SHIFTS"     sta="0x0303" val="[]" val_typ="0x0401" desc="the last ten shifts, from the database"/>
+		<var id="CATALOG"    sta="0x0303" val="[]" val_typ="0x0401" desc="REASONS and PRODUCTS for the page, JSON"/>
+		<var id="LINE_CFG"   sta="0x0303" val="{}" val_typ="0x0401" desc="the line's settings, as LINE/S00 has them"/>
+		<var id="MSG"        sta="0x0303" val=""   val_typ="0x0401" desc="the last thing the MES said"/>
+
+		<!-- WHAT THE PAGE MAY WRITE: why a stop happened.
+		     {"sid": 17, "reason": 20, "n": <any>}   a finished stop, by its row
+		     {"sid": "open", "reason": 20, "n": ..}  the stop going on now
+		     'n' makes two equal requests different. main.tick handles it,
+		     on its own thread - so the page's write never races the tick. -->
+		<var id="REASON_SET" xdb_acl="0xFF111113" sta="0x0303" val="" val_typ="0x0401"
+		     desc="request: the reason of a stop"/>
+
+		<!-- ================================================================
+		     THE PAGE - http://127.0.0.1:8100/
+		     ================================================================ -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the MES's web listener"
+		     con_host="127.0.0.1" con_port="8100" con_mod="SERVER" con_ses="8"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="the MES, live"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_OEE" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//var" pro_retain_atr="val"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

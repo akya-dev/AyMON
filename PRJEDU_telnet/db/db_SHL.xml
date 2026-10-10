@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_telnet / SHL/S00 - a plant, and a shell into the engine running it.
+
+     Two halves:
+
+       THE PLANT     a thread, a timer and five values: a tank level with
+                     alarm limits, a pump, a maintenance flag, a counter and
+                     one value only an Admin may see. Same shape as
+                     PRJEDU_101; read that one first if <var> is new to you.
+
+       THE SHELL     <auth>  who may log in, and as what
+                     CN_TEL  PRO.telnet over plain TCP, 127.0.0.1:2323
+                     CN_TELS the same shell over TLS, 127.0.0.1:2324
+
+     WHY A SHELL AT ALL. AyXDB.exe has a maintenance prompt behind CTRL-X,
+     but that prompt reads stdin: once the engine runs as a Windows service
+     there is no console to type into. PRO.telnet is the same capability on
+     a socket - and it is an ordinary protocol, so it inherits the transport,
+     TLS, the address filter (con_acl) and the per-session role from the
+     connection layer every other protocol already uses.
+
+     THE SHELL EVALUATES SCRIPT UNDER THE SERVICE ACCOUNT. Three things keep
+     that honest, and this file configures all three:
+       1  con_acl   who may open a socket at all, checked at accept time
+       2  con_auth  who may log in, and what role they get
+       3  xdb_acl   what that role may read and write - see MAINT / SECRET
+     The shell is NOT privileged: a command runs with the session's own role,
+     which makes it MORE restricted than the CTRL-X console (that one is
+     SYSTEM and sees everything).
+     ===================================================================== -->
+<xdb id="SHL/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/SHL.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_SHL.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<!-- ================================================================
+		     THE PLANT - something to look at from the shell
+		     ================================================================ -->
+		<thr id="TH_MAIN" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- Once a second, main.tick moves the tank. -->
+		<var id="T_SIM" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="TH_MAIN" evt_per="1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.tick]" desc="process step"/>
+
+		<!-- The tank level, with the alarm chain from PRJEDU_101. ALM.onlvl
+		     moves the alarm bits inside 'sta', and main.on_level prints the
+		     transition - which is what makes 'log on' in the shell worth
+		     watching. No xdb_acl here: every role that got through the door
+		     may read it, and write it. -->
+		<var id="LEVEL" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x1142" sta_fnc="[EVT.sta,main.on_level]"
+		     val="50" val_typ="0x1308" val_fnc="[ATR.rou,ATR.lmt,ALM.onlvl]"
+		     val_min="0" val_max="100" val_rou="0.1" val_unt="%"
+		     val_alm_onlhi_alm="95" val_alm_onlhi_wrn="85"
+		     val_alm_onllo_wrn="20" val_alm_onllo_alm="10"
+		     desc="tank level"/>
+
+		<!-- THE PUMP - the one thing an operator may change.
+		     xdb_acl is one nibble per role, role N in bits 4N..4N+3, written
+		     high role first:  0x76543210.  The bits are 1 read, 2 write,
+		     4 create, 8 delete.
+		         0xFF333111
+		          ^^           roles 7 Admin and 6 Engineer: everything
+		            ^^^        roles 5 4 3 (Manager .. Operator): read+write
+		               ^^^     roles 2 1 0 (Monitor .. Guest): read only
+		     So 'opr' can start the pump from the shell and 'mon' cannot -
+		     and neither can, in any other channel either. An ACL belongs to
+		     the element, not to the shell. -->
+		<var id="PUMP" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="0" val_typ="0x1104" xdb_acl="0xFF333111"
+		     desc="inlet pump, 1 = running"/>
+
+		<!-- MAINTENANCE MODE. While this is 1 the simulator stops driving the
+		     pump and leaves it wherever a human put it. Everyone may read it,
+		     Engineer and Admin may write it (nibble 1 = read, F = everything).
+		     A realistic pair of rights: the operator drives the pump, the
+		     engineer decides whether the plant is in manual at all. -->
+		<var id="MAINT" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="0" val_typ="0x1104" xdb_acl="0xFF111111"
+		     desc="1 = manual, the simulator leaves the pump alone"/>
+
+		<var id="COUNT" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="0" val_typ="0x0104" desc="simulator steps so far"/>
+
+		<!-- ADMIN ONLY. 0xF0000000: role 7 everything, every other role
+		     nothing - not even read. Log in as 'opr' and
+		         evt.GetValue("id('SECRET')/@val")
+		     answers nothing at all. The shell did not decide that; the
+		     element did, and it would answer the same over MQTT, REST or a
+		     replication link. -->
+		<var id="SECRET" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="the boiler-room key is under the mat" val_typ="0x0401"
+		     xdb_acl="0xF0000000" desc="what only an Admin may read"/>
+
+		<!-- ================================================================
+		     THE SHELL
+		     ================================================================ -->
+
+		<!-- WHO MAY LOG IN.
+		     One <auth> element serves every channel that points at it with
+		     con_auth - telnet here, but MQTT and the web login the same way.
+		     What it brings that a login script cannot: hashed passwords, a
+		     lockout per user and address, one audit line per attempt, and a
+		     role that can never exceed Admin.
+
+		     THE USER NAME ATTRIBUTE IS usr_id, NOT id. An id would enter the
+		     document-wide id index and shadow elements of the same name.
+
+		     PASSWORDS. 'admin' carries a real PBKDF2-SHA256 hash; the others
+		     are plain text, which the engine accepts and QUIETLY UPGRADES to
+		     a hash at the first successful login - in memory. It cannot
+		     rewrite this file, so after the first login a restart starts over
+		     from the plain text. That is a demonstration, not a deployment:
+		     make your own hashes in the shell with
+		         AUTH.hash("the password")
+		     and paste the answer into usr_pwd.
+
+		     ROLES. Two ways, both shown: usr_role sets the number directly,
+		     usr_grp names a group that auth_map turns into one. The group
+		     form is what an LDAP or SQL back end gives you.
+
+		     auth_try / auth_lock: five failures from one address lock that
+		     user for 30 seconds. An Admin in another session can clear it
+		     with AUTH.unlock("*").
+
+		     xdb_acl="0xF0000000" - this element holds password hashes, so
+		     only an Admin may read it. Without that line any logged-in
+		     session could read the hashes out of the tree.
+		     Passwords here are 'admin123', 'eng123', 'opr123', 'mon123'. -->
+		<auth id="A_SHELL" xdb_acl="0xF0000000"
+		      auth_prv="local"
+		      auth_map="engineer:6, operator:3, monitor:2" auth_map_def="0"
+		      auth_try="5" auth_lock="30" auth_iter="20000" auth_rehash="1">
+			<usr usr_id="admin" usr_role="7"
+			     usr_pwd="$pbkdf2-sha256$20000$3Xp5P63C7hx1QroVbaHY6w$S3eFxdf4GE8roqSrkdwrqE7ZjGJDzJZ72493zhz9Xqo"/>
+			<usr usr_id="eng"   usr_grp="engineer" usr_pwd="eng123"/>
+			<usr usr_id="opr"   usr_grp="operator" usr_pwd="opr123"/>
+			<usr usr_id="mon"   usr_grp="monitor"  usr_pwd="mon123"/>
+		</auth>
+
+		<!-- THE SHELL, PLAIN TCP.
+		     Plain telnet carries the password, and everything after it, in
+		     CLEAR TEXT. That is why con_host and con_acl both say 127.0.0.1:
+		     the listener does not leave this machine. Reach it from elsewhere
+		     through SSH or RDP, or use the TLS one below.
+
+		     con_acl is checked at ACCEPT TIME, before a session object even
+		     exists: a refused address never sees the banner and never gets to
+		     try a password. Leaving con_acl out means every address is
+		     accepted, and the engine says so in the log at startup.
+
+		     pro_oncmd is consulted after the built-in commands and before
+		     script evaluation: main.shell_cmd answers 'plant', 'pump on|off' and
+		     'ping', and returns nothing for everything else, which lets the
+		     line fall through to the script engine.
+
+		     con_ses="4"     four shells at once is plenty; this is not a UI
+		     con_idletmo     seconds before a forgotten session is dropped
+		     pro_tel_try     failed logins before the socket is closed
+		     pro_tel_echo    1 = the server echoes; this is what hides the
+		                     password and makes the arrow keys work -->
+		<con id="CN_TEL" xdb_fnc="[CON.tcp,PRO.telnet]" desc="MAINTENANCE SHELL"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"
+		     con_host="127.0.0.1" con_port="2323" con_mod="SERVER" con_acl="127.0.0.1"
+		     con_ses="4" thr_wrk="1" thr_per="50" con_tmo="5" con_comdly="0" con_rct="0"
+		     con_clr="1" con_rcvlen="4096" con_keeptmo="0" con_idletmo="600"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1"
+		     con_auth="A_SHELL"
+		     pro_oncmd="main.shell_cmd(ses, cmd);"
+		     pro_tel_ban="AyMON example plant - maintenance shell"
+		     pro_tel_try="3" pro_tel_echo="1"/>
+
+		<!-- THE SAME SHELL, ENCRYPTED.
+		     The protocol code is identical; CON.tls is the only difference,
+		     and the con_ssl_* fields are the ordinary ones every other TLS
+		     listener in AyMON uses. An ordinary telnet client cannot speak
+		     TLS - use shell.ps1 -Tls, or stunnel in front of it, or
+		     'openssl s_client -connect 127.0.0.1:2324 -quiet'.
+
+		     THE CERTIFICATE IN db\cert\ IS PUBLIC. It is self-signed for
+		     localhost / 127.0.0.1 and its private key is in this repository
+		     for anyone to read, so it encrypts nothing that is secret from
+		     anyone who has cloned it. It exists so the TLS half works with
+		     nothing installed. Put your own in its place for anything else.
+
+		     con_ssl_verify="0": the server does not ask the client for a
+		     certificate. If your site can issue client certificates, turning
+		     that on puts a gate ahead of the password. -->
+		<con id="CN_TELS" xdb_fnc="[CON.tls,PRO.telnet]" desc="MAINTENANCE SHELL (TLS)"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"
+		     con_host="127.0.0.1" con_port="2324" con_mod="SERVER" con_acl="127.0.0.1"
+		     con_ses="4" thr_wrk="1" thr_per="50" con_tmo="5" con_comdly="0" con_rct="0"
+		     con_clr="1" con_rcvlen="4096" con_keeptmo="0" con_idletmo="600"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1"
+		     con_auth="A_SHELL"
+		     pro_oncmd="main.shell_cmd(ses, cmd);"
+		     pro_tel_ban="AyMON example plant - maintenance shell (TLS)"
+		     pro_tel_try="3" pro_tel_echo="1"
+		     con_ssl_cert="%DB%/cert/demo_cert.pem" con_ssl_key="%DB%/cert/demo_key.pem"
+		     con_ssl_pwd="" con_ssl_verify="0"/>
+	</data>
+</xdb>

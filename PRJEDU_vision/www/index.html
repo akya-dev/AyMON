@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_vision -- the page. Served by CN_WEB (PRO.http) from this
+     directory. Four files, nothing downloaded: this one, app.js,
+     mqtt-lite.js and style.css.
+
+     Pictures come over HTTP, straight from the engine's memory:
+       live       GET /blob/VIS/S00/CN_VIEW/frm?stream=1   (MJPEG: a new
+                  part every time CN_VIEW delivers a frame)
+       last       GET /blob/VIS/S00/SHOT/val                (when its seq moves)
+       rejects    GET /blob/VIS/S00/REJ0..REJ5/val
+     Everything else - counters, verdicts, the cameras' state - over MQTT.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bottle Inspection</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>Bottle inspection <span class="doc">VIS/S00</span></h1>
+    <div class="chips">
+        <span id="c-mqtt" class="chip" title="MQTT over ws://.../mqtt">MQTT</span>
+        <span id="c-cam" class="chip" title="the camera connection CN_CAM">CAMERA</span>
+        <span id="c-rej" class="chip" title="the alarm state of REJ_PCT">REJECTS</span>
+    </div>
+</header>
+
+<main>
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card live-card">
+        <div class="label">The line, live <span class="muted">- <code>GET /blob/VIS/S00/CN_VIEW/frm?stream=1</code></span></div>
+        <div class="frame live">
+            <img id="live" alt="the conveyor, live">
+            <svg id="win" viewBox="0 0 640 480" preserveAspectRatio="none" aria-hidden="true">
+                <rect id="w-rect" x="200" y="64" width="240" height="320"/>
+                <text id="w-text" x="204" y="60">inspection window</text>
+                <!-- the PRO.vision blocks' regions (their pro_adr, from the engine) -->
+                <rect id="o-S_MOVE" class="o move" x="0" y="0" width="0" height="0"/>
+                <rect id="o-S_LIGHT" class="o light" x="0" y="0" width="0" height="0"/>
+                <rect id="o-S_GATE" class="o gate" x="0" y="0" width="0" height="0"/>
+                <rect id="o-S_SHIFT" class="o shift" x="0" y="0" width="0" height="0"/>
+            </svg>
+            <div id="no-live" class="no-img">waiting for the camera</div>
+        </div>
+        <div class="muted small">One camera, four connections. <b>CN_CAM</b> opens the source; <b>CN_VIEW</b> (this picture),
+            <b>CN_INS</b> (the dashed window) and <b>CN_SEN</b> (the coloured boxes, below) are <code>link:CN_CAM</code> - the
+            same frames, each through its own <code>con_cam_*</code> fields.</div>
+
+        <table class="cams">
+            <thead><tr><th></th><th>state</th><th>delivered</th><th>read</th><th>what it is</th></tr></thead>
+            <tbody>
+                <tr id="r-CN_CAM"><th>CN_CAM</th><td class="st"></td><td class="rate"></td><td class="in"></td><td class="info"></td></tr>
+                <tr id="r-CN_INS"><th>CN_INS</th><td class="st"></td><td class="rate"></td><td class="in"></td><td class="info"></td></tr>
+                <tr id="r-CN_VIEW"><th>CN_VIEW</th><td class="st"></td><td class="rate"></td><td class="in"></td><td class="info"></td></tr>
+                <tr id="r-DV_SEN"><th>CN_SEN</th><td class="st"></td><td class="rate"></td><td class="in"></td><td class="info"></td></tr>
+            </tbody>
+        </table>
+        <div id="cam-err" class="read bad mono" hidden></div>
+
+        <div class="controls">
+            <div>
+                <div class="label">Camera <span class="muted">- <code>CAM_ON</code></span></div>
+                <div class="seg seg2" id="cam_on">
+                    <button data-v="1" title="CN_CAM sta 0x0303">on</button>
+                    <button data-v="0" title="CN_CAM sta 0x0000: the views wait, idle, not lost">off</button>
+                </div>
+            </div>
+            <div>
+                <div class="label">Source <span class="muted">- <code>SRC</code></span></div>
+                <div class="seg seg2" id="src">
+                    <button data-v="0" title="file:frames?fps=10&amp;loop=1 - the recorded line">recorded line</button>
+                    <button data-v="1" title="usb:0 - this computer's first camera">your camera</button>
+                </div>
+            </div>
+            <div>
+                <div class="label">Live view <span class="muted">- <code>VIEW_FPS</code></span></div>
+                <div class="seg" id="view_fps">
+                    <button data-v="1">1/s</button><button data-v="2">2/s</button>
+                    <button data-v="5">5/s</button><button data-v="10">10/s</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card">
+        <div class="label">The last bottle <span class="muted">- <code>GET /blob/VIS/S00/SHOT/val</code></span></div>
+        <div class="shot-row">
+            <div class="frame shot"><img id="shot" alt="the last bottle inspected"><div id="no-shot" class="no-img">no bottle yet</div></div>
+            <div class="shot-side">
+                <div id="v-LAST" class="verdict">--</div>
+                <div class="kv"><span>liquid top</span><b id="v-LEVEL">--</b> <span class="unit">px, must be &le; <b id="v-FILL_Y_MAX">--</b></span></div>
+                <div class="kv"><span>cap middle</span><b id="v-CAP_Y">--</b> <span class="unit">px, must be &ge; <b id="v-CAP_Y_MIN">--</b></span></div>
+                <div class="kv"><span>inspection</span><b id="v-MS">--</b> <span class="unit">ms</span></div>
+                <div class="legend small">
+                    <div><i class="sw" style="background:#fadc00"></i> where the cap must be</div>
+                    <div><i class="sw" style="background:#00beff"></i> the fill line</div>
+                    <div><i class="sw" style="background:#ff00ff"></i> the liquid's top, found</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="label space">How often the inspection looks <span class="muted">- <code>INS_FPS</code>, CN_INS <code>con_cam_fps</code></span></div>
+        <div class="seg seg6" id="ins_fps">
+            <button data-v="0" title="con_cam_fps 0: every frame the camera gives">every frame</button>
+            <button data-v="10">10/s</button><button data-v="5">5/s</button><button data-v="2">2/s</button>
+            <button data-v="1">1/s</button><button data-v="0.5">0.5/s</button>
+        </div>
+        <div class="muted small">A bottle is whole in the window for about four camera frames. Look less often and some
+            pass uninspected: MISSED - and a bottle nobody inspected is rejected.</div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card speed-card">
+        <div class="label">How fast <span class="muted">- the line asked for, and what the engine really does</span></div>
+        <div class="label">The line <span class="muted">- <code>SPEED</code>: the recording played at this many frames a second, a bottle every 8</span></div>
+        <div class="seg seg3" id="speed">
+            <button data-v="10" title="75 bottles a minute">10 frames/s</button>
+            <button data-v="100" title="750 bottles a minute">100 frames/s</button>
+            <button data-v="1000" title="7500 bottles a minute, if the engine keeps up">1000 frames/s</button>
+        </div>
+        <div class="grid speed">
+            <div><div class="label">Camera <span class="muted">CN_CAM</span></div><span id="k-cam" class="mid">--</span> <span class="unit">frames/s</span>
+                <div class="muted small">asked <b id="k-ask">--</b></div></div>
+            <div><div class="label">Inspection <span class="muted">CN_INS</span></div><span id="k-ins" class="mid">--</span> <span class="unit">frames/s</span>
+                <div class="muted small">of <b id="k-insin">--</b> it could read</div></div>
+            <div><div class="label">Inspected</div><span id="k-bpm" class="mid">--</span> <span class="unit">bottles/min</span>
+                <div class="muted small"><b id="k-bps">--</b> a second</div></div>
+            <div><div class="label">Missed</div><span id="k-mpm" class="mid">--</span> <span class="unit">bottles/min</span>
+                <div class="muted small">nobody looked at them</div></div>
+            <div><div class="label">One bottle</div><span id="k-ms" class="mid">--</span> <span class="unit">ms</span>
+                <div class="muted small">inspect + draw + JPEG</div></div>
+        </div>
+        <div class="muted small">The rates are the connections' own (<code>con_cam_rate</code>, the last 4 s); bottles a minute are
+            counted by this page over the last 5 s. At 1000 the camera stops where reading the recording stops: one JPEG
+            decoded at a time. Choose <b>every frame</b> for the inspection, or it looks ten times a second and misses
+            almost every bottle.</div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card sen-card">
+        <div class="label">The line, watched without a script <span class="muted">- <code>CN_SEN</code>
+            <code>[CON.cam,PRO.vision]</code>, device <code>DV_SEN</code>: four blocks the engine runs on every frame</span>
+            <span id="s-DV_SEN" class="state"></span></div>
+        <div class="grid sen">
+            <div class="tile">
+                <div class="label"><i class="sw move"></i>Moving <span class="muted">S_MOVE diff</span></div>
+                <span id="k-MOVE" class="mid">--</span> <span class="unit">% of pixels changed</span>
+                <div id="w-MOVE" class="word"></div>
+                <div class="muted small">frame against the frame before, where the bottles pass. Alarm under 0.5 %: the line stands.</div>
+            </div>
+            <div class="tile">
+                <div class="label"><i class="sw gate"></i>Light barrier <span class="muted">S_GATE count</span></div>
+                <span id="lamp-GATE" class="lamp"></span> <span id="k-GATE" class="mid">--</span> <span class="unit">% liquid</span>
+                <div id="w-GATE" class="word"></div>
+                <div class="muted small">a strip 8 px wide in the middle: a bottle stands in it three frames in eight.</div>
+            </div>
+            <div class="tile">
+                <div class="label"><i class="sw light"></i>Light <span class="muted">S_LIGHT roi</span></div>
+                <span id="k-LIGHT" class="mid">--</span> <span class="unit">/ 255</span>
+                <svg id="spark" class="spark" viewBox="0 0 120 30" preserveAspectRatio="none"><polyline id="spark-l" points=""/></svg>
+                <div class="muted small">the wall's mean, the last minute. Cover the lens: warning under 140, alarm under 80.</div>
+            </div>
+            <div class="tile">
+                <div class="label"><i class="sw shift"></i>Camera position <span class="muted">S_SHIFT match</span></div>
+                <span class="mid"><span id="k-SHIFT_DX">--</span>, <span id="k-SHIFT_DY">--</span></span> <span class="unit">px moved</span>
+                <div class="small">match <b id="k-SHIFT_SCORE">--</b> <span id="w-SHIFT" class="word"></span></div>
+                <div class="muted small">a bolt under the belt, cut from the first frame, found again in every one.</div>
+                <div class="seg seg1"><button id="sen_ref" title="SEN_REF: take the bolt again from the next frame">the camera is right - take the bolt again</button></div>
+            </div>
+        </div>
+        <div class="muted small">No line of script: each block's numbers reach an <code>&lt;io&gt;</code> as a Modbus register's
+            would, and each <code>&lt;io&gt;</code> has its alarm limits (<code>ALM.onlvl</code>). Switch the camera off and the
+            blocks' watchdog sets the device WAITING, in alarm, within a few seconds.</div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card">
+        <div class="label">Rejects in the last 20 bottles <span id="s-REJ" class="state"></span></div>
+        <div><span id="v-REJ_PCT" class="big">--</span> <span class="unit">%</span></div>
+        <div class="hbar"><div id="rej-fill"></div><div class="mark wrn" style="left:35%"></div><div class="mark alm" style="left:50%"></div></div>
+        <div class="muted small">warning at 35 %, alarm at 50 % (<code>ALM.onlvl</code>). The recorded line makes one bad bottle in four.</div>
+
+        <table class="counts">
+            <tr><th>inspected</th><td id="v-INSPECTED">--</td><td></td></tr>
+            <tr class="good"><th>good</th><td id="v-GOOD">--</td><td><div class="bar" id="b-GOOD"></div></td></tr>
+            <tr class="bad"><th>no cap</th><td id="v-NOCAP">--</td><td><div class="bar" id="b-NOCAP"></div></td></tr>
+            <tr class="bad"><th>wrong cap</th><td id="v-WRONGCAP">--</td><td><div class="bar" id="b-WRONGCAP"></div></td></tr>
+            <tr class="bad"><th>cap high</th><td id="v-CAPHIGH">--</td><td><div class="bar" id="b-CAPHIGH"></div></td></tr>
+            <tr class="bad"><th>low fill</th><td id="v-LOWFILL">--</td><td><div class="bar" id="b-LOWFILL"></div></td></tr>
+            <tr class="bad"><th>missed</th><td id="v-MISSED">--</td><td><div class="bar" id="b-MISSED"></div></td></tr>
+            <tr><th>passed the camera</th><td id="v-PASSED">--</td><td class="muted small">from the recording's own frame number, 0.6 s late</td></tr>
+        </table>
+        <div class="seg seg1"><button id="reset" title="RESET: any new value">counters to zero</button></div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card rej-card">
+        <div class="label">The last six rejects <span class="muted">- <code>REJ0</code> .. <code>REJ5</code>, newest first</span></div>
+        <div id="gallery" class="gallery"></div>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

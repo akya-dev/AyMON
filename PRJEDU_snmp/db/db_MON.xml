@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     MON/S00 - the monitoring side: AyMON as an SNMP MANAGER.
+
+     This file is what you would write for a real device. The four levels
+     mean:
+
+       <con>  the SNMP client: UDP, the version and the community
+       <dev>  one device: its address, and credentials of its own if it
+              needs them
+       <bi>   ONE REQUEST: a base OID, a timer, and the points below it go
+              into ONE packet (pro_fni="GET")
+       <io>   one OID, one point, with units, scaling and alarms
+
+     THE OID IS SPLIT IN TWO. The <bi> carries the base and each <io> the
+     rest; the engine joins them with a dot. Keeping the base on the block
+     is not cosmetic - it is what lets one packet carry every point of
+     that block.
+
+     POLLING COSTS PACKETS, NOT POINTS. GET puts up to pro_vb (24 by
+     default) varbinds in one request, so these five points are one packet
+     every two seconds. Give each point its own <bi> and it is five.
+     ===================================================================== -->
+<xdb id="MON/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/MON.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFFFFFFF1">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_MON.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<!-- THE MANAGER.
+		     con_mod="CLIENT" + pro_role="MASTER": we ask, the agent answers.
+		     con_host / con_port are empty here because the <dev> below
+		     carries its own - one <con> can serve devices at many addresses.
+		     pro_ver / pro_getc: v2c and the read community. Exact spellings
+		     are "V1", "V2C", "V3"; anything else is ignored silently.
+		     For v3 the fields are pro_usr, pro_auth, pro_pwd (and pro_priv /
+		     pro_priv_key for encryption) - and con_ses must be > 0, because
+		     credentials are per device session.
+		     con_rct="5": redial every 5 s while the device is not there. -->
+		<con id="CN_SNMP" xdb_fnc="[CON.udp,PRO.snmp]" desc="SNMP manager"
+		     con_host="" con_port="" con_mod="CLIENT" con_way="FULL" con_ses="4"
+		     con_tmo="1" con_clr="1" con_rct="5" con_comdly="0"
+		     pro_role="MASTER" pro_tmo="1" pro_try="1" pro="1" pro_typ="0xD411" pro_fnc="[]"
+		     pro_ver="V2C" pro_getc="public" pro_setc="private"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]" evt_thr="CN_SNMP"/>
+
+		<!-- THE DEVICE. Change con_host / con_port and the same points poll a
+		     real switch, UPS or PDU. pro_getc / pro_usr here override the
+		     connection's, per field - that is how one <con> serves devices
+		     with different communities. -->
+		<dev id="TANK" pro_con="CN_SNMP" pro_adr="1" con_host="127.0.0.1" con_port="1161"
+		     desc="the tank served by AGT/S00"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+
+			<!-- ONE REQUEST, every two seconds.
+			     pro_adr  the base OID (a private enterprise arc, 99999)
+			     pro_fni="GET"  ask for exactly these OIDs. GETNEXT walks one
+			              step at a time and GETBULK walks a subtree; GET is
+			              what you want when you know what you are reading.
+			     pro_typ="0xC412"  the block's own value; the points below
+			              carry the values that matter. -->
+			<bi id="TANK_BLK" xdb_fnc="[XDB.evt]" desc="1.3.6.1.4.1.99999"
+			    sta="0x0302" sta_typ="0x1142" sta_fnc="[EVT.sta,PRO.sta]"
+			    evt="0" evt_typ="0x1204" evt_fnc="[PRO.pol]" evt_cfg="0x0002"
+			    evt_per="2" evt_dly="0" evt_syn="0"
+			    pro="" pro_typ="0xC412" pro_fnc="[]"
+			    pro_adr="1.3.6.1.4.1.99999" pro_fni="GET">
+
+				<!-- THE POINTS. pro_adr is the rest of the OID after the
+				     block's base, so this one is 1.3.6.1.4.1.99999.2.1.0.
+				     pro_typ is how the ANSWER is read: 0x1104 = unsigned 32
+				     bit, which is what Gauge32 and Counter32 arrive as; the
+				     0x1000 bit is what makes pro_fnc run at all.
+				     pro_fnc="[VAL.put]" is the bridge from the wire value
+				     'pro' to the meaning 'val' - without it every poll
+				     succeeds and 'val' never moves. -->
+				<io id="LEVEL" pro="0" pro_typ="0x1104" pro_adr="2.1.0" pro_fnc="[VAL.put]"
+				    sta="0x0302" sta_typ="0x1142" sta_fnc="[main.on_alarm]" desc="tank level"
+				    val="0" val_typ="0x1308" val_fnc="[ATR.rou,ATR.lmt,ALM.onlvl]"
+				    val_rou="1" val_min="0" val_max="100" val_unt="%"
+				    val_alm_onlhi_alm="90" val_alm_onlhi_wrn="80"
+				    val_alm_onllo_wrn="20" val_alm_onllo_alm="10"/>
+
+				<!-- SNMP HAS NO FLOATS. The agent serves tenths of a degree
+				     as an INTEGER (0x1204 = signed 32 bit) and val_cnv_dlt
+				     turns them back into degrees - the same attribute the
+				     Modbus example uses for its scaled registers. -->
+				<io id="TEMP" pro="0" pro_typ="0x1204" pro_adr="2.2.0" pro_fnc="[VAL.put]"
+				    sta="0x0302" sta_typ="0x1142" desc="water temperature"
+				    val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou]"
+				    val_cnv_dlt="0.1" val_cnv_ofs="0" val_rou="0.1" val_unt="C"/>
+
+				<io id="PUMP" pro="0" pro_typ="0x1204" pro_adr="2.3.0" pro_fnc="[VAL.put]"
+				    sta="0x0302" sta_typ="0x1142" desc="pump running"
+				    val="0" val_typ="0x1104" val_fnc="[main.on_pump]"/>
+
+				<io id="STARTS" pro="0" pro_typ="0x1104" pro_adr="2.4.0" pro_fnc="[VAL.put]"
+				    sta="0x0302" sta_typ="0x1142" desc="pump starts (Counter32)"
+				    val="0" val_typ="0x1104"/>
+
+				<!-- TimeTicks are hundredths of a second, as a plain unsigned
+				     number: 4711 is 47.11 seconds. The engine does not turn
+				     them into a time - that is the device's own clock, and
+				     what it means is the device's business. -->
+				<io id="UPTIME" pro="0" pro_typ="0x1104" pro_adr="1.2.0" pro_fnc="[VAL.put]"
+				    sta="0x0302" sta_typ="0x1142" desc="agent uptime, 1/100 s"
+				    val="0" val_typ="0x1104"/>
+
+				<!-- A STRING, to show that a type is a type. The agent serves
+				     this one as an OCTET STRING and it arrives as text. -->
+				<io id="DESCR" pro="" pro_typ="0x1401" pro_adr="1.1.0" pro_fnc="[VAL.put]"
+				    sta="0x0302" sta_typ="0x1142" desc="what the agent calls itself"
+				    val="" val_typ="0x0401"/>
+			</bi>
+		</dev>
+
+		<!-- A report line every ten seconds. -->
+		<var id="REPORT" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="CN_SNMP" evt_per="10" evt_dly="5" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.report]" desc="periodic log line"/>
+
+		<!-- ================================================================
+		     THE PAGE - http://127.0.0.1:8105/  (only from this computer)
+		     CN_WEB serves www/; CN_LIVE is MQTT inside a WebSocket on the
+		     same port (/mqtt) and publishes this document: a new
+		     subscription gets the current values at once (retain), and
+		     every change after that.
+		     The page only reads: xdb_acl="0xFFFFFFF1" on the document
+		     gives a Guest (role 0, a page that did not log in) read and
+		     nothing else.
+		     ================================================================ -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the page"
+		     con_host="127.0.0.1" con_port="8105" con_mod="SERVER" con_ses="8" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="the live values for the page"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_MONW" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//io" pro_retain_atr="val,pro,sta"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

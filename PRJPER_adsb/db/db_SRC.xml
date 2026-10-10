@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     SRC/S00 - the receiver: a dump1090, simulated.
+
+     A real ADS-B decoder listens on TCP 30003 and writes one text line per
+     message it decodes, to everyone connected - it never waits to be
+     asked. This document does the same, for a dozen aircraft that it
+     flies itself (main.fly, twice a second):
+
+       * they come in from the edge of a 250 km circle around HOME, cross
+         it, and leave; a new one takes the place of each that leaves
+       * they climb, cruise and descend, at the speeds airliners fly
+       * every three minutes one of them squawks 7700 - an emergency -
+         for a minute, so the tracker's alarm has something to do
+
+     HOME is Istanbul Airport. Move it and the traffic moves with it.
+
+     THE CONNECTION. PRO.raw on a TCP listener: the engine accepts the
+     tracker's connection, and main.fly writes lines into every connected
+     session. Nothing ever arrives from the other side (on_nothing drops
+     it if it does).
+
+     THE LINES. SBS-1 / BaseStation, comma separated, 22 fields:
+       MSG,<type>,1,1,<hex>,1,<date>,<time>,<date>,<time>,<callsign>,
+           <altitude>,<ground speed>,<track>,<lat>,<lon>,<vertical rate>,
+           <squawk>,<alert>,<emergency>,<spi>,<on ground>
+     Only the fields a message type carries are filled; the rest are
+     empty. Types sent here: 1 callsign, 3 position (altitude, lat, lon),
+     4 velocity (speed, track, vertical rate), 6 squawk.
+     ===================================================================== -->
+<xdb id="SRC/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/SRC.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_SRC.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<thr id="TH_SRC" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- TCP 30003, the port every SBS-1 client expects. Loopback only. -->
+		<con id="CN_SBS" xdb_fnc="[CON.tcp,PRO.raw]" desc="SBS-1 output (TCP 30003)"
+		     con_host="127.0.0.1" con_port="30003" con_mod="SERVER" con_acl="127.0.0.1"
+		     con_way="FULL" con_ses="4" con_tmo="5" con_clr="1" con_rcvlen="512"
+		     con_keeptmo="0" con_idletmo="0"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD411" pro_fnc="[]"
+		     pro_onparse="main.on_nothing(exc);"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<var id="T_FLY" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_SRC" evt_per="0.5" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.fly]" desc="the sky, twice a second"/>
+
+		<var id="HOME_LAT" sta="0x0303" val="41.2753" val_typ="0x0308" val_unt="deg" desc="the receiver's position: Istanbul Airport"/>
+		<var id="HOME_LON" sta="0x0303" val="28.7519" val_typ="0x0308" val_unt="deg"/>
+		<!-- the emergency: one aircraft squawks 7700 for a minute, the first
+		     time after EMERG_FIRST seconds, then every EMERG_EVERY (0: never) -->
+		<var id="EMERG_FIRST" sta="0x0303" val="30"  val_typ="0x0308" val_unt="s"/>
+		<var id="EMERG_EVERY" sta="0x0303" val="180" val_typ="0x0308" val_unt="s"/>
+		<var id="RANGE_KM" sta="0x0303" val="250"  val_typ="0x0308" val_unt="km" desc="how far the receiver hears"/>
+		<var id="PLANES"   sta="0x0303" val="12"   val_typ="0x0308" desc="how many aircraft are in the sky at once"/>
+
+		<!-- the sky: one JSON object per aircraft -->
+		<var id="SKY"   sta="0x0303" val="[]" val_typ="0x0401" desc="the simulated aircraft"/>
+		<var id="STEPS" sta="0x0303" val="0"  val_typ="0x0104" desc="half seconds so far"/>
+		<var id="SENT"  sta="0x0303" val="0"  val_typ="0x0104" desc="lines sent"/>
+	</data>
+</xdb>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_web - AyMON example: a live web page over HTTP, WebSocket and MQTT
+     No hardware, no database, nothing to install - a browser is enough.
+
+     THE ROOT DOCUMENT. It names the engine and loads one child document,
+     PLT/S00, which holds a small simulated tank AND the three connections
+     that put it on a web page. They sit in the same document on purpose:
+     an MQTT connection publishes the changes of ITS OWN document.
+
+     Run:   run.bat,  then open  http://127.0.0.1:8080/
+            or, encrypted,       https://127.0.0.1:8443/
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="S01">
+	<config>
+		<doc id="PLT/S00" sta="0x0300" src="%DB%/db_PLT.xml" desc="a tank, and the web page that shows it" />
+	</config>
+	<data>
+	</data>
+</xdb>

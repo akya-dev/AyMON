@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_net - the tank and its mail. Served by PLT/S00 on
+     127.0.0.1:8114; the values come over MQTT inside a WebSocket on the
+     same port (/mqtt). The page may write OVERFILL, TEST and REPORT only.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tank Mail and Files</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+    <style>
+        .mail { border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+        .mail .hd { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+        .mail pre { margin: 8px 0 0; white-space: pre-wrap; font: 13px/1.4 ui-monospace, Consolas, monospace; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>The tank writes mail and files <span class="doc">PLT/S00 &rarr; PRO.smtp &rarr; MBX/S00 :2525, PRO.ftp &rarr; FTP/S00 :2121</span></h1>
+    <div class="chips"><span id="c-mail" class="chip">mail --</span><span id="c-live" class="chip">--</span></div>
+</header>
+
+<main>
+    <section class="card">
+        <div class="label">The tank <span class="muted">dashes: warning 80 %, alarm 90 %</span></div>
+        <div class="gauge-row">
+            <div class="gauge" id="g"><i id="g-fill"></i></div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:10px">
+                <div class="tiles">
+                    <div class="tile" id="t-level"><div class="t">level</div><div class="v"><span id="level">--</span><span class="u"> %</span></div><div class="s" id="s-level">--</div></div>
+                    <div class="tile"><div class="t">what it is doing</div><div class="v" style="font-size:16px" id="phase">--</div></div>
+                </div>
+                <div class="ctl">
+                    <button id="b-over">Overfill once</button>
+                    <button id="b-test">Send a test mail</button>
+                </div>
+                <div class="note">Overfill: the level rises through the warning and the alarm and comes back -
+                    two mails, one when the alarm comes, one when it is gone.</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="label">The mail <span class="muted">CN_MAIL, one point: MAIL</span></div>
+        <div class="tiles">
+            <div class="tile"><div class="t">asked for</div><div class="v" id="mails">--</div></div>
+            <div class="tile"><div class="t">sent (250)</div><div class="v ok" id="sent">--</div></div>
+            <div class="tile"><div class="t">not sent</div><div class="v" id="failed">--</div></div>
+        </div>
+        <div class="note">The message is written to <code>MAIL/@pro</code>; the server's answer comes back
+            <b>into the same attribute</b> and runs <code>main.mail_done</code>. Last answer:</div>
+        <div class="note"><code id="last">--</code></div>
+        <div class="note">Without the licence feature <code>net</code> 20 mails a day are free; the next one is
+            answered <code>code 0</code> - not sent - until the engine starts again.</div>
+    </section>
+
+    <section class="card">
+        <div class="label">The files <span class="muted">CN_FILES, PRO.ftp</span></div>
+        <div class="tiles">
+            <div class="tile"><div class="t">reports uploaded</div><div class="v ok" id="reports">--</div></div>
+            <div class="tile"><div class="t">on the server</div><div class="v" id="nfiles">--</div></div>
+        </div>
+        <div class="ctl" style="margin-top:10px"><button id="b-report">Make and upload a shift report</button></div>
+        <div class="note">The tank's own timer writes the last minutes of samples to a CSV, zips it
+            (<code>FILE.zip</code>), and writes an FTP job: <code>put</code> as <code>.part</code>, renamed when
+            complete, the local file moved to <code>out/sent</code>. Then it asks for the directory (<code>list</code>).</div>
+    </section>
+
+    <section class="card">
+        <div class="label">What the file server holds <span class="muted">FTP/S00, FTP written in script</span></div>
+        <div class="table-wrap"><table>
+            <thead><tr><th>name</th><th class="n">size</th><th>kind</th></tr></thead>
+            <tbody id="files"></tbody>
+        </table></div>
+    </section>
+
+    <section class="card wide">
+        <div class="label">The FTP replies <span class="muted">newest first</span></div>
+        <div class="table-wrap"><table>
+            <thead><tr><th>time</th><th>id</th><th>cmd</th><th class="n">code</th><th class="n">ok</th><th class="n">bytes</th><th>the server said</th></tr></thead>
+            <tbody id="ftp"></tbody>
+        </table></div>
+    </section>
+
+    <section class="card wide">
+        <div class="label">What the engine sent <span class="muted">the mail replies, newest first</span></div>
+        <div class="table-wrap"><table>
+            <thead><tr><th>time</th><th>id</th><th>subject</th><th class="n">code</th><th class="n">ok</th><th>the server said</th></tr></thead>
+            <tbody id="out"></tbody>
+        </table></div>
+    </section>
+
+    <section class="card wide">
+        <div class="label">What the mail server received <span class="muted">MBX/S00, SMTP written in script - the last ten</span></div>
+        <div id="inbox"><div class="note">nothing yet - press a button</div></div>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="kit.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

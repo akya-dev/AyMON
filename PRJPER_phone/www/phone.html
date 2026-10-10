@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJPER_phone - the page a phone opens:
+         https://<the PC's address>:8110/phone.html
+
+     It reads the phone's motion sensors, summarises every fifth of a
+     second into one line of text and publishes that line to
+     PHN/S00/IN/val/set. It also listens: to its own elements' 'sta' (the
+     engine's verdict - the colour of the banner) and to its 'buzz'.
+
+     phone.html?sim=1 is a simulated phone for a PC with no motion sensor:
+     the same page, the same lines, made-up numbers and three buttons.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AyMON Phone</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body class="phone">
+<header>
+    <h1>This phone <span class="doc" id="pid">P_…</span></h1>
+    <div class="chips">
+        <span id="c-live" class="chip" title="MQTT inside a WebSocket to the engine">offline</span>
+        <span id="c-sens" class="chip" title="motion sensor events arriving">no sensor</span>
+    </div>
+</header>
+
+<main>
+    <div id="banner" class="banner">not started<small>press Start</small></div>
+
+    <section class="card" id="start-card">
+        <div class="label">Your phone's name <span class="muted">- shown on the dashboard</span></div>
+        <div class="start-row">
+            <input type="text" id="name" maxlength="24" autocomplete="off">
+            <button class="go" id="start">Start</button>
+        </div>
+        <div class="opts">
+            <label><input type="checkbox" id="share-pos"> share my position <span class="muted">(off unless you tick it)</span></label>
+            <label><input type="checkbox" id="keep-awake" checked> keep the screen on</label>
+        </div>
+        <p class="note" id="start-note">A phone shows its motion sensors to a page only after a tap. iPhone
+            asks for permission; say Allow.</p>
+    </section>
+
+    <section class="card">
+        <div class="readings">
+            <div class="cell" id="cell-vib"><div class="k">vibration</div><div class="v"><span id="v-vib">--</span> <span class="unit">m/s²</span></div></div>
+            <div class="cell" id="cell-tilt"><div class="k">tilt</div><div class="v"><span id="v-tilt">--</span> <span class="unit">°</span></div></div>
+            <div class="cell"><div class="k">heading</div><div class="v"><span id="v-head">--</span> <span class="unit">°</span></div></div>
+            <div class="cell" id="cell-drop"><div class="k">drops</div><div class="v"><span id="v-drop">0</span></div></div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="label">Level <span class="muted">- lay the phone flat to centre the bubble</span></div>
+        <svg class="dial" viewBox="-50 -50 100 100" aria-label="spirit level">
+            <circle r="46" class="rim"/>
+            <circle r="15" class="ring"/>
+            <circle r="30" class="ring"/>
+            <circle id="bubble" r="7" class="bub"/>
+        </svg>
+    </section>
+
+    <section class="card" id="sim-card" hidden>
+        <div class="label">Simulated phone <span class="muted">- no motion sensor here, so these make one up</span></div>
+        <div class="sim">
+            <button id="sim-shake">shake 3 s</button>
+            <button id="sim-tilt">tilt 45°</button>
+            <button id="sim-drop">drop it</button>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="label">The engine says</div>
+        <div id="msg" class="note">--</div>
+        <p class="note">Buzzed by the dashboard: <b id="buzzes">0</b> times.</p>
+        <p class="note">Sent: <b id="sent">0</b> lines. What is sent: one line five times a second,
+            e.g. <code id="last">S,…</code></p>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="phone.js"></script>
+</body>
+</html>

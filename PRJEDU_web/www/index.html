@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_web -- the page. Served by CN_WEB (PRO.http) from this directory.
+     Three files and no downloads: this one, app.js and mqtt-lite.js.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AyMON Live Tank</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- no favicon: without this line every browser asks for /favicon.ico
+         and the engine logs the miss -->
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>Tank <span class="doc">PLT/S00</span></h1>
+    <div class="links">
+        <span id="st-http" class="chip ok" title="this page came over HTTP">HTTP</span>
+        <span id="st-rest" class="chip" title="GET /api/values">REST</span>
+        <span id="st-mqtt" class="chip" title="MQTT over ws://.../mqtt">MQTT/WS</span>
+    </div>
+</header>
+
+<main>
+    <section class="card tank-card">
+        <div class="tank" aria-label="tank level">
+            <div id="water" class="water"></div>
+            <div id="sp-line" class="sp-line"><span>set point</span></div>
+            <div class="band hi-alm" style="bottom:90%"></div>
+            <div class="band hi-wrn" style="bottom:80%"></div>
+            <div class="band lo-wrn" style="bottom:20%"></div>
+            <div class="band lo-alm" style="bottom:10%"></div>
+        </div>
+        <div class="tank-read">
+            <div class="label">LEVEL</div>
+            <div><span id="v-LEVEL" class="big">--</span> <span id="u-LEVEL" class="unit">%</span></div>
+            <div id="s-LEVEL" class="state">--</div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="grid">
+            <div><div class="label">TEMP</div><span id="v-TEMP" class="mid">--</span> <span id="u-TEMP" class="unit">C</span></div>
+            <div><div class="label">PUMP</div><span id="v-PUMP" class="mid">--</span></div>
+            <div><div class="label">SETPOINT</div><span id="v-SETPOINT" class="mid">--</span> <span class="unit">%</span></div>
+            <div><div class="label">COUNT</div><span id="v-COUNT" class="mid">--</span></div>
+        </div>
+
+        <label class="label" for="sp">Change the set point (publishes <code>PLT/S00/SETPOINT/val/set</code>)</label>
+        <div class="sp-row">
+            <input id="sp" type="range" min="0" max="100" step="1" value="50">
+            <output id="sp-out">50</output>
+        </div>
+        <p class="hint">Past 80 the level goes into WARNING, past 90 into ALARM &mdash;
+            the colours come from the <code>sta</code> the engine publishes, not from this page.</p>
+
+        <svg id="trend" viewBox="0 0 240 60" preserveAspectRatio="none" aria-label="level trend">
+            <polyline id="trend-line" fill="none" stroke-width="1.5" points=""/>
+        </svg>
+    </section>
+
+    <section class="card log-card">
+        <div class="label">MQTT traffic <span id="rate" class="muted"></span></div>
+        <ol id="log"></ol>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

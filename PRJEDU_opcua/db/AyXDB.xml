@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_opcua - AyMON example: an OPC UA client, against a machine
+     that has its own OPC UA server.
+
+     The machine is sim/ua_machine.py: a simulated injection moulding
+     machine behind a real OPC UA server (asyncua, somebody else's stack),
+     on opc.tcp://127.0.0.1:4840/moulding/. Start it first:
+     run_machine.bat (needs setup.bat once - see the README).
+
+     UA/S00 is the engine's side, with three connections to that machine:
+
+       CN_UA   in the clear, Anonymous - what you have running in five
+               minutes. It polls every second. The server lets an
+               anonymous session read, and nothing else.
+       CN_UAP  the same, for a subscription: the server sends a value
+               when it changes. On a connection of its own, because a
+               Publish waits at the server until there is news.
+       CN_UAS  signed and encrypted (Basic256Sha256), logged in as the
+               user 'setter' - what a plant should run. It writes the
+               setpoint and the start/stop, and calls the machine's
+               methods. It needs both certificates trusted: the machine's
+               here (pro_trust), and ours on the machine (the README says
+               how).
+
+     The page: http://127.0.0.1:8102/
+
+     Five connections, one document: inside the FREE edition.
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="S01">
+	<config>
+		<doc id="UA/S00" sta="0x0300" src="%DB%/db_UA.xml" desc="the machine, over OPC UA" />
+	</config>
+	<data>
+	</data>
+</xdb>

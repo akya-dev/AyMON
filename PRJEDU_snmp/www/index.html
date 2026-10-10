@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_snmp - the manager's page. Served by MON/S00 on
+     127.0.0.1:8105; the values come over MQTT inside a WebSocket on the
+     same port (/mqtt). The page reads only.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SNMP Tank</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>The tank, over SNMP <span class="doc">MON/S00 &rarr; v2c agent @ 127.0.0.1:1161</span></h1>
+    <div class="chips"><span id="c-dev" class="chip">agent --</span><span id="c-live" class="chip">--</span></div>
+</header>
+
+<main>
+    <section class="card">
+        <div class="label">The tank <span class="muted">dashes: warning and alarm limits</span></div>
+        <div class="gauge-row">
+            <div class="gauge" id="g"><i id="g-fill"></i></div>
+            <div class="tiles" style="flex:1">
+                <div class="tile" id="t-level"><div class="t">level</div><div class="v"><span id="level">--</span><span class="u"> %</span></div><div class="s" id="s-level">--</div></div>
+                <div class="tile"><div class="t">temperature</div><div class="v"><span id="temp">--</span><span class="u"> C</span></div></div>
+                <div class="tile"><div class="t">pump</div><div class="v"><span id="pump">--</span></div><div class="s muted"><span id="starts">--</span> starts</div></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="label">The agent <span class="muted">what it says about itself</span></div>
+        <div class="tiles">
+            <div class="tile"><div class="t">sysDescr-like, OCTET STRING</div><div class="v" style="font-size:16px" id="descr">--</div></div>
+            <div class="tile"><div class="t">up for, from TimeTicks</div><div class="v" style="font-size:16px" id="uptime">--</div></div>
+        </div>
+        <canvas id="trend" style="margin-top:14px"></canvas>
+    </section>
+
+    <section class="card wide">
+        <div class="label">What the agent sent, and what it means <span class="muted">every 2 s: ONE GET for all six OIDs</span></div>
+        <div class="table-wrap"><table>
+            <thead><tr><th>point</th><th>OID (base + point)</th><th>SNMP type</th><th class="n">on the wire (pro)</th><th class="n">value (val)</th><th>state</th></tr></thead>
+            <tbody id="rows"></tbody>
+        </table></div>
+        <div class="note">SNMP has no floats: the agent sends the temperature in tenths as an INTEGER and
+            <code>val_cnv_dlt="0.1"</code> turns it back into degrees. TimeTicks are hundredths of a second - a plain number;
+            the page, not the engine, turns it into a time.</div>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="kit.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

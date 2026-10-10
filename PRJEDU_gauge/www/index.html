@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_gauge -- the page. Served by CN_WEB (PRO.http) from this
+     directory. Four files, nothing downloaded: this one, app.js,
+     mqtt-lite.js and style.css.
+
+     The values arrive over MQTT. The picture arrives one of two ways, and
+     the page may choose (PATH):
+       blob    MQTT carries a descriptor of GAU/S00/PIC/val; the page then
+               fetches the bytes over HTTP: GET /blob/GAU/S00/PIC/val
+       base64  GAU/S00/IMG/val over MQTT, a PNG in a data: URL (the old way)
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gauge Reader</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>Gauge reader <span class="doc">GAU/S00</span></h1>
+    <div class="chips">
+        <span id="c-mqtt" class="chip" title="MQTT over ws://.../mqtt">MQTT</span>
+        <span id="c-read" class="chip" title="the reader's verdict on the last frame (READ)">READ</span>
+        <span id="c-press" class="chip" title="the alarm state of PRESS">PRESS</span>
+    </div>
+</header>
+
+<main>
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card cam-card">
+        <div class="label">What the camera sees <span class="muted">- <code id="src">-</code></span></div>
+        <div id="frame" class="frame">
+            <img id="img" alt="the gauge, as the camera sees it">
+            <svg id="overlay" viewBox="0 0 240 240" aria-hidden="true">
+                <path id="o-arc" fill="none"/>
+                <line id="o-needle" x1="120" y1="120" x2="120" y2="120"/>
+                <g id="o-centre"><line x1="-6" y1="0" x2="6" y2="0"/><line x1="0" y1="-6" x2="0" y2="6"/></g>
+            </svg>
+            <div id="no-img" class="no-img">waiting for the first frame<br><span class="muted">no picture at all? the README's "If there is no picture"</span></div>
+        </div>
+        <label class="check"><input id="show" type="checkbox" checked> show what the reader found: the dial's centre, the scale, the needle</label>
+        <div id="v-READ" class="read mono">-</div>
+        <div class="muted small">frame <b id="v-FRAMES">-</b> &middot; <b id="v-MS">-</b> ms in Python &middot; <b id="v-REJECTS">-</b> not used</div>
+
+        <div class="label noise-label">How the picture travels <span class="muted">- <code>GAU/S00/PATH/val/set</code></span></div>
+        <div class="seg seg3" id="path">
+            <button data-p="0" title="Python writes a PNG, base64 in a string value, published over MQTT">0 base64 in MQTT</button>
+            <button data-p="1" title="the frame is a blob; the engine encodes a PNG, the page fetches it over HTTP">1 PNG blob</button>
+            <button data-p="2" title="the frame is a blob; the engine encodes a JPEG, the page fetches it over HTTP">2 JPEG blob</button>
+        </div>
+        <div class="label noise-label">The camera <span class="muted">- <code>GAU/S00/SIZE/val/set</code></span></div>
+        <div class="seg seg2" id="size">
+            <button data-s="0" title="the dial fills the picture">0 240 &times; 240, 1 a second</button>
+            <button data-s="1" title="the dial is part of a panel">1 640 &times; 480, 10 a second</button>
+        </div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card">
+        <div class="label">Reading <span id="s-PRESS" class="state"></span></div>
+        <div><span id="v-PRESS" class="big">--</span> <span class="unit">bar</span></div>
+        <div class="grid">
+            <div><div class="label">True <span class="muted">- nobody can measure it</span></div><span id="v-SEEN" class="mid">--</span> <span class="unit">bar</span></div>
+            <div><div class="label">Error</div><span id="v-ERR" class="mid">--</span> <span class="unit">bar</span></div>
+            <div><div class="label">Needle</div><span id="v-ANGLE" class="mid">--</span> <span class="unit">&deg;</span></div>
+            <div><div class="label">Compressor</div><span id="v-COMP" class="mid">--</span></div>
+        </div>
+
+        <div class="label">Confidence <span id="s-CONF" class="state"></span></div>
+        <div class="hbar"><div id="conf-fill"></div><div id="conf-min" title="CONF_MIN"></div></div>
+        <div class="muted small"><b id="v-CONF">--</b> &middot; a frame below <b id="v-CONF_MIN">--</b> is not used, and PRESS keeps its last good value</div>
+
+        <div class="label noise-label">How hard the camera's life is <span class="muted">- <code>GAU/S00/NOISE/val/set</code></span></div>
+        <div class="seg" id="noise">
+            <button data-n="0" title="a clean picture">0 clean</button>
+            <button data-n="1" title="sensor noise, a soft lens, a vibrating needle">1 noise</button>
+            <button data-n="2" title="+ light from one side, glare off the glass">2 glare</button>
+            <button data-n="3" title="+ a passing shadow, a knocked camera">3 shadow</button>
+        </div>
+
+        <div class="label noise-label">How the reader finds the needle <span class="muted">- <code>GAU/S00/METHOD/val/set</code></span></div>
+        <div class="seg seg2" id="method">
+            <button data-m="0" title="the ray most darker than its neighbours">0 darker than around it</button>
+            <button data-m="1" title="the darkest ray - the reader's first version">1 darkest ray</button>
+        </div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card cost-card">
+        <div class="label">What the picture costs <span class="muted">- measured by this page, the last 10 s</span></div>
+        <div class="grid cost">
+            <div><div class="label">MQTT</div><span id="k-mqtt" class="mid">--</span> <span class="unit">KB/s</span></div>
+            <div><div class="label">HTTP</div><span id="k-http" class="mid">--</span> <span class="unit">KB/s</span></div>
+            <div><div class="label">Picture</div><span id="k-pic" class="mid">--</span> <span class="unit">KB</span></div>
+            <div><div class="label">Shown</div><span id="k-fps" class="mid">--</span> <span class="unit">/s</span></div>
+            <div><div class="label">Age <span class="muted">when shown</span></div><span id="k-age" class="mid">--</span> <span class="unit">ms</span></div>
+        </div>
+        <div class="muted small">Age is from the moment the camera took the frame (<code>CAP</code>) to the picture on this page, median; it needs the page and the engine on one clock.</div>
+        <div class="label noise-label">One frame, two readers, no copy</div>
+        <div class="small">Light on the dial, read natively by the engine (<code>IMG.stats</code>): <b id="v-LIGHT">--</b> <span class="muted">of 255</span></div>
+        <div class="small">The script saw the frame at <b id="v-FRAME_AT" class="mono">--</b>; Python read the gauge from <b id="v-SAME">--</b></div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card trend-card">
+        <div class="label">The last two minutes <span class="muted">- <span class="k-true">true</span> and <span class="k-read">read</span>, <span class="k-bad">&times;</span> a frame not used</span></div>
+        <svg id="trend" viewBox="0 0 600 200" preserveAspectRatio="none" aria-label="true and read pressure">
+            <g id="t-grid"></g>
+            <polyline id="t-true" fill="none" points=""/>
+            <polyline id="t-read" fill="none" points=""/>
+            <g id="t-bad"></g>
+        </svg>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

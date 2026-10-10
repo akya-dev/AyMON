@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     SIM/S00 - the drone: a Tello, written in script.
+
+     A real Tello is a small UDP server with a text protocol:
+
+       UDP 8889   COMMANDS in, ANSWERS out. "command", "takeoff",
+                  "forward 100", "battery?" ... one datagram each. The
+                  answer ("ok", "error", "87") goes back to the address the
+                  command came from. A command that MOVES the drone is
+                  answered when the move is FINISHED, not when it starts.
+       UDP 8890   STATE out, about ten times a second, to the address that
+                  sent "command": "pitch:0;roll:0;yaw:0;...;h:80;bat:87;..."
+
+     This document is the same thing on 127.0.0.1, built from two
+     connections with no protocol of their own (PRO.raw) and a script:
+
+       CN_SIM     UDP server on 8889. pro_onparse hands each command to
+                  main.on_cmd, which answers at once or starts a move.
+       CN_SIMST   UDP client to 8890. main.tick sends the state line on it.
+
+     The drone itself is the <var>s below: position, height, heading,
+     battery, and the move in progress. main.tick moves them ten times a
+     second and, when a move is done, sends its "ok" - from the timer,
+     through CN_SIM, to whoever sent the last command.
+
+     It is a teaching drone, not a flight model. What it copies on purpose,
+     because a ground station has to cope with it:
+       * nothing works until "command" (SDK mode)
+       * a move is answered when it ends: seconds, not milliseconds
+       * no command for 15 s while flying -> it lands by itself
+       * a flip needs 50 % battery, a takeoff 10 %
+       * the battery runs down - faster here than on a real one (DRAIN)
+       * "emergency" stops the motors in the air
+     ===================================================================== -->
+<xdb id="SIM/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/SIM.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_SIM.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<thr id="TH_SIM" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- 8889: THE COMMAND SOCKET.
+		     The same connection as the SNMP agent in PRJEDU_snmp: a UDP
+		     listener with no protocol, and a script that reads each
+		     datagram and answers it on the same socket.
+		     A real Tello listens on 192.168.10.1; this one on loopback
+		     only, and con_acl refuses anyone else at the door. -->
+		<con id="CN_SIM" xdb_fnc="[CON.udp,PRO.raw]" desc="Tello command socket (UDP 8889)"
+		     con_host="127.0.0.1" con_port="8889" con_mod="SERVER" con_acl="127.0.0.1"
+		     con_way="FULL" con_ses="4" con_tmo="5" con_clr="1" con_rcvlen="512"
+		     con_keeptmo="0" con_idletmo="0"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD411" pro_fnc="[]"
+		     pro_onparse="main.on_cmd(exc);"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- 8890: THE STATE STREAM. A UDP client: it only ever sends, from
+		     main.tick. A real Tello sends the state to the address that
+		     sent "command"; here that address is fixed. -->
+		<con id="CN_SIMST" xdb_fnc="[CON.udp,PRO.raw]" desc="Tello state stream (UDP 8890)"
+		     con_host="127.0.0.1" con_port="8890" con_mod="CLIENT"
+		     con_way="FULL" con_ses="0" con_tmo="5" con_clr="1" con_rcvlen="512"
+		     con_keeptmo="0" con_idletmo="0" con_rct="1"
+		     pro_role="MASTER" pro_tmo="1" pro_try="1" pro="" pro_typ="0xD411" pro_fnc="[]"
+		     pro_onparse="main.on_nothing(exc);"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- The flight model, ten times a second. -->
+		<var id="T_SIM" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_SIM" evt_per="0.1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.tick]" desc="flight model step"/>
+
+		<!-- ================================================================
+		     THE DRONE. x / y are where it is relative to the takeoff point
+		     (a real Tello does not know that - it is not in its state line;
+		     the simulator needs it to fly). h is what the state calls 'h'.
+		     ================================================================ -->
+		<var id="SDK"   sta="0x0303" val="0"    val_typ="0x0104" desc="1 after 'command'"/>
+		<var id="FLY"   sta="0x0303" val="0"    val_typ="0x0104" desc="1 while the motors run"/>
+		<var id="X"     sta="0x0303" val="0"    val_typ="0x0308" val_unt="cm" desc="forward of takeoff"/>
+		<var id="Y"     sta="0x0303" val="0"    val_typ="0x0308" val_unt="cm" desc="left of takeoff"/>
+		<var id="H"     sta="0x0303" val="0"    val_typ="0x0308" val_unt="cm" desc="height"/>
+		<var id="YAW"   sta="0x0303" val="0"    val_typ="0x0308" val_unt="deg" desc="heading, -180..180"/>
+		<var id="BAT"   sta="0x0303" val="87"   val_typ="0x0308" val_unt="%" desc="battery"/>
+		<var id="TEMP"  sta="0x0303" val="45"   val_typ="0x0308" val_unt="C" desc="board temperature"/>
+		<var id="FLYT"  sta="0x0303" val="0"    val_typ="0x0308" val_unt="s" desc="motor time"/>
+		<var id="SPEED" sta="0x0303" val="50"   val_typ="0x0308" val_unt="cm/s" desc="'speed x' sets it"/>
+
+		<!-- The move in progress, as JSON: what is left of it and which
+		     command is waiting for its "ok". Empty when hovering. -->
+		<var id="TASK"  sta="0x0303" val=""     val_typ="0x0401" desc="the move in progress"/>
+
+		<!-- The last 'rc a b c d' and when it came: sticks, -100..100. -->
+		<var id="RC"    sta="0x0303" val="0 0 0 0" val_typ="0x0401" desc="left/right fwd/back up/down yaw"/>
+		<var id="RC_MS" sta="0x0303" val="0"    val_typ="0x0108" desc="time of the last rc"/>
+
+		<!-- When the last command arrived: 15 s of silence in the air and
+		     the drone lands on its own, as a real one does. -->
+		<var id="CMD_MS" sta="0x0303" val="0"   val_typ="0x0108" desc="time of the last command"/>
+
+		<!-- How fast the battery goes, % per second in the air. A real Tello
+		     flies about 12 minutes (0.12 %/s); this one is quicker so the
+		     low-battery landing happens while you are still watching. -->
+		<var id="DRAIN" sta="0x0303" val="0.4"  val_typ="0x0308" val_unt="%/s" desc="battery drain in flight"/>
+
+		<var id="CMDS"  sta="0x0303" val="0"    val_typ="0x0104" desc="commands received"/>
+	</data>
+</xdb>

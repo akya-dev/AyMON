@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJPER_phone - AyMON example: your phone's sensors in the engine.
+
+     No app to install. The phone opens a page this engine serves, the page
+     reads the phone's motion sensors (and, if you allow it, the battery and
+     the position) and sends what it measured over MQTT inside a secure
+     WebSocket. The engine turns every phone into a small device of its own,
+     with alarms - and tells the phone when it is in alarm.
+
+     One document, PHN/S00: the phones, the rules, and the two doors in:
+
+       https://<this PC's address>:8110/phone.html   for the phones, over
+                                                     the local network
+       http://127.0.0.1:8111/                        the dashboard, on this
+                                                     PC only
+
+     No phone at hand? Open  http://127.0.0.1:8111/phone.html?sim=1  in a
+     browser tab: a simulated phone, with a "shake" button.
+
+     Run:  run.bat  - it prints the address to type on the phone.
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="S01">
+	<config>
+		<doc id="PHN/S00" sta="0x0300" src="%DB%/db_PHN.xml" desc="the phones, their alarms, and the page they talk to" />
+	</config>
+	<data>
+	</data>
+</xdb>

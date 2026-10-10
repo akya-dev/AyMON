@@ -1,0 +1,179 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     MON/S00 - the monitoring side: this engine in the MASTER role. It
+     polls the plant once a second and turns counts into values with units,
+     limits and alarms.
+
+     Four levels, and every AyMON project you will ever read has them:
+
+       <con>  a CONNECTION - a socket, a serial port, a transport.
+              Where the wire is and what protocol speaks on it.
+       <dev>  a DEVICE on that connection - a station/unit address.
+              One <con> usually carries many <dev>.
+       <bi>   a BLOCK inside the device - ONE REQUEST on the wire.
+              "read 4 holding registers starting at 0" is one <bi>.
+              Its TIMER (evt_per) is what makes the poll happen.
+       <io>   a POINT inside the block - one register or one bit, the
+              thing an operator actually looks at.
+
+     The block is the unit of communication, the point is the unit of
+     meaning. Polling 50 registers in one <bi> is one Modbus frame; putting
+     each register in its own <bi> is 50 frames for the same data. That is
+     the single biggest performance decision in a Modbus project.
+     ===================================================================== -->
+<xdb id="MON/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/MON.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFFFFFFF1">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_MON.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<!-- THE CONNECTION.
+		     con_mod="CLIENT"  - we dial out
+		     pro_role="MASTER" - we ask, the device answers
+		     con_host/con_port empty: each <dev> below carries its own, so one
+		       <con> can serve devices at different addresses.
+		     con_ses="4"       - each device gets its own socket, dialled on
+		                          its first poll rather than at startup
+		     con_tmo / pro_tmo - how long to wait for the socket and for the
+		                          answer, in SECONDS
+		     con_rct="5"       - redial every 5 s while the device is down
+		     evt_thr="CN_MB"   - the polls run on this connection's own thread -->
+		<con id="CN_MB" xdb_fnc="[CON.tcp,PRO.modbus]" desc="Modbus TCP master"
+		     con_host="" con_port="" con_mod="CLIENT" pro_role="MASTER" pro_mod="TCP"
+		     con_way="FULL" con_ses="4" con_clr="1" con_tmo="1.0" con_comdly="0" con_rct="5"
+		     pro_tmo="1" pro_try="1" pro="1" pro_typ="0xD411" pro_fnc="[]"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]" evt_thr="CN_MB"/>
+
+		<!-- THE DEVICE.
+		     pro_adr  the Modbus unit id (PLC/S00 answers for unit 1)
+		     pro_con  which <con> carries it
+		     con_host/con_port  where this device lives. Change these two and
+		       the example talks to a real PLC instead of PLC/S00. -->
+		<dev id="TANK" pro_adr="1" pro_con="CN_MB" con_host="127.0.0.1" con_port="1502"
+		     desc="tank station" sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+
+			<!-- THE BLOCK = ONE REQUEST.
+			     pro_fni="3"   Modbus function 3, read holding registers
+			     pro_typ="0xD412"  the block's own value is a BUFFER of 16-bit
+			                   units - one element per holding register. The
+			                   raw answer lands here.
+			     pro_adr="0"   first register
+			     pro_len="4"   HOW MANY ELEMENTS OF pro_typ, so four
+			                   REGISTERS here, not four bytes. With
+			                   pro_typ="0xD411" (a byte buffer) the same four
+			                   registers would be pro_len="8", and every <io>
+			                   address below would be a byte offset too. Pick
+			                   0xD412 for Modbus and the whole block counts in
+			                   registers - the way the device's manual counts.
+			     pro_fnc="[PRO.inp]"  distributes that buffer to the <io> below
+			     evt_fnc="[PRO.pol]" + evt_per="1"  poll once a second -->
+			<bi id="TANK_BLK" xdb_fnc="[XDB.evt]" desc="holding registers 0..3"
+			    sta="0x0302" sta_typ="0x1142" sta_fnc="[EVT.sta,PRO.sta]"
+			    evt="0" evt_typ="0x1204" evt_fnc="[PRO.pol]" evt_cfg="0x0002"
+			    evt_per="1" evt_thr=""
+			    pro_typ="0xD412" pro="" pro_fnc="[PRO.inp]"
+			    pro_adr="0" pro_len="4" pro_fni="3">
+
+				<!-- THE POINTS.
+				     pro_adr   which register inside the block - the same unit
+				               as the block's pro_len, so "1" is the second
+				               register. With a dot it addresses a BIT:
+				               pro_adr="2.1" means register 2, bit 1, i.e.
+				               absolute bit 2*16+1 of the block. See the flags
+				               below.
+				     pro_fnc   what happens when a new WIRE value lands.
+				               VAL.put copies 'pro' into 'val' - 'pro' is what
+				               the device said, 'val' is what the point means,
+				               and nothing crosses between them by itself. Leave
+				               it out and every poll succeeds, every raw value is
+				               right, and 'val' never moves: a silent zero.
+				     pro_typ   how to read it OFF THE WIRE. 0x1102 = unsigned
+				               16 bit, which is what a holding register is.
+				               (0x1202 signed, 0x1204 a 32-bit pair, 0x1111 a
+				               single bit.)
+				     val_typ   what the value IS once it is ours: a double
+				               here, because the scaling produces fractions.
+				     val_cnv_dlt / val_cnv_ofs  the scaling: val = raw*dlt+ofs.
+				               This is where "counts" become "percent".
+				     val_fnc   the chain that runs on every new value:
+				                 VAL.cnv   apply the scaling
+				                 ATR.rou   round to val_rou
+				                 ATR.lmt   clamp to val_min..val_max
+				                 ALM.onlvl compare with the four alarm limits
+				               Not one line of script in any of it. -->
+				<io id="TANK_LEVEL" pro="0" pro_typ="0x1102" pro_adr="0" pro_fnc="[VAL.put]"
+				    sta="0x0302" sta_typ="0x1142" desc="tank level"
+				    val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou,ATR.lmt,ALM.onlvl]"
+				    val_cnv_dlt="0.1" val_cnv_ofs="0" val_rou="0.1"
+				    val_min="0" val_max="100" val_unt="%"
+				    val_alm_onlhi_alm="95" val_alm_onlhi_wrn="85"
+				    val_alm_onllo_wrn="15" val_alm_onllo_alm="5"/>
+
+				<io id="TANK_TEMP" pro="0" pro_typ="0x1102" pro_adr="1" pro_fnc="[VAL.put]"
+				    sta="0x0302" sta_typ="0x1142" desc="tank temperature"
+				    val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou,ATR.lmt,ALM.onlvl]"
+				    val_cnv_dlt="0.1" val_cnv_ofs="0" val_rou="0.1"
+				    val_min="-20" val_max="80" val_unt="C"
+				    val_alm_onlhi_alm="33" val_alm_onlhi_wrn="30"/>
+
+				<!-- THREE BITS OUT OF ONE REGISTER.
+				     Register 2 of this device is a status word. Nothing takes
+				     it apart in script: pro_typ="0x1111" says "a single bit"
+				     and pro_adr="2.0" / "2.1" / "2.2" say which one. The dot
+				     is register.bit in the block's own unit, so with a 16-bit
+				     block "2.1" is bit 2*16+1 = 33 of the buffer. A device
+				     whose manual numbers bits 0..15 inside a register maps
+				     straight onto this. -->
+				<io id="PUMP_RUN" pro="0" pro_typ="0x1111" pro_adr="2.0" pro_fnc="[VAL.put]"
+				    sta="0x0302" sta_typ="0x1142" desc="pump running"
+				    val="0" val_typ="0x1104" val_fnc="[main.on_pump]"/>
+
+				<io id="VALVE_OPEN" pro="0" pro_typ="0x1111" pro_adr="2.1" pro_fnc="[VAL.put]"
+				    sta="0x0302" sta_typ="0x1142" desc="drain valve open"
+				    val="0" val_typ="0x1104"/>
+
+				<io id="TEMP_HIGH" pro="0" pro_typ="0x1111" pro_adr="2.2" pro_fnc="[VAL.put]"
+				    sta="0x0302" sta_typ="0x1142" desc="device's own high-temp flag"
+				    val="0" val_typ="0x1104"/>
+
+				<io id="PUMP_HOURS" pro="0" pro_typ="0x1102" pro_adr="3" pro_fnc="[VAL.put]"
+				    sta="0x0302" sta_typ="0x1142" desc="pump running hours"
+				    val="0" val_typ="0x1104" val_unt="h"/>
+			</bi>
+		</dev>
+
+		<!-- A report line every ten seconds, so the log tells a story. -->
+		<var id="REPORT" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="CN_MB" evt_per="10" evt_dly="5" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.report]" desc="periodic log line"/>
+
+		<!-- ================================================================
+		     THE PAGE - http://127.0.0.1:8103/  (only from this computer)
+		     CN_WEB serves www/; CN_LIVE is MQTT inside a WebSocket on the
+		     same port (/mqtt), and publishes this document's points: a new
+		     subscription gets the current val / pro / sta of every <io> at
+		     once (retain), and every change after that. The page only
+		     reads - xdb_acl="0xFFFFFFF1" on the document gives a Guest
+		     (role 0, a page that did not log in) read and nothing else.
+		     ================================================================ -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the page"
+		     con_host="127.0.0.1" con_port="8103" con_mod="SERVER" con_ses="8" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="the live values for the page"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_MON" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//io" pro_retain_atr="val,pro,sta"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

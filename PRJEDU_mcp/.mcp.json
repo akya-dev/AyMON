@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "aymon-demo": {
+      "type": "http",
+      "url": "http://127.0.0.1:8095/mcp",
+      "headers": { "Authorization": "Bearer demo-read-key" }
+    },
+    "aymon-demo-rw": {
+      "type": "http",
+      "url": "http://127.0.0.1:8096/mcp",
+      "headers": { "Authorization": "Bearer demo-write-key" }
+    }
+  }
+}

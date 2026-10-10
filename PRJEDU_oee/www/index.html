@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_oee - the MES's page. Served by OEE/S00 on 127.0.0.1:8100;
+     the live values come over MQTT inside a WebSocket on the same port
+     (/mqtt), as in PRJEDU_web.
+
+     It reads OEE/S00 only - LIVE, STOPS, PARETO, SHIFTS, ... are JSON
+     values the MES keeps for it. It writes two kinds of thing:
+       OEE/S00/REASON_SET    why a stop happened (the only write the MES
+                             takes from the page)
+       LINE/S00/...          the world buttons: break the machine, jam it,
+                             take its material away, change the settings
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Line OEE</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>Line OEE <span class="doc">OEE/S00</span></h1>
+    <div class="chips">
+        <span id="c-shift" class="chip">shift --</span>
+        <span id="c-left" class="chip">--</span>
+        <span id="c-state" class="chip">--</span>
+        <span id="c-link" class="chip">connecting</span>
+    </div>
+</header>
+
+<main>
+    <!-- ================= the four numbers ================= -->
+    <section class="card wide">
+        <div class="kpis">
+            <div class="kpi"><div class="label">Availability</div><div class="big" id="k-a">--</div><div class="bar"><i id="b-a"></i></div><div class="small muted">run time / planned time</div></div>
+            <div class="kpi"><div class="label">Performance</div><div class="big" id="k-p">--</div><div class="bar"><i id="b-p"></i></div><div class="small muted">ideal time / run time</div></div>
+            <div class="kpi"><div class="label">Quality</div><div class="big" id="k-q">--</div><div class="bar"><i id="b-q"></i></div><div class="small muted">good parts / all parts</div></div>
+            <div class="kpi oee"><div class="label">OEE</div><div class="big" id="k-oee">--</div><div class="bar"><i id="b-oee"></i></div><div class="small muted">A &times; P &times; Q</div></div>
+        </div>
+        <div class="check small" id="check">--</div>
+    </section>
+
+    <!-- ================= where the time went ================= -->
+    <section class="card wide">
+        <div class="label">Where this shift's time went <span class="muted">(seconds; a shift is eight minutes here)</span></div>
+        <div id="fall" class="fall"></div>
+    </section>
+
+    <!-- ================= the line now ================= -->
+    <section class="card">
+        <div class="label">The line now</div>
+        <div id="state" class="state">--</div>
+        <div id="open" class="open"></div>
+        <div class="kv">
+            <span>product</span><b id="product">--</b>
+            <span>ideal cycle (master data)</span><b id="ideal">--</b>
+            <span>parts this shift</span><b id="parts">--</b>
+            <span>bad parts (of them in startup)</span><b id="bad">--</b>
+            <span>minor stops</span><b id="minors">--</b>
+            <span>counter registers (wrap at 65536)</span><b id="raw">--</b>
+        </div>
+    </section>
+
+    <!-- ================= stops ================= -->
+    <section class="card">
+        <div class="label">This shift <span class="muted">(stops longer than the minor-stop limit)</span></div>
+        <svg id="timeline" viewBox="0 0 1000 44" preserveAspectRatio="none" class="timeline"></svg>
+        <div class="legend small" id="legend"></div>
+        <div class="msg small" id="msg"></div>
+        <table class="stops"><thead><tr><th>#</th><th>at</th><th class="n">s</th><th>why</th></tr></thead><tbody id="stops"></tbody></table>
+    </section>
+
+    <!-- ================= Pareto ================= -->
+    <section class="card">
+        <div class="label">Downtime by reason
+            <span class="seg"><button id="par-now" class="on">this shift</button><button id="par-all">last 10 shifts</button></span>
+        </div>
+        <svg id="pareto" viewBox="0 0 520 240" class="pareto"></svg>
+    </section>
+
+    <!-- ================= history ================= -->
+    <section class="card">
+        <div class="label">Finished shifts <span class="muted">(from log\oee.db)</span></div>
+        <table class="hist"><thead><tr><th>shift</th><th>start</th><th class="n">A</th><th class="n">P</th><th class="n">Q</th><th class="n">OEE</th><th class="n">good</th></tr></thead><tbody id="hist"></tbody></table>
+        <div class="buttons foot"><button id="csv">Download CSV</button></div>
+    </section>
+
+    <!-- ================= the world ================= -->
+    <section class="card wide">
+        <div class="label">The machine <span class="muted">(LINE/S00 - the bench, not the MES: make things happen)</span></div>
+        <div class="buttons">
+            <button data-now="FAULT_NOW" class="stop">Break it</button>
+            <button data-now="JAM_NOW">Jam it</button>
+            <button data-now="MATERIAL_NOW">Take the material away</button>
+            <button data-now="CHANGE_NOW">Change over now</button>
+        </div>
+        <div class="sliders">
+            <label>bad parts <b id="v-SCRAP_PCT">--</b> %<input type="range" min="0" max="20" step="1" data-cfg="SCRAP_PCT"></label>
+            <label>slow spells at <b id="v-SLOW_PCT">--</b> % speed<input type="range" min="50" max="100" step="5" data-cfg="SLOW_PCT"></label>
+            <label>a breakdown every <b id="v-FAULT_EVERY_S">--</b> s<input type="range" min="0" max="600" step="30" data-cfg="FAULT_EVERY_S"></label>
+            <label>a jam every <b id="v-JAM_EVERY_S">--</b> s<input type="range" min="0" max="120" step="5" data-cfg="JAM_EVERY_S"></label>
+            <label>no material every <b id="v-MATERIAL_EVERY_S">--</b> s<input type="range" min="0" max="900" step="30" data-cfg="MATERIAL_EVERY_S"></label>
+            <label>lot size <b id="v-LOT">--</b> parts<input type="range" min="10" max="300" step="10" data-cfg="LOT"></label>
+        </div>
+        <div class="small muted">0 = never. The machine made <b id="made">--</b> parts since it started, <b id="madebad">--</b> of them bad - what the MES counts should add up to that.</div>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

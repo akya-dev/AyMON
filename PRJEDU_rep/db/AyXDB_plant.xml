@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_rep - AyMON example 4: REPLICATION. Root file of the PLANT.
+
+     Two engines, one machine. This one is the plant: it produces the data.
+     The other one (AyXDB_centre.xml) mirrors it. Start them in either
+     order, stop and restart either one - they find each other again.
+
+     TWO THINGS DECIDE EVERYTHING, AND BOTH ARE IN THIS FILE:
+
+       tid="PLANT"   WHO AM I. Every node in a replicated system has a name
+                     of its own. It is the ONLY difference between this file
+                     and the centre's: the <con> rows below are written once
+                     and REP.cfg reads tid to work out which end of the link
+                     this node is. See db_sys_plant.xml.
+
+       <doc sta>     WHAT IS THIS DOCUMENT TO ME. The top nibble is the
+                     document's ROLE, and every direction decision that
+                     replication makes comes from it - not from the
+                     connection:
+
+                         sta = 0xRC00
+                                 |'- bit 12-13  cluster state
+                                 '-  bit 14-15  role class: 0 plain
+                                                            1 EDGE (field)
+                                                            2 HUB  (centre)
+
+                     0x4300 = EDGE, running. This is the SOURCE.
+                     0x8300 = HUB,  running. That is the MIRROR (centre).
+
+                     Nothing else marks a direction anywhere in this
+                     project. Swap the two numbers and the data flows the
+                     other way.
+
+     Run:  run_plant.bat   (and run_centre.bat in another window)
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0"
+     log_lnk="%PRJ%/log/%TID%_XDB.log" sta="0x0300" tid="PLANT">
+	<config>
+		<!-- The machinery: connections, the simulator, the timers. NOT
+		     replicated - this document is the node's own equipment. -->
+		<doc id="SYS/S00" sta="0x0300" src="%DB%/db_sys_plant.xml"
+		     desc="plain - this node's connections and its simulator" />
+
+		<!-- The data. EDGE = this node is where it comes from.
+		     The same id ('PRC/P01') must exist on the centre; that is how
+		     the two ends know they are talking about the same document. -->
+		<doc id="PRC/P01" sta="0x4300" src="%DB%/db_proc.xml"
+		     desc="EDGE - pumping station P01, the SOURCE of the data" />
+	</config>
+	<data>
+	</data>
+</xdb>

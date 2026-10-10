@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_modbus - the monitoring side's page. Served by MON/S00 on
+     127.0.0.1:8103; the values come over MQTT inside a WebSocket on the
+     same port (/mqtt). The page reads only.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Modbus Tank</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>Tank station, over Modbus TCP <span class="doc">MON/S00 &rarr; unit 1 @ 127.0.0.1:1502</span></h1>
+    <div class="chips"><span id="c-dev" class="chip">device --</span><span id="c-live" class="chip">--</span></div>
+</header>
+
+<main>
+    <section class="card">
+        <div class="label">The tank <span class="muted">dashes: warning and alarm limits</span></div>
+        <div class="gauge-row">
+            <div class="gauge" id="g"><i id="g-fill"></i></div>
+            <div class="tiles" style="flex:1">
+                <div class="tile" id="t-level"><div class="t">level</div><div class="v"><span id="level">--</span><span class="u"> %</span></div><div class="s" id="s-level">--</div></div>
+                <div class="tile" id="t-temp"><div class="t">temperature</div><div class="v"><span id="temp">--</span><span class="u"> C</span></div><div class="s" id="s-temp">--</div></div>
+                <div class="tile"><div class="t">pump running hours</div><div class="v"><span id="hours">--</span><span class="u"> h</span></div></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="label">Register 2, bit by bit <span class="muted">pro_adr="2.0" / "2.1" / "2.2"</span></div>
+        <div class="lamps">
+            <span class="lamp" id="l-pump"><i></i>pump running</span>
+            <span class="lamp" id="l-valve"><i></i>drain valve open</span>
+            <span class="lamp bad" id="l-hot"><i></i>device's high-temp flag</span>
+        </div>
+        <div class="note">One status register, three points - no script takes it apart.</div>
+        <canvas id="trend" style="margin-top:14px"></canvas>
+    </section>
+
+    <section class="card wide">
+        <div class="label">What the wire says, and what it means <span class="muted">one poll a second: ONE request for all of it</span></div>
+        <div class="table-wrap"><table>
+            <thead><tr><th>point</th><th>register</th><th class="n">on the wire (pro)</th><th>scaling</th><th class="n">value (val)</th><th>state</th></tr></thead>
+            <tbody id="rows"></tbody>
+        </table></div>
+        <div class="note">The device only knows counts: 723 in register 0 is 72.3 % because <code>val_cnv_dlt="0.1"</code> says so.
+            The limits and the alarm state are configuration too (<code>ALM.onlvl</code>) - the colour comes from the point's sta.</div>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="kit.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

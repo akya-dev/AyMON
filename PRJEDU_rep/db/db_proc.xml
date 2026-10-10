@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRC/P01 - pumping station P01. THIS IS THE DOCUMENT THAT TRAVELS.
+
+     There is nothing about replication in this file. No connection, no
+     peer, no direction, no filter. It is an ordinary AyMON document that
+     happens to be declared EDGE in AyXDB_plant.xml, and that one word is
+     the whole of its involvement.
+
+     Two rules govern what crosses the wire, and both are visible here:
+
+       1  AN ELEMENT WITHOUT AN id OF ITS OWN IS NOT REPLICATED.
+          Replication addresses elements by id - <document>/<id>/<attr>.
+          A branch with no id anywhere under it cannot be addressed, so it
+          is counted ("id'siz=" in the log) and skipped. Everything below
+          has an id.
+
+       2  THE MACHINERY IS NOT IN HERE.
+          No <script>, no <thr>, no <con>, no timer. Those live in
+          db_sys_plant.xml, which is a separate document and stays home.
+          The simulator writes into this document from outside, with
+          addresses like doc('PRC/P01')/id('LEVEL')/@val - exactly what a
+          Modbus device, an MQTT broker or an operator would do.
+
+          It is worth being strict about this. A replicated document is
+          DATA. Put a <script src="..."> in it and the mirror will faithfully
+          receive the script element too.
+     ===================================================================== -->
+<xdb id="PRC/P01" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0"
+     log_lnk="%PRJ%/log/%TID%_PRC.log" sta="0x0300" sta_typ="0x142"
+     thr_wrk="0" thr_per="100">
+	<config>
+	</config>
+
+	<data>
+		<!-- THE TANK LEVEL, WITH LIMITS ON IT.
+		     The four val_alm_* attributes are the alarm; ALM.onlvl compares
+		     the value with them and moves the ALARM BITS INSIDE 'sta'.
+
+		     Watch this one at the centre. The alarm is computed ONCE, here,
+		     where the value is born; what reaches the mirror is the RESULT
+		     - 'sta' is an ordinary attribute and travels like any other.
+		     One value, one decision, one owner.
+
+		     THE 0x1000 BIT IS NOT DECORATION. val_typ="0x1308" is
+		     0x0308 (double) plus 0x1000, and 0x1000 is what says "run the
+		     val_fnc chain". Without it the chain is declared and never
+		     runs: no rounding, no alarm, no error, no log line - the value
+		     just stores raw and 'sta' never moves. Same bit, same meaning,
+		     in sta_typ="0x1142" for the sta_fnc chain.
+		     The plain values below carry no chain, so they do not need it. -->
+		<var id="LEVEL" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x1142" sta_fnc="[EVT.sta]"
+		     val="0" val_typ="0x1308" val_fnc="[ATR.rou,ALM.onlvl]"
+		     val_rou="0.1" val_unt="%"
+		     val_alm_onlhi_alm="92" val_alm_onlhi_wrn="85"
+		     val_alm_onllo_wrn="20" val_alm_onllo_alm="10"
+		     desc="tank level"/>
+
+		<!-- Ordinary values. 0x0308 = double, 0x0104 = unsigned 32 bit. -->
+		<var id="TEMP" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="0" val_typ="0x0308" val_unt="C" desc="pump bearing temperature"/>
+
+		<var id="PUMP" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="0" val_typ="0x0104" desc="pump running, 0 or 1"/>
+
+		<var id="STARTS" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="0" val_typ="0x0104" desc="how many times the pump has started"/>
+
+		<!-- A string, to show that a type is a type wherever it lands.
+		     The mirror gets 0x0401 too, not "some text". -->
+		<var id="STATE" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="starting" val_typ="0x0401" desc="what the station is doing"/>
+	</data>
+</xdb>

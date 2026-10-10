@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     AI/S00 - the door an AI assistant comes in through: one MCP endpoint.
+
+     MCP (Model Context Protocol) is how an assistant - Claude Code, Claude
+     Desktop, any MCP client - calls tools on another system: JSON-RPC 2.0
+     over HTTP POST. PRO.mcp makes the engine an MCP server.
+
+       CN_MCP   http://127.0.0.1:8099/mcp   key "demo-robot-key"
+                read and write, as an OPERATOR (pro_mcp_role="3")
+
+     What the assistant can do is decided by the cell, not by this file:
+       * it SEES what the MCP whitelist shows it: CEL/S00 (mcp_pub="1").
+         Not the robot's own document, not this one.
+       * it WRITES what xdb_acl lets an Operator write there: AI_CMD and
+         AI_SPEED - the built-in set_value on anything else is refused
+       * what it writes goes through the cell's rules (main.on_ai_cmd)
+
+     The project's three tools (db_AI_mcp.js) are the comfortable way in:
+       cell_status     everything about the cell in one call
+       robot_command   load / play / pause / stop - and the cell's verdict
+       set_speed       the speed, up to the assistant's ceiling
+     They run with this endpoint's role too: a tool is not a way around
+     xdb_acl.
+
+     THIS DOCUMENT IS NOT PUBLISHED (no mcp_pub): the assistant cannot read
+     its own key or change its own role.
+
+     The key is in a public repository: it is an example, not a secret.
+     pro_mcp_key left empty would switch authentication OFF.
+     ===================================================================== -->
+<xdb id="AI/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/AI.log"
+     sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100">
+	<config>
+		<!-- The script id is the scope: pro_mcp_tools="mcp.tools" below is
+		     "call tools() in here". -->
+		<script id="mcp" xdb_fnc="[SCR.prs]" src="%DB%/db_AI_mcp.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<!-- pro_mcp_usr   the name in the log and in every audit line
+		     pro_mcp_log   the read_logs tool, up to WARN (4) - so the
+		                   assistant can read why something was refused
+		     pro_mcp_wmax  a single write touches at most this many elements -->
+		<con id="CN_MCP" xdb_fnc="[CON.tcp,PRO.mcp]" desc="the assistant's endpoint"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"
+		     con_host="127.0.0.1" con_port="8099" con_mod="SERVER" con_acl="127.0.0.1"
+		     con_ses="4" thr_wrk="1" thr_per="50" con_tmo="5" con_comdly="0" con_rct="0"
+		     con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="120"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1"
+		     pro_mcp_key="demo-robot-key" pro_mcp_acc="rw" pro_mcp_role="3"
+		     pro_mcp_usr="ai-operator" pro_mcp_log="4" pro_mcp_wmax="4"
+		     pro_mcp_tools="mcp.tools"/>
+	</data>
+</xdb>

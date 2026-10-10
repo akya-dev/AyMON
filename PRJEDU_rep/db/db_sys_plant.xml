@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     SYS/S00 on the PLANT - this node's own equipment.
+
+     Two connections and a simulator. None of it is replicated: a node's
+     connections, threads and scripts are its own, and putting them in a
+     document that travels would send a node its neighbour's wiring.
+
+     THE ONE IDEA IN THIS FILE
+
+     Look at <con id="CN_PLANT"> below, then look at the same element in
+     db_sys_centre.xml. THEY ARE THE SAME TEXT. Neither says "listen" or
+     "dial", and neither names this node.
+
+     REP.cfg works it out. It runs before CON.* in the xdb_fnc list and
+     compares pro_nid - the name of the node that LISTENS - with the
+     tid in the root file:
+
+         pro_nid == tid   ->  SERVER. Peers connect to me. con_host takes
+                              pro_rep_link, con_port takes pro_rep_path.
+         pro_nid != tid   ->  CLIENT. I connect to them. con_host/con_port
+                              take pro_rep_host/pro_rep_port.
+
+     One row per link, written once, copied to every node. With three or
+     four nodes that stops being a convenience and becomes the only way to
+     keep them consistent.
+     ===================================================================== -->
+<xdb id="SYS/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/%TID%_SYS.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFFFFFFF1">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_plant.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<thr id="TH_MAIN" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- THE LISTENER.
+		     Replication does not open a port of its own. It shares an
+		     ordinary HTTP listener and is told apart by PATH, which is why
+		     CN_PLANT below says con_host="#CN_EXT": the '#' means "hand me
+		     the sessions that arrive on that connection for my path".
+		     A real site has this listener already - the web interface, the
+		     REST API and the MCP endpoint all sit on it - and replication
+		     costs it one more path, not one more open port in the firewall.
+
+		     127.0.0.1 on purpose. See the note in run_plant.bat about what
+		     a licence does and does not gate. -->
+		<con id="CN_EXT" xdb_fnc="[CON.tcp,PRO.http]" desc="the node's one listener"
+		     con_host="127.0.0.1" con_port="9180" con_mod="SERVER" con_ses="8"
+		     con_tmo="2" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="2" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- ============================================================
+		     THE REPLICATION LINK.  This element is identical in
+		     db_sys_centre.xml. Keep it that way if you edit it.
+
+		     xdb_fnc  REP.cfg FIRST, then the transport, then the protocol.
+		              The order matters: REP.cfg writes con_mod / pro_role /
+		              con_host / con_port, and CON.ws has to find them
+		              already written. Put it after and the connection is
+		              never set up ("con_mod missing").
+
+		     pro_nid  WHICH NODE LISTENS. Not "who am I" - that is tid.
+		     pro_rep_link / pro_rep_path   my end: the listener and the path
+		     pro_rep_host / pro_rep_port   the listening node's address
+		     pro_rep_doc   WHICH DOCUMENTS this link carries. Mandatory on
+		              the receiving end: an incoming topic names its
+		              document and it is resolved against this list.
+		     pro_rep_atr   attribute whitelist. '*' is the default; it is
+		              written out to say the filter is deliberately absent.
+		              'val,sta' would carry values and alarms and nothing
+		              else - no descriptions, no limits, no units.
+		     pro_rep_dir   what the LINK may carry. On a field-to-centre
+		              link this must be "both": the same row is the data
+		              path upward and the request path downward (the mirror
+		              asks for elements it does not have yet).
+		              It is not the direction of the data - see below.
+		     pro_rep_axis  "vert" = field-to-centre, as opposed to two peers
+		              of the same cluster mirroring each other.
+
+		     WHAT IS *NOT* HERE: which way the data flows. That is decided
+		     by the <doc sta> of each document at each end (EDGE / HUB), in
+		     the root files. The connection carries; the document decides.
+
+		     con_role="8"  the peer writes into this node's documents as the
+		              DOCUMENT role, above the 0..7 user roles that xdb_acl
+		              grants. A replication peer is not a logged-in user.
+		     con_acl   who may connect, checked at accept before a session
+		              exists. Wildcards, comma separated. Leave it out and
+		              there is no filtering at all.
+		     con_idletmo="0"  a replication link may be silent for hours;
+		              nothing has changed, so nothing is sent. Without this
+		              the idle timer would close a perfectly good link.
+		     ============================================================ -->
+		<con id="CN_PLANT" xdb_fnc="[REP.cfg,CON.ws,PRO.rep]" desc="replication link to PLANT"
+		     pro_nid="PLANT"
+		     pro_rep_link="#CN_EXT" pro_rep_path="/rep"
+		     pro_rep_host="127.0.0.1" pro_rep_port="9180"
+		     pro_rep_doc="PRC/P01" pro_rep_atr="*" pro_rep_dir="both" pro_rep_axis="vert"
+		     con_role="8" con_acl="127.0.0.1" con_rct="2" con_idletmo="0"
+		     con_tmo="5" con_clr="1" con_keeptmo="30.0"
+		     pro_ver="5.0" pro_tmo="5" pro_try="1" pro_typ="0xC412" pro_fnc="[]"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- The simulator. It writes into PRC/P01 from here, across the
+		     document boundary, the way any source of values would. -->
+		<var id="T_SIM" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="TH_MAIN" evt_per="1" evt_dly="1" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.tick]"
+		     cnt="0" cnt_typ="0x5104" desc="one process step a second"/>
+
+		<!-- ================================================================
+		     FOR THE PAGE (served by the centre, http://127.0.0.1:8108/)
+		     The page compares the source with the mirror, so it listens to
+		     both nodes. This node's part: VIEW, PRC/P01 as one JSON value
+		     twice a second, published by CN_LIVE - MQTT inside a WebSocket,
+		     mounted on the node's one listener like CN_PLANT (9180, path
+		     /mqtt). xdb_acl="0xFFFFFFF1" on the document: a page that did
+		     not log in (a Guest) reads and writes nothing.
+		     ================================================================ -->
+		<var id="T_VIEW" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_MAIN" evt_per="0.5" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.view]" desc="PRC/P01 for the page"/>
+		<var id="VIEW" sta="0x0303" val="" val_typ="0x0401" desc="the source, JSON"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="the source, for the page"
+		     con_host="#CN_EXT" con_port="/mqtt" con_mod="SERVER" con_ses="4" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_SYSP" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//var" pro_retain_atr="val"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

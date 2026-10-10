@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     FLD/S00 - the field: a tank, and AyMON as the MQTT BROKER.
+
+     THE ONE IDEA IN THIS FILE
+     The broker publishes its OWN DOCUMENT. There is no list of topics
+     anywhere below: every attribute of this document that changes is
+     published as
+
+         <document>/<element id>/<attribute>       FLD/S00/LEVEL/val
+
+     to every client whose subscription matches. Adding a point to the
+     field is adding a <var>; it is on the wire from that moment.
+
+     And the other direction: a client that publishes to
+         FLD/S00/SETPOINT/val/set
+     WRITES id('SETPOINT')/@val here, through that element's own val_fnc.
+
+     The broker is also an ordinary broker. Two outside clients can talk
+     to each other through it on any topic at all, element or not.
+     ===================================================================== -->
+<xdb id="FLD/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/FLD.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_FLD.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<thr id="TH_FLD" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- THE BROKER.
+		     con_mod="SERVER" + pro_role="SLAVE"  listen, and serve this
+		              document. (pro_role is the MQTT role, con_mod only says
+		              who opens the socket; the two are independent.)
+		     pro_pfx="+/+"   the first two topic levels are the document
+		              name - FLD/S00 - so a topic reads back as an address.
+		     pro_setsfx="set"  the suffix that turns a PUBLISH into a write.
+		     con_keeptmo  keep-alive in SECONDS; a client that goes silent
+		              for 1.5 times its own keep-alive is dropped.
+
+		     RETAIN, the AyMON way. The broker keeps NO store of retained
+		     messages - the document IS the store. With pro_retain="1" a
+		     new subscription is answered at once with the current value of
+		     every matching attribute of the elements pro_retain_adr
+		     selects (here every <var>, attribute val only), so a client
+		     that connects in the middle of the day does not wait for the
+		     next change. pro_retain_adr is mandatory: without it the
+		     feature is off (the log says so).
+
+		     con_acl="127.0.0.1"  who may connect, checked at accept.
+		     No login: see the README before you open this to a network. -->
+		<con id="CN_BRK" xdb_fnc="[CON.tcp,PRO.mqtt]" desc="MQTT broker"
+		     con_host="127.0.0.1" con_port="1884" con_mod="SERVER" con_acl="127.0.0.1"
+		     con_way="FULL" con_ses="4" con_tmo="5" con_clr="1" con_rcvlen="8192"
+		     con_keeptmo="60.0" con_idletmo="0"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_FLD" pro_nid="S00" pro_pfx="+/+" pro_getsfx="" pro_setsfx="set"
+		     pro_subqos="0" pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//var" pro_retain_atr="val"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- THE PROCESS, once a second.
+		     evt_typ="0x5201": the 0x4000 bit makes the timer's own 'evt'
+		     attribute LOCAL - it pulses every second and is nobody's
+		     business outside this engine, so it is not published. -->
+		<var id="T_SIM" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_FLD" evt_per="1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.tick]" desc="process step"/>
+
+		<!-- WHAT THE FIELD PUBLISHES.
+		     Plain values: no limits, no alarms. A sensor on a real site does
+		     not know what "too high" means either - that is the monitoring
+		     side's job, and MON/S00 does it. -->
+		<var id="LEVEL" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="50" val_typ="0x1308" val_fnc="[ATR.rou]" val_rou="0.1" desc="tank level, %"/>
+		<var id="TEMP" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="20" val_typ="0x1308" val_fnc="[ATR.rou]" val_rou="0.1" desc="water temperature, C"/>
+		<var id="PUMP" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="0" val_typ="0x0104" desc="inlet pump, 1 = running"/>
+
+		<!-- WHAT THE FIELD ACCEPTS.
+		     FLD/S00/SETPOINT/val/set lands here. Rounded, clamped to
+		     0..100 - a client that sends 250 gets 100 - and logged. The
+		     stored value is then published like any other change, which is
+		     how the writer learns what was really kept. -->
+		<var id="SETPOINT" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="50" val_typ="0x1308" val_fnc="[ATR.rou,ATR.lmt,main.on_setpoint]"
+		     val_min="0" val_max="100" val_rou="1" desc="level the pump holds, %"/>
+
+		<!-- WHAT THE FIELD KEEPS TO ITSELF.
+		     val_typ="0x4104": an unsigned 32-bit value with the 0x4000
+		     (LOCAL) bit. It changes every second and is never published.
+		     Take the bit off and FLD/S00/STEPS/val appears on the wire. -->
+		<var id="STEPS" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="0" val_typ="0x4104" desc="process steps, not published"/>
+	</data>
+</xdb>

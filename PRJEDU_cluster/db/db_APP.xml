@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     APP/S00 - THE JOB. A cluster member: it runs on whichever node is
+     master and is a mirror on the other.
+
+     A small production line in numbers: every second the master adds RATE
+     units to COUNT; every BATCH_SIZE units a batch is finished and gets
+     an <item> in LOG (the last ten are kept). BY says which node made the
+     last unit.
+
+     THE SAME FILE ON BOTH NODES, AND THE SAME SCRIPT. Nothing in it asks
+     "am I the master?":
+       * on the MASTER the document runs (sta 0x1303): its thread, its
+         timer and its *_fnc chains are on
+       * on the SPARE it is parked (0x2202): no thread, no timer - and the
+         master's replication keeps every value and every <item> in step
+     When the master goes, the spare is promoted, its thread starts and
+     main.step carries on from the COUNT the master last sent. How much
+     is lost in a failover is what this example measures.
+
+     The page may write RUN and RATE (xdb_acl). A page on the SPARE may
+     too: the spare does not apply a user's command, it forwards it to the
+     master (PRO.rep 'fwd'), and the result comes back by replication.
+     ===================================================================== -->
+<xdb id="APP/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/%TID%_APP.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFF111111">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_APP.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<thr id="TH_APP" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- the line, once a second - on the master -->
+		<var id="T_STEP" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_APP" evt_per="1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.step]" desc="the line's second"/>
+
+		<var id="RUN"   sta="0x0303" val="1" val_typ="0x1104" xdb_acl="0xFF111113" desc="1 = the line runs"/>
+		<var id="RATE"  sta="0x0303" val="5" val_typ="0x1104" val_fnc="[ATR.lmt]" val_min="1" val_max="20"
+		     xdb_acl="0xFF111113" val_unt="1/s" desc="units a second, 1..20"/>
+
+		<var id="COUNT" sta="0x0303" val="0" val_typ="0x0104" desc="units made"/>
+		<var id="BATCH" sta="0x0303" val="1" val_typ="0x0104" desc="the batch being made"/>
+		<var id="BATCH_SIZE" sta="0x0303" val="100" val_typ="0x0104" desc="units in a batch"/>
+		<var id="BY"    sta="0x0303" val=""  val_typ="0x0401" desc="the node that made the last unit"/>
+		<var id="LAST_MS" sta="0x0303" val="0" val_typ="0x0308" desc="when the last unit was made"/>
+
+		<!-- THE FINISHED BATCHES: one <item> each, newest first, ten kept.
+		     main.step writes the batch (as JSON) into @new; ELM.new makes the
+		     <item>: new_elm_new is its tag, _pos 0 = at the top, _idatr +
+		     _max give it an id from a pool B01..B10, _eval fills its
+		     attributes from what was written. The list is kept at ten by
+		     main.step, which deletes the oldest BEFORE it writes @new:
+		     ELM.new's own cut comes after the id is chosen, so the eleventh
+		     item would find the pool full and get no id (see db_APP.js).
+		     WHY NOT evt.AddElement? Because an element has to be ANNOUNCED
+		     to reach a mirror. ELM.new creates and deletes through the
+		     engine's one path that publishes (the spare gets an 'ins', and a
+		     'del' for the one cut off); a script's AddElement puts the node
+		     in this document only - the spare would never see it. -->
+		<list id="LOG" sta="0x0303" desc="finished batches"
+		      new="" new_typ="0x1401" new_fnc="[ELM.new]"
+		      new_elm_new="item" new_elm_new_pos="0" new_elm_new_idatr="id" new_elm_new_max="B10"
+		      new_elm_new_eval="main.fill_item(evt);"></list>
+	</data>
+</xdb>

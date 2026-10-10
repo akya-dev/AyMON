@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_robot_mcp - AyMON example: an AI assistant runs a robot cell,
+     inside rules it cannot change.
+
+     The robot cell of PRJEDU_robotarm, and one more door: an MCP endpoint
+     an assistant (Claude Code, Claude Desktop, any MCP client) comes in
+     through. The assistant sees the cell, starts and stops the program,
+     sets the speed - and is refused whatever the cell keeps for a person:
+     power, brakes, unlocking a protective stop, a speed above its ceiling,
+     and everything, when the person at the page switches it off.
+
+       ROB/S00   the ROBOT, simulated (as in PRJEDU_robotarm): a six-axis
+                 arm; dashboard server TCP 29999, Modbus TCP 1504
+       CEL/S00   the CELL CONTROLLER: the rules, the part handshake, the
+                 feeder, the page http://127.0.0.1:8098/ - and the
+                 assistant's channel (AI_CMD, AI_SPEED); on the MCP
+                 whitelist (mcp_pub)
+       AI/S00    the MCP endpoint http://127.0.0.1:8099/mcp and the
+                 project's three tools
+
+     Seven connections: one more than the FREE edition's six. The EDU
+     licence that comes with the examples (bin/lic) allows eight.
+
+     Run:  run.bat,  then open  http://127.0.0.1:8098/  and connect the
+     assistant (README), or try it without one:  try.bat
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="S01">
+	<config>
+		<doc id="ROB/S00" sta="0x0300" src="%DB%/db_ROB.xml" desc="the robot - a six-axis arm and its controller, simulated" />
+		<doc id="CEL/S00" sta="0x0300" src="%DB%/db_CEL.xml" desc="the cell controller, its page, the assistant's channel" />
+		<doc id="AI/S00"  sta="0x0300" src="%DB%/db_AI.xml"  desc="the MCP endpoint and the project's tools" />
+	</config>
+	<data>
+	</data>
+</xdb>

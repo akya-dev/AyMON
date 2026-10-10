@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PLT/S00 - the plant: a heater block with a temperature sensor.
+
+     The model is the one a control course starts from - first order plus
+     dead time (FOPDT):
+
+         tau * dT/dt = K * u(t - theta) - (T - T_AMB) * LOSS
+
+       u      heater power, 0..100 %   (the controller's MV)
+       T      block temperature, C
+       K      C per % at steady state  (K_GAIN)
+       tau    how slowly it answers    (TAU, s)
+       theta  how long before it answers at all (DEAD, s) - the heat has
+              to reach the sensor
+       LOSS   1 with the fan off; FAN_LOSS with it on - more heat carried
+              away, so the same power holds a lower temperature. That is
+              the disturbance a controller is for.
+
+     The sensor adds noise (NOISE, C) and reads in steps of 0.01 C. TM is
+     what the controller sees; T is the truth.
+
+     These numbers are the plant, not the controller: change them here to
+     give the controller a harder job (a longer DEAD is the classic way to
+     make a loop oscillate). They are read every step.
+     ===================================================================== -->
+<xdb id="PLT/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/PLT.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_PLT.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<thr id="TH_PLT" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- The simulation step: 0.1 s. main.step integrates over exactly
+		     this, whatever the timer's jitter - a simulation keeps its
+		     own clock. -->
+		<var id="T_STEP" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_PLT" evt_per="0.1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.step]" desc="plant step, 0.1 s"/>
+
+		<!-- the plant's parameters -->
+		<var id="K_GAIN"   sta="0x0303" val="0.6"  val_typ="0x0308" val_unt="C/%" desc="steady-state gain"/>
+		<var id="TAU"      sta="0x0303" val="30"   val_typ="0x0308" val_unt="s"   desc="time constant"/>
+		<var id="DEAD"     sta="0x0303" val="3"    val_typ="0x0308" val_unt="s"   desc="dead time"/>
+		<var id="T_AMB"    sta="0x0303" val="23"   val_typ="0x0308" val_unt="C"   desc="room temperature"/>
+		<var id="FAN_LOSS" sta="0x0303" val="1.6"  val_typ="0x0308"               desc="heat loss with the fan on, times"/>
+		<var id="NOISE"    sta="0x0303" val="0.05" val_typ="0x0308" val_unt="C"   desc="sensor noise, standard deviation"/>
+
+		<!-- The disturbance. The page may switch it: no xdb_acl on this
+		     document - the plant is the lab bench, its knobs are for
+		     turning. -->
+		<var id="FAN" sta="0x0303" val="0" val_typ="0x1104" val_fnc="[main.on_fan]"
+		     desc="1 = the fan blows over the block"/>
+
+		<!-- The state. The rig starts WARM: 40 C, and in balance - 28.33 %
+		     of heater power holds it there ((40 - 23) / 0.6), which is the
+		     MV the controller starts with. So the first step can be made
+		     at once, instead of waiting minutes for the block to warm up. -->
+		<var id="T"    sta="0x0303" val="40" val_typ="0x0308" val_unt="C" desc="block temperature, the truth"/>
+		<var id="TM"   sta="0x0303" val="40" val_typ="0x0308" val_unt="C" desc="what the sensor reads"/>
+		<var id="U"    sta="0x0303" val="0"  val_typ="0x0308" val_unt="%" desc="the heater power acting now (after the dead time)"/>
+
+		<!-- The last DEAD seconds of heater power, oldest first, as JSON:
+		     the dead time is a queue. -->
+		<var id="PIPE" sta="0x0303" val="[]" val_typ="0x0401" desc="heater power still on its way"/>
+	</data>
+</xdb>

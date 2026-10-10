@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_rep - the centre's page. Served by the CENTRE (SYS/S00 on
+     127.0.0.1:8108). It listens to BOTH nodes: the plant's source
+     (ws://127.0.0.1:9180/mqtt) and the centre's mirror (this port,
+     /mqtt), and puts them side by side.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Replication Mirror</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>One plant, two engines <span class="doc">PRC/P01: plant = source, centre = mirror</span></h1>
+    <div class="chips"><span id="c-plant" class="chip">plant --</span><span id="c-link" class="chip">link --</span><span id="c-live" class="chip">centre --</span></div>
+</header>
+
+<main>
+    <section class="card">
+        <div class="label">The plant <span class="muted">the source - PRC/P01 has a file here (db_proc.xml)</span></div>
+        <div class="tiles" id="src"></div>
+    </section>
+
+    <section class="card">
+        <div class="label">The centre <span class="muted">the mirror - PRC/P01 has NO file here</span></div>
+        <div class="tiles" id="mir"></div>
+    </section>
+
+    <section class="card wide">
+        <div class="label">Level, both ends <span class="muted">the two lines lie on each other while the link is up</span></div>
+        <canvas id="trend"></canvas>
+    </section>
+
+    <section class="card">
+        <div class="label">The replication link <span class="muted">CN_PLANT on the centre</span></div>
+        <div class="ctl">
+            <b id="link">--</b>
+            <button id="off">Switch it off</button>
+            <button id="on">Switch it on</button>
+        </div>
+        <div class="note">Off: the plant goes on, the mirror keeps the last values it had. On: the link comes back and the
+            bulk sync brings the mirror up to date - watch the two columns and the trend.</div>
+    </section>
+
+    <section class="card">
+        <div class="label">What only the first sync carried</div>
+        <div class="table-wrap"><table><tbody>
+            <tr><td>elements in the mirror</td><td class="n" id="qty">--</td></tr>
+            <tr><td>LEVEL unit</td><td class="n" id="unit">--</td></tr>
+            <tr><td>LEVEL high alarm limit</td><td class="n" id="hi">--</td></tr>
+        </tbody></table></div>
+        <div class="note">The plant sends changes; the unit and the limits came once, with the first bulk sync, and are in the
+            mirror anyway - a mirror is a document, not a message queue.</div>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="kit.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

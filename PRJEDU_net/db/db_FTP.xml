@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     FTP/S00 - the other end of the file transfers: an FTP server, in script.
+
+     FTP uses TWO kinds of connection. Commands and answers travel on the
+     first; every listing and every file travels on a connection of its
+     own that the client opens for that one transfer, to the port the
+     server names in its answer to EPSV (passive mode). In stream mode a
+     file ends where its connection ends, so the server must hear the
+     CLOSE. Three hooks on one PRO.raw listener:
+
+       pro_onaccept  a connection was accepted. If the server is waiting
+                     for a data connection (it has just answered EPSV),
+                     this is it; otherwise it is a client: greet it,
+                     "220 ...".
+       pro_onparse   a command line, or the bytes of a file.
+       pro_onclose   a connection ended (4.3.4.568). The data connection
+                     of an upload: the file is complete - answer "226" on
+                     the command connection.
+
+     WHY ONE LISTENER FOR BOTH. A real server names a port range for data;
+     here EPSV names the command port itself, so the command session and
+     the data session live on the same <con> and run on the same thread:
+     the script never has two threads touching its state.
+
+     It is a SINK: it keeps the name, the size and the first bytes of every
+     file (to show a ZIP is a ZIP), not the file, and it serves one client
+     at a time. No TLS - the client says so out loud (pro_ftp_tls="none").
+     What it holds goes to the page (PLT/S00, FTP_FILES), whose writer must
+     be an Operator: con_role="3".
+     ===================================================================== -->
+<xdb id="FTP/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/FTP.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_FTP.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<!-- con_ses="4": a client's command connection and its data connection
+		     are two sessions of this one listener. -->
+		<con id="CN_FTP" xdb_fnc="[CON.tcp,PRO.raw]" desc="FTP, in script"
+		     con_host="127.0.0.1" con_port="2121" con_mod="SERVER" con_acl="127.0.0.1" con_role="3"
+		     con_way="FULL" con_ses="4" con_tmo="5" con_clr="0" con_rcvlen="65536"
+		     con_keeptmo="0" con_idletmo="120"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD411" pro_fnc="[]"
+		     pro_onaccept="main.onaccept(exc);"
+		     pro_onparse="main.onparse(exc);"
+		     pro_onclose="main.onclose(exc);"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<var id="FILES" sta="0x0303" val="[]" val_typ="0x0401"
+		     desc="what the server holds: [{name, size, at, zip}], newest first"/>
+		<var id="UPLOADS" sta="0x0303" val="0" val_typ="0x0104" desc="files received"/>
+	</data>
+</xdb>

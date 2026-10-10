@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_pid -- the lab page. Served by CN_WEB (PRO.http) from this
+     directory. Four files, nothing downloaded: this one, app.js,
+     mqtt-lite.js and style.css.
+
+     Everything it shows comes from CTL/S00 over MQTT. Everything it does
+     is a PUBLISH to one of the controller's request elements (SP, MODE,
+     MV_MAN, KP, TI, TD, AW, TUNE) or to the plant's fan (PLT/S00/FAN).
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PID Lab</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>PID lab <span class="doc">CTL/S00 &larr; PLT/S00</span></h1>
+    <div class="chips">
+        <span id="c-mqtt" class="chip">MQTT</span>
+        <span id="c-mode" class="chip" title="MODE">AUTO</span>
+        <span id="c-pv" class="chip" title="the alarm state of PV">PV normal</span>
+        <span id="c-fan" class="chip" title="PLT/S00/FAN - the disturbance">fan off</span>
+    </div>
+</header>
+
+<main>
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card trend-card">
+        <div class="trend-head">
+            <div class="label">Trend <span class="muted"><span class="k-pv">PV</span> <span class="k-sp">SP</span> <span class="k-mv">MV (right axis)</span></span></div>
+            <div class="trend-tools">
+                <select id="window" aria-label="time window">
+                    <option value="120">2 min</option>
+                    <option value="300" selected>5 min</option>
+                    <option value="600">10 min</option>
+                </select>
+                <button id="csv" class="small" title="every sample since the page opened">download CSV</button>
+            </div>
+        </div>
+        <svg id="trend" viewBox="0 0 800 260" preserveAspectRatio="none" aria-label="PV, SP and MV over time">
+            <g id="t-grid"></g>
+            <polyline id="t-mv" fill="none" points=""/>
+            <polyline id="t-sp" fill="none" points=""/>
+            <polyline id="t-pv" fill="none" points=""/>
+        </svg>
+        <div class="axes muted small"><span>C, left: 20 .. 90</span><span>MV %, right: 0 .. 100</span></div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card">
+        <div class="label">The loop</div>
+        <div class="big-row">
+            <div><div class="label">PV <span id="s-PV" class="state"></span></div><span id="v-PV" class="big">--</span> <span class="unit">C</span></div>
+            <div><div class="label">SP</div><span id="v-SP" class="big sp">--</span> <span class="unit">C</span></div>
+            <div><div class="label">MV</div><span id="v-MV" class="big mv">--</span> <span class="unit">%</span></div>
+        </div>
+
+        <label class="label" for="sp">Set point <span class="muted">- <code>CTL/S00/SP/val/set</code>, clamped to 20..85 by the controller</span></label>
+        <div class="row">
+            <input id="sp" type="range" min="20" max="85" step="1" value="40">
+            <output id="sp-out">40</output>
+            <button id="sp-step10" class="small" title="SP + 10">+10</button>
+            <button id="sp-stepm10" class="small" title="SP - 10">&minus;10</button>
+        </div>
+
+        <div class="label">Mode <span class="muted">- MANUAL: the heater power is yours, the integral tracks it</span></div>
+        <div class="seg">
+            <button id="m-auto" data-mode="1">AUTO</button>
+            <button id="m-man" data-mode="0">MANUAL</button>
+        </div>
+        <div class="row">
+            <input id="mvman" type="range" min="0" max="100" step="1" value="0">
+            <output id="mvman-out">0</output><span class="unit">%</span>
+        </div>
+
+        <div class="label">The three terms <span class="muted">- MV = P + I + D, then 0..100 %</span></div>
+        <div class="terms">
+            <div><span class="label">P</span><b id="v-P_TERM">--</b></div>
+            <div><span class="label">I</span><b id="v-I_TERM">--</b></div>
+            <div><span class="label">D</span><b id="v-D_TERM">--</b></div>
+        </div>
+
+        <div class="toggles">
+            <label><input id="fan" type="checkbox"> fan on <span class="muted">(a disturbance, on the plant)</span></label>
+            <label><input id="aw" type="checkbox" checked> anti-windup</label>
+        </div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card">
+        <div class="label">Tuning <span class="muted">- ISA form: MV = Kp (e + &int;e/Ti + Td de/dt)</span></div>
+        <div class="tuning">
+            <label>Kp <span class="muted">%/C</span><input id="kp" type="number" min="0" max="100" step="0.1"></label>
+            <label>Ti <span class="muted">s, 0 = none</span><input id="ti" type="number" min="0" max="3600" step="1"></label>
+            <label>Td <span class="muted">s</span><input id="td" type="number" min="0" max="600" step="0.1"></label>
+            <button id="apply">Apply</button>
+        </div>
+
+        <div class="label">Step test <span class="muted">- MANUAL, a heater step, a fitted model, a suggested PI</span></div>
+        <div class="row">
+            <button id="tune">Run step test</button>
+            <span id="v-TUNE_STATE" class="muted small">-</span>
+        </div>
+        <div class="model">
+            <div><span class="label">K</span><b id="v-ID_K">--</b> <span class="unit">C/%</span></div>
+            <div><span class="label">&tau;</span><b id="v-ID_TAU">--</b> <span class="unit">s</span></div>
+            <div><span class="label">&theta;</span><b id="v-ID_THETA">--</b> <span class="unit">s</span></div>
+            <div><span class="label">SIMC Kp</span><b id="v-SUG_KP">--</b></div>
+            <div><span class="label">SIMC Ti</span><b id="v-SUG_TI">--</b> <span class="unit">s</span></div>
+        </div>
+        <button id="use" class="small" disabled>Use the suggestion (Kp, Ti, Td = 0)</button>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card wide">
+        <div class="label">Step responses <span class="muted">- measured by the controller on every set-point change in AUTO, reported after 180 s</span></div>
+        <div class="live">
+            <div><span class="label">step</span><b id="v-STEP">--</b></div>
+            <div><span class="label">t</span><b id="v-STEP_T">--</b> <span class="unit">s</span></div>
+            <div><span class="label">rise 10-90 %</span><b id="v-RISE">--</b> <span class="unit">s</span></div>
+            <div><span class="label">overshoot</span><b id="v-OVERSHOOT">--</b> <span class="unit">%</span></div>
+            <div><span class="label">settling 2 %</span><b id="v-SETTLE">--</b> <span class="unit">s</span></div>
+            <div><span class="label">IAE</span><b id="v-IAE">--</b> <span class="unit">C&middot;s</span></div>
+        </div>
+        <table id="steps">
+            <thead><tr><th>step</th><th>Kp</th><th>Ti</th><th>Td</th><th>rise</th><th>overshoot</th><th>settling</th><th>IAE</th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <div class="label msgs-label">What the controller decided</div>
+        <ol id="msgs"></ol>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

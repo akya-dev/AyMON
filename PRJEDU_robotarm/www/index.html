@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_robotarm -- the cell's page. Served by CN_WEB (PRO.http) from
+     this directory. Four files, nothing downloaded: this one, app.js,
+     mqtt-lite.js and style.css.
+
+     Everything it shows comes from CEL/S00 over MQTT - the cell's view of
+     the robot, read over Modbus and the dashboard. What it does is a
+     PUBLISH to CMD, FEED or SPEED (the only elements the cell lets a page
+     write), or to the world around the robot: ROB/S00/DOOR, ROB/S00/BUMP.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Robot Arm Cell</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>Robot arm cell <span class="doc">CEL/S00 &harr; ROB/S00</span></h1>
+    <div class="chips">
+        <span id="c-mqtt" class="chip">MQTT</span>
+        <span id="c-link" class="chip" title="the dashboard connection (TCP 29999)">dashboard</span>
+        <span id="c-mode" class="chip" title="robotmode">robot mode</span>
+        <span id="c-safety" class="chip" title="safetystatus">safety</span>
+        <span id="c-prog" class="chip" title="programState">program</span>
+    </div>
+</header>
+
+<div id="banner" class="banner" hidden></div>
+
+<main>
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card wide arm-card">
+        <div class="label">The arm <span class="muted">drawn from the six joint angles the cell reads over Modbus (forward kinematics in the page)</span></div>
+        <div class="views">
+            <figure>
+                <svg id="top" viewBox="-700 -620 1400 1240" aria-label="the arm from above"></svg>
+                <figcaption>from above <span class="muted">x right, y up</span></figcaption>
+            </figure>
+            <figure>
+                <svg id="side" viewBox="-700 -1150 1400 1240" aria-label="the arm from the side"></svg>
+                <figcaption>from the side <span class="muted">x right, z up; the table at z = 0</span></figcaption>
+            </figure>
+        </div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card">
+        <div class="label">The robot <span class="muted">dashboard commands - the cell checks its rules first</span></div>
+        <div class="kv">
+            <span>mode</span><b id="mode">--</b>
+            <span>safety</span><b id="safety">--</b>
+            <span>program</span><b id="prog">--</b>
+            <span>step</span><b id="pstep">--</b>
+            <span>gripper</span><b id="grip">--</b>
+        </div>
+        <div class="buttons">
+            <button data-cmd="power on">Power on</button>
+            <button data-cmd="brake release">Brake release</button>
+            <button data-cmd="load pick_place.urp">Load pick_place</button>
+            <button data-cmd="load home.urp">Load home</button>
+            <button data-cmd="play" class="go">Play</button>
+            <button data-cmd="pause">Pause</button>
+            <button data-cmd="stop" class="stop">Stop</button>
+            <button data-cmd="unlock protective stop">Unlock protective stop</button>
+            <button data-cmd="power off">Power off</button>
+        </div>
+        <div id="msg" class="msg muted small">--</div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card">
+        <div class="label">The cell</div>
+        <div class="kv">
+            <span>feeder</span><b><label class="switch"><input type="checkbox" id="feed"> <span id="feed-txt">off</span></label></b>
+            <span>parts waiting</span><b id="infeed">--</b>
+            <span>parts put down</span><b id="placed">--</b>
+            <span>time per part</span><b><span id="cycle">--</span> <span class="unit">s</span></b>
+            <span>parts a minute</span><b id="rate">--</b>
+        </div>
+        <div class="speed">
+            <label for="speed">speed <b id="speed-out">100</b> %</label>
+            <input type="range" id="speed" min="10" max="100" step="5" value="100">
+        </div>
+        <div class="label hs-label">Handshake <span class="muted">registers 128..131</span></div>
+        <div class="lamps">
+            <span class="lamp" id="l128" title="128: cell - a part is ready">128 ready</span>
+            <span class="lamp" id="l131" title="131: robot - part taken">131 taken</span>
+            <span class="lamp" id="l130" title="130: robot - gripper closed">130 gripper</span>
+        </div>
+
+        <div class="label hs-label">The world around the robot <span class="muted">ROB/S00</span></div>
+        <div class="buttons">
+            <button id="door">Open the guard door</button>
+            <button id="bump" class="stop">Walk into the arm</button>
+        </div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card">
+        <div class="label">Joints <span class="muted">registers 270..275 and 280..285</span></div>
+        <table class="joints">
+            <thead><tr><th></th><th class="n">deg</th><th class="n">deg/s</th><th class="bar-h">-360 &hellip; 360</th></tr></thead>
+            <tbody id="joints"></tbody>
+        </table>
+        <div class="label hs-label">Tool <span class="muted">registers 400..405</span></div>
+        <div class="kv tcp">
+            <span>x y z</span><b id="tcp-p">--</b>
+            <span>rx ry rz</span><b id="tcp-r">--</b>
+        </div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card">
+        <div class="label">Dashboard <span class="muted">the operator's commands and the robot's replies</span></div>
+        <table class="log">
+            <thead><tr><th>time</th><th>command</th><th>reply</th></tr></thead>
+            <tbody id="dlog"><tr><td colspan="3" class="muted">nothing yet</td></tr></tbody>
+        </table>
+        <div class="muted small foot">status questions asked: <b id="polls">0</b> &middot; replies that never came: <b id="tmos">0</b></div>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

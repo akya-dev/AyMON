@@ -1,0 +1,50 @@
+name: Something is broken
+description: An example does not do what its README says, or the engine reports an error.
+labels: ["triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. Questions go to [Discussions](https://github.com/akya-dev/AyMON/discussions/categories/q-a);
+        a security problem goes to [Security](https://github.com/akya-dev/AyMON/security/policy), never here.
+  - type: input
+    id: example
+    attributes:
+      label: Which example
+      placeholder: PRJEDU_modbus
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows
+        - Linux
+        - WSL
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: Engine build
+      description: The first line `AyXDB -?` prints, or the build number at the top of the log.
+      placeholder: 4.3.4.586
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What you did, what you expected, what happened
+      placeholder: |
+        1. run.bat
+        2. opened http://127.0.0.1:8103/
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log lines
+      description: From the example's `log\` folder, the lines around the problem. **Remove passwords and connection strings.**
+      render: text

@@ -1,0 +1,64 @@
+# Builds the documentation site from README.md, docs/ and every example's
+# README.md, and publishes it on GitHub Pages. Nothing to do by hand: a push
+# that changes one of those files updates the site a minute later.
+#
+# While the repository is private the job is skipped (Pages on a private
+# repository needs a paid plan) -- no failed runs, no mails.
+name: site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "README.md"
+      - "docs/**"
+      - "PRJ*/README.md"
+      - "tools/site/**"
+      - ".github/workflows/site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # the Markdown only -- not the 20 MB of engine binaries
+          sparse-checkout: |
+            README.md
+            docs
+            tools/site
+            PRJ*/README.md
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r tools/site/requirements.txt
+      - id: pages
+        uses: actions/configure-pages@v5
+      - run: python tools/site/build.py --build
+        env:
+          SITE_URL: ${{ steps.pages.outputs.base_url }}/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: tools/site/_build/site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

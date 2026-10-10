@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     TRK/S00 - the tracker: SBS-1 lines in, aircraft as elements out.
+
+     THE STREAM. CN_SBS dials the receiver's port 30003 and never asks for
+     anything: the lines simply arrive, as unsolicited input of a MASTER,
+     and pro_onparse hands each arrival to main.on_lines. TCP delivers a
+     stream, not lines - an arrival may end in the middle of one - so the
+     unfinished tail is kept in the session's memory (exc.ses.mem) until
+     the rest comes.
+
+     THE AIRCRAFT. Each one is an <ac> element under SKY, created the first
+     time its ICAO address is heard and DELETED when it has not been heard
+     for LOST_S seconds. So the document IS the traffic picture:
+     count(id('SKY')/ac) is how many are overhead, id('AC_4B1805') is one
+     of them, and anything that can read an element - the page, an AI
+     assistant over MCP, a replication partner - sees the sky.
+
+     Every <ac> carries its squawk in 'val', with ALM.onin and the three
+     emergency codes: 7500 hijack, 7600 radio failure, 7700 emergency.
+     An alarm is configuration here, not code.
+
+     THE PAGE gets the whole sky once a second in one value: SNAP, filled
+     by main.tick with json(id('SKY')/ac) - one engine call, every
+     aircraft and every attribute, as JSON.
+
+     A REAL RECEIVER: set CN_SBS's con_host to the machine running dump1090
+     (or readsb, with its SBS output on), HOME_LAT / HOME_LON to where the
+     antenna is, and switch SRC/S00 off in AyXDB.xml.
+     ===================================================================== -->
+<xdb id="TRK/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/TRK.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFF111111">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_TRK.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<thr id="TH_TRK" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- THE STREAM: a TCP client to the receiver. con_rct="5": if the
+		     receiver goes away, dial again every 5 s. -->
+		<con id="CN_SBS" xdb_fnc="[CON.tcp,PRO.raw]" desc="SBS-1 input from the receiver"
+		     con_host="127.0.0.1" con_port="30003" con_mod="CLIENT"
+		     con_way="FULL" con_ses="0" con_tmo="5" con_clr="0" con_rcvlen="8192" con_rct="5"
+		     con_keeptmo="0" con_idletmo="0"
+		     pro_role="MASTER" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD411" pro_fnc="[]"
+		     pro_onparse="main.on_lines(exc);"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- once a second: forget the aircraft not heard for LOST_S, count,
+		     and build SNAP for the page -->
+		<var id="T_TICK" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_TRK" evt_per="1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.tick]" desc="the tracker's second"/>
+
+		<!-- where the antenna is: distances and bearings are from here -->
+		<var id="HOME_LAT" sta="0x0303" val="41.2753" val_typ="0x0308" val_unt="deg" desc="the receiver's position"/>
+		<var id="HOME_LON" sta="0x0303" val="28.7519" val_typ="0x0308" val_unt="deg"/>
+		<var id="LOST_S"   sta="0x0303" val="60"      val_typ="0x0308" val_unt="s" desc="not heard this long: deleted"/>
+
+		<!-- THE SKY: one <ac> per aircraft, added and removed by main -->
+		<list id="SKY" sta="0x0303" desc="the aircraft being heard"></list>
+
+		<!-- what the tracker knows about the stream -->
+		<var id="COUNT"  sta="0x0303" val="0"  val_typ="0x0104" desc="aircraft being heard"/>
+		<var id="LINES"  sta="0x0303" val="0"  val_typ="0x0104" desc="SBS-1 lines read"/>
+		<var id="RATE"   sta="0x0303" val="0"  val_typ="0x0104" val_unt="1/s" desc="lines in the last second"/>
+		<var id="BAD"    sta="0x0303" val="0"  val_typ="0x0104" desc="lines that were not SBS-1"/>
+		<var id="MAXR"   sta="0x0303" val="0"  val_typ="0x0308" val_unt="km" desc="the farthest position heard"/>
+		<var id="SEEN"   sta="0x0303" val="0"  val_typ="0x0104" desc="different aircraft since the start"/>
+		<var id="EMERG"  sta="0x0303" val=""   val_typ="0x0401" desc="the aircraft squawking an emergency code, if any"/>
+		<var id="SNAP"   sta="0x0303" val="[]" val_typ="0x0401" desc="the whole sky as JSON, once a second, for the page"/>
+		<var id="LAST_LINES" sta="0x0303" val="0" val_typ="0x4104" desc="LINES a second ago, local"/>
+
+		<!-- ================================================================
+		     THE MAP - http://127.0.0.1:8097/
+		     ================================================================ -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the web listener"
+		     con_host="127.0.0.1" con_port="8097" con_mod="SERVER" con_ses="8"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="the sky, live"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_TRK" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//var" pro_retain_atr="val"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJPER_phone / PHN/S00 - phones as devices.
+
+     WHAT A PHONE SENDS. Not raw samples. The page reads the motion sensors
+     60 to 100 times a second, and five times a second it sends what that
+     fifth of a second looked like, as one line of text into id('IN'):
+
+         S,<phone>,<seq>,<vib>,<gmin>,<gmax>,<tilt>,<pitch>,<roll>,<heading>
+
+       vib        how hard it shakes: the RMS of the acceleration with
+                  gravity taken out, m/s2
+       gmin/gmax  the smallest and largest total acceleration seen, m/s2 -
+                  about 9.8 while it lies still, near 0 while it falls
+       tilt       degrees away from lying flat (face up or down)
+       pitch/roll/heading   as the phone's orientation sensor gives them
+       seq        counts up; the engine does not need it, a person reading
+                  a capture does
+
+     and three more kinds of line, each only when something changed:
+
+         H,<phone>,<kind>,<name>             hello - name and platform
+         B,<phone>,<level %>,<charging 0|1>  the battery
+         G,<phone>,<lat>,<lon>,<accuracy m>  the position, if allowed
+         X,<phone>                           goodbye - the page was closed
+
+     Five lines a second instead of a hundred is the first lesson: a
+     sensor that is sampled fast is summarised at the edge, and the engine
+     gets features, not samples.
+
+     WHAT THE ENGINE MAKES OF IT. The first line of an unknown phone makes
+     a <phone> element under PHONES, with one <var> per quantity. Each
+     <var> names a CLASS (xdb_cls) below: the class carries the type, the
+     unit, the rounding and the ALARM LIMITS, so eight phones share one set
+     of limits - change cls_VIB and every phone follows. main.drain writes
+     the values (main.on_in only files each line; why, is at the top of
+     db_PHN.js); ALM.onlvl, inherited from the class, moves the alarm bits
+     in each <var>'s sta; the MQTT connections publish every change.
+
+     WHAT GOES BACK. Nothing is sent to a phone on purpose: the phone
+     subscribes to its own elements. When its VIB or TILT goes into alarm
+     it sees the sta change and turns red (and vibrates, on Android). The
+     page knows no limit - the engine decides.
+     The one deliberate message the other way is BUZZ, which the dashboard
+     writes: main.on_buzz counts up the phone's 'buzz' attribute, and the
+     phone, subscribed to it, vibrates.
+
+     TWO DOORS, TWO ROLES:
+       8110  https, on every address of this PC (the phones come over the
+             local network). con_acl lets in private addresses only.
+             A session there is role 0: it may READ everything and WRITE
+             only id('IN') - its own measurements.
+       8111  plain http on 127.0.0.1 only - the dashboard on this PC.
+             con_role="3": the same page may also write LIMITS, BUZZ and
+             RESET.
+     The rights are in xdb_acl, one hex digit per role (the lowest digit is
+     role 0; 1 = read, 3 = read + write). The document says 0xFF111111:
+     roles 0-5 read, 6-7 everything. The elements that may be written
+     open one more digit.
+
+     Four connections. FREE allows six.
+     ===================================================================== -->
+<xdb id="PHN/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/PHN.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFF111111">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_PHN.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+
+		<!-- ================================================================
+		     THE CLASSES - one per kind of measurement.
+		     An element with xdb_cls="cls_VIB" reads every attribute it does
+		     not have itself from here: val_fnc, the unit, the limits.
+		     val_typ 0x1308: a float (0x0308) whose val_fnc runs (0x1000).
+		     No role may write them directly: the dashboard asks through
+		     id('LIMITS'), and main.on_limits writes them after checking.
+		     ================================================================ -->
+		<tvar id="cls_VIB" sta_typ="0x1142"
+		      val_typ="0x1308" val_fnc="[ATR.rou,ALM.onlvl]" val_rou="0.01" val_unt="m/s2"
+		      val_alm_onlhi_wrn="1.5" val_alm_onlhi_alm="4"
+		      desc="vibration, RMS"/>
+
+		<tvar id="cls_TILT" sta_typ="0x1142"
+		      val_typ="0x1308" val_fnc="[ATR.rou,ALM.onlvl]" val_rou="1" val_unt="deg"
+		      val_alm_onlhi_wrn="30" val_alm_onlhi_alm="60"
+		      desc="tilt from lying flat"/>
+
+		<!-- Battery: the low side. Not every browser tells (Safari and
+		     Firefox do not), so this <var> is made on the first B line,
+		     not with the phone: a battery nobody reported must not sit at
+		     0 % in alarm. -->
+		<tvar id="cls_BAT" sta_typ="0x1142"
+		      val_typ="0x1308" val_fnc="[ATR.rou,ALM.onlvl]" val_rou="1" val_unt="%"
+		      val_alm_onllo_wrn="20" val_alm_onllo_alm="10"
+		      desc="battery"/>
+
+		<!-- Plain numbers: no alarm, just rounding so a phone lying on the
+		     table does not publish a new heading for every tenth of a
+		     degree of sensor noise. -->
+		<tvar id="cls_ANG" sta_typ="0x1142"
+		      val_typ="0x1308" val_fnc="[ATR.rou]" val_rou="1" val_unt="deg"
+		      desc="an angle"/>
+
+		<!-- Drops: a count, in alarm from the first one until somebody
+		     resets it (the dashboard's reset, id('RESET')).
+		     A float, although it only ever holds whole numbers: the limit
+		     0.5 sits between 0 and 1, and in an integer type it would be
+		     cut to 0 - then 0 itself counts as "above the limit" and the
+		     alarm never clears. -->
+		<tvar id="cls_DROP" sta_typ="0x1142"
+		      val_typ="0x1308" val_fnc="[ALM.onlvl]" val_alm_onlhi_alm="0.5"
+		      desc="drops since the last reset"/>
+
+		<!-- The position, "lat,lon,accuracy". Made on the first G line,
+		     like the battery: only a phone whose owner pressed "share
+		     position" has one. -->
+		<tvar id="cls_POS" sta_typ="0x1142" val_typ="0x0401"
+		      desc="lat,lon,accuracy in m"/>
+	</config>
+
+	<data>
+		<thr id="TH_PHN" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- Once a second: which phones went quiet, which are gone, and the
+		     list the dashboard draws. -->
+		<var id="T_TICK" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_PHN" evt_per="1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.tick]" desc="the watchdog"/>
+
+		<!-- ================================================================
+		     THE PHONES. main adds one <phone> here per phone, like this:
+
+		     <phone id="P_k3x9q" name="Pixel 7" kind="android" ...
+		            val="1" val_fnc="[ALM.onin]" val_alm_onin_alm="[0]">
+		       <var id="P_k3x9q_VIB"  xdb_cls="cls_VIB"  .../>
+		       <var id="P_k3x9q_TILT" xdb_cls="cls_TILT" .../>
+		       ...
+		     </phone>
+
+		     The phone's own val is its LINK: 1 while lines arrive, 0 after
+		     LINK_S seconds of silence (alarm), and after LOST_S seconds the
+		     element is removed.
+		     ================================================================ -->
+		<list id="PHONES" sta="0x0303" desc="the phones that are talking to us"></list>
+
+		<!-- For the dashboard: the phones as a JSON list, rewritten when a
+		     phone comes or goes. -->
+		<var id="LIST"  sta="0x0303" val="[]" val_typ="0x0401" desc="the phones, as JSON"/>
+		<var id="COUNT" sta="0x0303" val="0"  val_typ="0x0104" desc="phones with a live link"/>
+		<var id="MSG"   sta="0x0303" val=""   val_typ="0x0401" desc="the last thing the engine decided"/>
+
+		<!-- ================================================================
+		     THE DOORS FOR WRITING. Each is a request; its val_fnc decides.
+		     ================================================================ -->
+
+		<!-- Every phone writes here, and only here: 0xFF333333 = roles 0-5
+		     may read and write. A phone cannot write another element -
+		     not even its own VIB: what it says goes through main, which
+		     checks it.
+		     val_typ 0x5401: text (0x0401), val_fnc runs (0x1000), LOCAL
+		     (0x4000) - the raw lines are not published back to every
+		     page; what main makes of them is.
+		     main.on_in does not work on the line: it files it in INBOX,
+		     and T_IN hands the inbox to main.drain ten times a second, on
+		     TH_PHN. Why, is at the top of db_PHN.js. -->
+		<var id="IN" xdb_acl="0xFF333333" sta="0x0303" val="" val_typ="0x5401" val_fnc="[main.on_in]"
+		     desc="request: one line from a phone"/>
+
+		<var id="INBOX" sta="0x0303" val="" val_typ="0x4401" desc="lines not worked on yet, | between"/>
+		<var id="INBOX_MAX" sta="0x0303" val="20000" val_typ="0x0104" desc="characters the inbox may hold"/>
+		<var id="LOST"  sta="0x0303" val="0" val_typ="0x0104" desc="lines thrown away: the inbox was full"/>
+
+		<var id="T_IN" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_PHN" evt_per="0.1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.drain]" desc="work on the inbox"/>
+
+		<!-- The dashboard only (role 3): the limits, as JSON -
+		       {"VIB":[1.5,4],"TILT":[30,60],"BAT":[20,10]}
+		     warning first, then alarm. main.on_limits checks them (numbers,
+		     in the right order) and writes them into the classes, so every
+		     phone - and every phone that comes later - follows at once. The
+		     page never writes a class itself: the classes are not open to
+		     any role, this request is. main.start fills it from the classes
+		     so a page that opens sees the limits in force. -->
+		<var id="LIMITS" xdb_acl="0xFF113111" sta="0x0303" val="" val_typ="0x1401" val_fnc="[main.on_limits]"
+		     desc="request: new alarm limits, JSON"/>
+		<var id="LIMITS_NOW" sta="0x0303" val="" val_typ="0x0401" desc="the limits in force, JSON"/>
+
+		<!-- The dashboard only (role 3): val = the phone whose drop count
+		     goes back to 0 (and whose drop alarm with it). Filed in the
+		     inbox like a phone's line, so the alarm is cleared on TH_PHN. -->
+		<var id="RESET" xdb_acl="0xFF113111" sta="0x0303" val="" val_typ="0x5401" val_fnc="[main.on_reset]"
+		     desc="request: reset this phone's drop count"/>
+
+		<!-- The dashboard only (role 3): val = the phone to buzz. -->
+		<var id="BUZZ" xdb_acl="0xFF113111" sta="0x0303" val="" val_typ="0x5401" val_fnc="[main.on_buzz]"
+		     desc="request: make this phone vibrate"/>
+
+		<!-- ================================================================
+		     THE RULES. The limits of each measurement are in its class
+		     above; these are the ones that are not a limit of one value.
+		     ================================================================ -->
+		<var id="MAX_PHONES" sta="0x0303" val="8"  val_typ="0x0104" desc="no more phones than this"/>
+		<var id="LINK_S"     sta="0x0303" val="3"  val_typ="0x0308" val_unt="s" desc="silent this long: link alarm"/>
+		<var id="LOST_S"     sta="0x0303" val="60" val_typ="0x0308" val_unt="s" desc="silent this long: forgotten"/>
+		<!-- A drop: first a moment of free fall (the total acceleration
+		     falls towards 0), then, within DROP_MS, an impact. 20 m/s2 is
+		     about 2 g: a landing on a cushion from half a metre reaches it,
+		     a phone caught softly in the hand usually does not. Try it on
+		     something soft - and move the numbers until it tells the two
+		     apart for YOUR phone. That is what a threshold is. -->
+		<var id="DROP_FREE"  sta="0x0303" val="3"   val_typ="0x0308" val_unt="m/s2" desc="free fall below this"/>
+		<var id="DROP_HIT"   sta="0x0303" val="20"  val_typ="0x0308" val_unt="m/s2" desc="impact above this"/>
+		<var id="DROP_MS"    sta="0x0303" val="1500" val_typ="0x0104" val_unt="ms" desc="fall to impact, at most"/>
+
+		<!-- ================================================================
+		     THE WEB SIDE
+		     ================================================================ -->
+
+		<!-- 8110: THE PHONES' DOOR. https, because a browser shows motion
+		     and position sensors to a secure page only. 0.0.0.0 = every
+		     network card of this PC: the phones come over Wi-Fi.
+		     con_acl: private address ranges only - home and office
+		     networks, never an address from the internet, even if a router
+		     forwards the port by mistake. (172.* is wider than the private
+		     172.16-31 range; narrow it to your own network.)
+		     The certificate is the public one from PRJEDU_web - the phone
+		     will warn once, and it is right to. -->
+		<con id="CN_WEBS" xdb_fnc="[CON.tls,PRO.http]" desc="the phones' door, https"
+		     con_host="0.0.0.0" con_port="8110" con_mod="SERVER" con_ses="16"
+		     con_acl="127.0.0.1, 10.*, 172.*, 192.168.*"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     con_ssl_cert="%DB%/cert/demo_cert.pem" con_ssl_key="%DB%/cert/demo_key.pem" con_ssl_pwd=""
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- MQTT inside the secure WebSocket: wss://<address>:8110/mqtt.
+		     A phone's session is role 0 (no con_role here).
+		     pro_retain: a page that opens late gets every val and sta at
+		     once - the phones already there, their alarms. -->
+		<con id="CN_LIVES" xdb_fnc="[CON.wss,PRO.mqtt]" desc="the phones' live link"
+		     con_host="#CN_WEBS" con_port="/mqtt" con_mod="SERVER" con_ses="10"
+		     con_tmo="5" con_clr="1" con_keeptmo="30.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_PHS" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//*[@val]" pro_retain_atr="val,sta"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- 8111: THE DASHBOARD'S DOOR. Plain http, and only from this PC:
+		     127.0.0.1 is a secure context for a browser, so the simulated
+		     phone works here too. -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the dashboard's door"
+		     con_host="127.0.0.1" con_port="8111" con_mod="SERVER" con_ses="8"
+		     con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- con_role="3": a session that comes in here is an Operator, so
+		     it may write what 0xFF113111 opens - LIMITS, BUZZ, RESET. The
+		     same page on 8110 may not. -->
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="the dashboard's live link"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="6"
+		     con_role="3"
+		     con_tmo="5" con_clr="1" con_keeptmo="30.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_PHD" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//*[@val]" pro_retain_atr="val,sta"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_mqtt - AyMON example: MQTT, both ends, nothing to install.
+
+     One engine, two documents, real MQTT packets on a loopback socket
+     between them:
+
+       FLD/S00   the field. A small tank, and AyMON as the MQTT BROKER on
+                 127.0.0.1:1884. Every change of a value in this document
+                 is published as  FLD/S00/<id>/<attribute>.
+       MON/S00   the monitoring side. AyMON as an MQTT CLIENT: it connects
+                 to that broker, subscribes, turns the messages into points
+                 with limits and alarms, and writes a set point back.
+
+     Read FLD/S00 first if AyMON is to BE the broker other things connect
+     to, MON/S00 first if AyMON is to connect to a broker that already
+     exists (mosquitto, a cloud service, another AyMON).
+
+     Port 1884, not 1883, so the example never collides with a mosquitto
+     already running on this machine. The README shows how to point
+     MON/S00 at one instead.
+
+     Run:  run.bat
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="S01">
+	<config>
+		<doc id="FLD/S00" sta="0x0300" src="%DB%/db_FLD.xml" desc="the field - a tank and the MQTT broker" />
+		<doc id="MON/S00" sta="0x0300" src="%DB%/db_MON.xml" desc="the monitoring side - an MQTT client" />
+	</config>
+	<data>
+	</data>
+</xdb>

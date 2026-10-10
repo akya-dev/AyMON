@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_hardening - the plant's page. Served by PLT/S00 on
+     127.0.0.1:8101; the live values come over MQTT inside a WebSocket on
+     the same port (/mqtt), and so does every write.
+
+     Three things on it:
+       * the plant, as the person who logged in sees it - and what the
+         plant does with that person's writes
+       * the SELF-CHECK: what the plant can see of its own configuration
+       * the ACCESS TEST: logs in as four identities and tries what each
+         may and may not do (the demo accounts' passwords are in app.js -
+         they are in the README too; this is a lab, not a plant)
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Plant Hardening</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>Plant hardening <span class="doc">PLT/S00</span></h1>
+    <div class="chips"><span id="c-who" class="chip">not connected</span><span id="c-link" class="chip">--</span></div>
+</header>
+
+<main>
+    <!-- ================= who you are ================= -->
+    <section class="card">
+        <div class="label">Log in</div>
+        <form id="login" class="login">
+            <input id="user" placeholder="user name" autocomplete="username">
+            <input id="pwd" type="password" placeholder="password" autocomplete="current-password">
+            <button type="submit">Log in</button>
+            <button type="button" id="anon">Connect without a password</button>
+            <button type="button" id="logout">Log out</button>
+        </form>
+        <div class="small muted">mon / opr / eng - the passwords are in the README.
+            As delivered, the plant does not really ask.</div>
+        <div id="who" class="who"></div>
+    </section>
+
+    <!-- ================= the plant ================= -->
+    <section class="card">
+        <div class="label">The tank <span class="muted" id="seen">(log in to see it)</span></div>
+        <div class="tank-row">
+            <div class="tank"><i id="t-level"></i><b id="t-trip" class="trip"></b><b id="t-sp" class="sp"></b></div>
+            <div class="kv">
+                <span>level</span><b id="level">--</b>
+                <span>inlet valve</span><b id="valve">--</b>
+                <span>pump</span><b id="pump">--</b>
+                <span>trip</span><b id="tripped">--</b>
+                <span>overflow</span><b id="overflow">--</b>
+            </div>
+        </div>
+        <div class="ctl">
+            <label>setpoint <b id="v-SETPOINT">--</b> %<input type="range" min="10" max="90" step="1" data-w="SETPOINT"></label>
+            <label>trip level <b id="v-TRIP_LEVEL">--</b> %<input type="range" min="50" max="150" step="1" data-w="TRIP_LEVEL"></label>
+            <div class="buttons">pump:
+                <button data-cmd="AUTO">AUTO</button><button data-cmd="STOP">STOP</button> <b id="pcmd">--</b></div>
+        </div>
+        <div class="kv recipe"><span>recipe</span><b id="recipe">--</b></div>
+        <div class="msg small" id="wmsg"></div>
+        <div class="msg small muted" id="msg"></div>
+    </section>
+
+    <!-- ================= the self-check ================= -->
+    <section class="card wide">
+        <div class="label">Self-check <span class="muted">- what the plant can see of its own configuration, every 5 s</span></div>
+        <table class="check"><tbody id="self"><tr><td class="muted">log in to see it</td></tr></tbody></table>
+    </section>
+
+    <!-- ================= the access test ================= -->
+    <section class="card wide">
+        <div class="label">Access test <span class="muted">- log in as four identities and try</span>
+            <button id="run">Run the access test</button></div>
+        <table class="check">
+            <thead><tr><th>#</th><th>who tries what</th><th>should</th><th>did</th><th></th></tr></thead>
+            <tbody id="test"><tr><td colspan="5" class="muted">not run yet - it takes about 20 seconds and puts back every value it changes</td></tr></tbody>
+        </table>
+        <div class="small muted" id="score"></div>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

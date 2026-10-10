@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     SYS/S00 on the CENTRE - this node's own equipment.
+
+     One connection and a reporter. Compare it with db_sys_plant.xml:
+
+       * <con id="CN_PLANT"> is THE SAME TEXT, character for character.
+         Here tid is "CENTRE" and pro_nid is "PLANT", so REP.cfg makes it a
+         CLIENT that dials 127.0.0.1:9180 and asks for the path /rep.
+         There it is a SERVER that waits on #CN_EXT. Neither file had to
+         say so.
+
+       * there is no CN_EXT. The centre does not listen for anything in
+         this example, so it needs no listener. (A real centre has one -
+         it is where the operators' browsers go.)
+     ===================================================================== -->
+<xdb id="SYS/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/%TID%_SYS.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFFFFFFF1">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_centre.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<thr id="TH_MAIN" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- ============================================================
+		     THE REPLICATION LINK. Identical to the plant's. Keep it that
+		     way if you edit it: the whole point of REP.cfg is that this
+		     row is written once and copied to every node.
+		     The commentary is in db_sys_plant.xml.
+		     ============================================================ -->
+		<con id="CN_PLANT" xdb_fnc="[REP.cfg,CON.ws,PRO.rep]" desc="replication link to PLANT"
+		     pro_nid="PLANT"
+		     pro_rep_link="#CN_EXT" pro_rep_path="/rep"
+		     pro_rep_host="127.0.0.1" pro_rep_port="9180"
+		     pro_rep_doc="PRC/P01" pro_rep_atr="*" pro_rep_dir="both" pro_rep_axis="vert"
+		     con_role="8" con_acl="127.0.0.1" con_rct="2" con_idletmo="0"
+		     con_tmo="5" con_clr="1" con_keeptmo="30.0"
+		     pro_ver="5.0" pro_tmo="5" pro_try="1" pro_typ="0xC412" pro_fnc="[]"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- Read the mirror out loud every three seconds. Nothing special:
+		     the mirror is an ordinary document and is addressed like one,
+		     doc('PRC/P01')/id('LEVEL')/@val. -->
+		<var id="T_SHOW" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="TH_MAIN" evt_per="3" evt_dly="2" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.show]"
+		     cnt="0" cnt_typ="0x5104" desc="report what the mirror holds"/>
+
+		<!-- ================================================================
+		     THE PAGE - http://127.0.0.1:8108/  (only from this computer)
+		     It shows the source (from the plant node, 9180/mqtt) next to
+		     the mirror (from this node). VIEW is the mirror as one JSON
+		     value twice a second; LINK is the page's switch for the
+		     replication link - the one thing it may write (its own
+		     xdb_acl; the document's gives a Guest read only). val_typ
+		     0x1104: the 0x1000 bit is what makes val_fnc run.
+		     ================================================================ -->
+		<var id="T_VIEW" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_MAIN" evt_per="0.5" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.view]" desc="PRC/P01 for the page"/>
+		<var id="VIEW" sta="0x0303" val="" val_typ="0x0401" desc="the mirror, JSON"/>
+		<var id="LINK" sta="0x0303" val="1" val_typ="0x1104" xdb_acl="0xFFFFFFF3"
+		     val_fnc="[main.link]" desc="1 = replication link on, 0 = off (the page)"/>
+
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the page"
+		     con_host="127.0.0.1" con_port="8108" con_mod="SERVER" con_ses="8" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="the mirror, for the page"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_SYSC" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//var" pro_retain_atr="val"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

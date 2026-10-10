@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     TEL/S00 - the ground station.
+
+     Four connections, and every one of them is configuration:
+
+       CN_TELLO   UDP client to the drone's 8889. Commands out, answers in.
+                  PRO.raw: the Tello SDK is plain text, so the script speaks
+                  it (main.tello_send out, main.on_reply in).
+       CN_STATE   UDP listener on 8890. The drone's state line, ten times a
+                  second, into the <var>s below (main.on_state).
+       CN_WEB     http://127.0.0.1:8090/ - the page in ..\www
+       CN_LIVE    ws://127.0.0.1:8090/mqtt - the live values, and the
+                  buttons: a button PUBLISHES to TEL/S00/CMD/val/set.
+
+     WHO DECIDES WHAT THE DRONE MAY DO. Not the page. A button only asks,
+     and that is enforced, not agreed: xdb_acl="0xFF111111" on <xdb> lets
+     a page READ every element of this document and write none - except
+     the three request elements CMD, MISSION and RC, which carry
+     xdb_acl="0xFF111113" (role 0, a page that has not logged in: read +
+     write). A page that publishes to TEL/S00/MAX_H/val/set, or tries to
+     fake the height, is refused by the engine.
+     A request lands in id('CMD'), and main.on_cmd - the val_fnc of that
+     element - checks it against the limits here (MAX_H, BAT_TAKEOFF) and
+     against the drone's state before anything goes out. The same would
+     be true of an AI assistant or a second page: they all write CMD.
+     And three rules run without anybody asking, in main.tick:
+       * the battery falls to BAT_LAND        -> it lands
+       * nothing sent for 5 s in the air      -> "battery?", so the drone
+                                                 does not land by itself
+       * no state line for 1.5 s              -> LINK goes to alarm
+
+     ONE COMMAND AT A TIME. The Tello answers a move when the move is done,
+     seconds later, and a command sent before that is refused. So CMD does
+     not send: it queues. main.tick sends the next command when the
+     previous one has been answered, and gives up on it after a timeout.
+     land, stop and emergency skip the queue - they empty it.
+
+     A REAL TELLO. Join its Wi-Fi (TELLO-xxxxxx), then below:
+       CN_TELLO  con_host="192.168.10.1"
+       CN_STATE  con_host="0.0.0.0"  con_acl="192.168.10.1"
+     and in AyXDB.xml sta="0x0000" on SIM/S00. Read the README first.
+     ===================================================================== -->
+<xdb id="TEL/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/TEL.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFF111111">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_TEL.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<thr id="TH_TEL" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- ================================================================
+		     THE DRONE LINK
+		     ================================================================ -->
+
+		<!-- COMMANDS. A UDP client, MASTER: it speaks first. There is no
+		     request/answer pairing in the engine here on purpose - the
+		     answer to "takeoff" comes five seconds later, and nothing
+		     should sit blocked for that. main.tello_send sends; the answer
+		     arrives on its own, like any unsolicited input of a MASTER,
+		     and pro_onparse hands it to main.on_reply. -->
+		<con id="CN_TELLO" xdb_fnc="[CON.udp,PRO.raw]" desc="Tello commands (UDP 8889)"
+		     con_host="127.0.0.1" con_port="8889" con_mod="CLIENT"
+		     con_way="FULL" con_ses="0" con_tmo="5" con_clr="1" con_rcvlen="512"
+		     con_keeptmo="0" con_idletmo="0" con_rct="1"
+		     pro_role="MASTER" pro_tmo="1" pro_try="1" pro="" pro_typ="0xD411" pro_fnc="[]"
+		     pro_onparse="main.on_reply(exc);"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- STATE. The drone sends it; we only listen. con_acl names the
+		     one address allowed to: loopback for the simulator,
+		     192.168.10.1 for a real Tello. -->
+		<con id="CN_STATE" xdb_fnc="[CON.udp,PRO.raw]" desc="Tello state (UDP 8890)"
+		     con_host="127.0.0.1" con_port="8890" con_mod="SERVER" con_acl="127.0.0.1"
+		     con_way="FULL" con_ses="4" con_tmo="5" con_clr="1" con_rcvlen="1024"
+		     con_keeptmo="0" con_idletmo="0"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD411" pro_fnc="[]"
+		     pro_onparse="main.on_state(exc);"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- The ground station's clock: queue, keep-alive, safety, link
+		     watchdog. Ten times a second, on its own thread. -->
+		<var id="T_CTL" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_TEL" evt_per="0.1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.tick]" desc="ground station step"/>
+
+		<!-- ================================================================
+		     WHAT THE DRONE SAYS - one <var> per field of the state line.
+		     main.on_state writes them; the id is the field name in capitals.
+		     A field the drone sends and nobody declared here is skipped.
+		     Units as the Tello SDK documents them.
+		     ================================================================ -->
+		<var id="H" sta="0x0303" sta_typ="0x1142" val="0" val_typ="0x1308"
+		     val_fnc="[ALM.onlvl]" val_alm_onlhi_wrn="250" val_alm_onlhi_alm="300"
+		     val_unt="cm" desc="height above the takeoff point"/>
+		<var id="TOF"   sta="0x0303" val="0" val_typ="0x0308" val_unt="cm" desc="distance to the floor (ToF sensor)"/>
+		<var id="BAT" sta="0x0303" sta_typ="0x1142" val="0" val_typ="0x1308"
+		     val_fnc="[ALM.onlvl]" val_alm_onllo_wrn="30" val_alm_onllo_alm="20"
+		     val_unt="%" desc="battery"/>
+		<var id="TEMPH" sta="0x0303" sta_typ="0x1142" val="0" val_typ="0x1308"
+		     val_fnc="[ALM.onlvl]" val_alm_onlhi_wrn="80" val_alm_onlhi_alm="90"
+		     val_unt="C" desc="highest board temperature"/>
+		<var id="TEMPL" sta="0x0303" val="0" val_typ="0x0308" val_unt="C" desc="lowest board temperature"/>
+		<var id="PITCH" sta="0x0303" val="0" val_typ="0x0308" val_unt="deg" desc="nose up +"/>
+		<var id="ROLL"  sta="0x0303" val="0" val_typ="0x0308" val_unt="deg" desc="right wing down +"/>
+		<var id="YAW"   sta="0x0303" val="0" val_typ="0x0308" val_unt="deg" desc="heading since power-on"/>
+		<var id="VGX"   sta="0x0303" val="0" val_typ="0x0308" val_unt="dm/s" desc="speed x"/>
+		<var id="VGY"   sta="0x0303" val="0" val_typ="0x0308" val_unt="dm/s" desc="speed y"/>
+		<var id="VGZ"   sta="0x0303" val="0" val_typ="0x0308" val_unt="dm/s" desc="speed z"/>
+		<var id="BARO"  sta="0x0303" val="0" val_typ="0x0308" desc="barometer, as sent"/>
+		<var id="TIME"  sta="0x0303" val="0" val_typ="0x0308" val_unt="s" desc="motor time"/>
+		<var id="AGX"   sta="0x0303" val="0" val_typ="0x0308" val_unt="0.001 g" desc="acceleration x"/>
+		<var id="AGY"   sta="0x0303" val="0" val_typ="0x0308" val_unt="0.001 g" desc="acceleration y"/>
+		<var id="AGZ"   sta="0x0303" val="0" val_typ="0x0308" val_unt="0.001 g" desc="acceleration z"/>
+
+		<!-- ================================================================
+		     WHAT THE GROUND STATION KNOWS
+		     ================================================================ -->
+
+		<!-- 1 while state lines arrive. ALM.onin puts it in alarm at 0:
+		     the list form of an alarm, for values that are states, not
+		     levels. -->
+		<var id="LINK" sta="0x0303" sta_typ="0x1142" val="0" val_typ="0x1104"
+		     val_fnc="[ALM.onin]" val_alm_onin_alm="[0]" desc="state lines arriving"/>
+		<var id="SDK"    sta="0x0303" val="0"  val_typ="0x0104" desc="1 once 'command' was answered ok"/>
+		<var id="FLYING" sta="0x0303" val="0"  val_typ="0x0104" desc="1 while h is above 5 cm"/>
+		<var id="BUSY"   sta="0x0303" val=""   val_typ="0x0401" desc="the command waiting for its answer"/>
+		<var id="QUEUE"  sta="0x0303" val=""   val_typ="0x0401" desc="commands still to send, | between"/>
+		<var id="REPLY"  sta="0x0303" val=""   val_typ="0x0401" desc="the last answer from the drone"/>
+		<var id="MSG"    sta="0x0303" val=""   val_typ="0x0401" desc="the last thing the ground station decided"/>
+
+		<!-- ================================================================
+		     WHAT A PAGE (OR ANYONE) MAY WRITE
+		     Each is a request, and its val_fnc decides what becomes of it.
+		     ================================================================ -->
+
+		<!-- A command, as the SDK spells it: "takeoff", "forward 100",
+		     "cw 90", "land". -->
+		<var id="CMD" xdb_acl="0xFF111113" sta="0x0303" val="" val_typ="0x1401" val_fnc="[main.on_cmd]"
+		     desc="request: one Tello command"/>
+
+		<!-- A named flight plan: "square", "hop", "box". The plans are in
+		     main.missions() - add your own there. -->
+		<var id="MISSION" xdb_acl="0xFF111113" sta="0x0303" val="" val_typ="0x1401" val_fnc="[main.on_mission]"
+		     desc="request: a flight plan by name"/>
+
+		<!-- The sticks: "a b c d", each -100..100 - left/right,
+		     back/forward, down/up, yaw. Sent at once as 'rc a b c d', never
+		     queued (it has no answer to wait for), clamped by the height
+		     limit. -->
+		<var id="RC" xdb_acl="0xFF111113" sta="0x0303" val="0 0 0 0" val_typ="0x1401" val_fnc="[main.on_rc]"
+		     desc="request: stick positions"/>
+
+		<!-- THE RULES. Change them here, not in the page. -->
+		<var id="MAX_H"       sta="0x0303" val="300" val_typ="0x0308" val_unt="cm" desc="no higher than this"/>
+		<var id="BAT_TAKEOFF" sta="0x0303" val="25"  val_typ="0x0308" val_unt="%"  desc="no takeoff below this"/>
+		<var id="BAT_LAND"    sta="0x0303" val="20"  val_typ="0x0308" val_unt="%"  desc="land by itself at this"/>
+
+		<!-- The ground station's own bookkeeping. Kept LOCAL: 0x4000 in
+		     val_typ keeps a value off MQTT, so the page is not sent a
+		     timestamp ten times a second. Times are Time.GetTimeMs(). -->
+		<var id="BUSY_MS"  sta="0x0303" val="0" val_typ="0x4108" desc="when BUSY was sent"/>
+		<var id="BUSY_TMO" sta="0x0303" val="0" val_typ="0x4104" desc="ms BUSY may take"/>
+		<var id="SENT_MS"  sta="0x0303" val="0" val_typ="0x4108" desc="when anything was last sent"/>
+		<var id="STATE_MS" sta="0x0303" val="0" val_typ="0x4108" desc="when the last state line came"/>
+		<var id="AUTOLAND" sta="0x0303" val="0" val_typ="0x4104" desc="1 once the battery rule has landed it"/>
+		<var id="SENT"     sta="0x0303" val="0" val_typ="0x4104" desc="commands sent"/>
+		<var id="STATES"   sta="0x0303" val="0" val_typ="0x4104" desc="state lines received"/>
+
+		<!-- ================================================================
+		     THE WEB SIDE - the same two connections as PRJEDU_web, on
+		     port 8090 so both examples can run at once.
+		     ================================================================ -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the web listener"
+		     con_host="127.0.0.1" con_port="8090" con_mod="SERVER" con_ses="8"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- MQTT inside a WebSocket. pro_retain: a page that opens in the
+		     middle of a flight gets every val and sta at once, instead of
+		     waiting for them to change. -->
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="live values and buttons"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_TEL" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//var" pro_retain_atr="val,sta"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

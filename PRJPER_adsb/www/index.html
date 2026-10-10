@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJPER_adsb -- the map. Served by CN_WEB (PRO.http) from this
+     directory. Four files, nothing downloaded: this one, app.js,
+     mqtt-lite.js and style.css.
+
+     Everything it shows comes from TRK/S00 over MQTT: SNAP (the whole sky
+     as JSON, once a second) and the counters. It writes nothing - the
+     document is read-only for a page (xdb_acl on TRK/S00).
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ADS-B Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>ADS-B tracker <span class="doc">TRK/S00 &larr; SBS-1 :30003</span></h1>
+    <div class="chips">
+        <span id="c-mqtt" class="chip">MQTT</span>
+        <span id="c-feed" class="chip" title="RATE - SBS-1 lines in the last second">no feed</span>
+        <span id="c-emerg" class="chip" title="EMERG - an aircraft squawking 7500, 7600 or 7700">no emergency</span>
+    </div>
+</header>
+
+<div id="banner" class="banner" hidden></div>
+
+<main>
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card map-card">
+        <div class="map-head">
+            <div class="label">The sky <span class="muted">north up, range rings, trails of the last minute</span></div>
+            <select id="zoom" aria-label="map range">
+                <option value="100">100 km</option>
+                <option value="260" selected>260 km</option>
+                <option value="420">420 km</option>
+            </select>
+        </div>
+        <svg id="map" viewBox="-300 -300 600 600" aria-label="aircraft positions around the receiver">
+            <g id="m-grid"></g>
+            <g id="m-trails"></g>
+            <g id="m-planes"></g>
+        </svg>
+        <div class="legend muted small">
+            <span><i class="sw lo"></i>below 10 000 ft</span>
+            <span><i class="sw mid"></i>10 000 - 25 000 ft</span>
+            <span><i class="sw hi"></i>above 25 000 ft</span>
+            <span><i class="sw em"></i>emergency squawk</span>
+        </div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card side">
+        <div class="label">Now</div>
+        <div class="big" id="count">--</div>
+        <div class="muted small">aircraft being heard <code>count(id('SKY')/ac)</code></div>
+
+        <dl class="stats">
+            <dt>lines / s</dt>     <dd id="rate">--</dd>
+            <dt>lines read</dt>    <dd id="lines">--</dd>
+            <dt>not SBS-1</dt>     <dd id="bad">--</dd>
+            <dt>aircraft seen</dt> <dd id="seen">--</dd>
+            <dt>farthest</dt>      <dd><span id="maxr">--</span> <span class="unit">km</span></dd>
+            <dt>forgotten after</dt><dd><span id="lost">--</span> <span class="unit">s</span></dd>
+            <dt>receiver</dt>      <dd id="home">--</dd>
+        </dl>
+
+        <div class="label sel-label">Selected</div>
+        <div id="sel" class="muted small">click an aircraft or a row</div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card wide">
+        <div class="label">Aircraft <span class="muted">nearest first - one row per &lt;ac&gt; element under SKY</span></div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>callsign</th><th>ICAO</th><th class="n">FL</th><th class="n">kt</th><th class="n">trk</th>
+                        <th class="n">ft/min</th><th class="n">km</th><th class="n">brg</th><th class="n">squawk</th><th class="n">msgs</th><th class="n">age s</th></tr>
+                </thead>
+                <tbody id="rows"><tr><td colspan="11" class="muted">waiting for the tracker&hellip;</td></tr></tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

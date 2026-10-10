@@ -1,0 +1,24 @@
+body:
+  - type: markdown
+    attributes:
+      value: |
+        English or Turkish — both are fine. Questions are read about once a week.
+        Quicker: search the [site](https://akya-dev.github.io/AyMON/), or give
+        [llms-full.txt](https://akya-dev.github.io/AyMON/llms-full.txt) to your AI assistant.
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+    validations:
+      required: true
+  - type: input
+    id: context
+    attributes:
+      label: Example, platform, engine build (if it is about running something)
+      placeholder: PRJEDU_mqtt, Linux, 4.3.4.586
+  - type: textarea
+    id: log
+    attributes:
+      label: Log or XML lines, if any
+      description: Remove passwords and connection strings.
+      render: text

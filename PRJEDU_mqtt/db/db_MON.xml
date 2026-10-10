@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     MON/S00 - the monitoring side: AyMON as an MQTT CLIENT.
+
+     The same four levels as PRJEDU_modbus, and what each one means here:
+
+       <con>  the connection to the BROKER: address, client id, keep-alive
+       <dev>  one publisher on it, named by its topic prefix
+       <bi>   ONE SUBSCRIPTION - its pro_adr is a topic filter
+       <io>   one topic inside that subscription - one point
+
+     There is NO timer on the block. Modbus asks, so a Modbus block needs a
+     clock (evt_per + PRO.pol). MQTT is told: the broker pushes a message
+     when a value changes, and the point moves when it arrives. A <bi>
+     here with evt_fnc="[PRO.pol]" would be refused - there is nothing to
+     poll.
+     ===================================================================== -->
+<xdb id="MON/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/MON.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFFFFFFF1">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_MON.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<!-- THE CONNECTION TO THE BROKER.
+		     con_mod="CLIENT" + pro_role="MASTER"  dial out, and be the
+		              MQTT client: subscribe to what the <io> below name,
+		              publish what is written to them.
+		     con_host / con_port  the broker. FLD/S00 in this engine; put
+		              a mosquitto or a cloud broker here and nothing else in
+		              this file changes (README: "Using mosquitto instead").
+		     pro_cid  the MQTT client id. It must be unique on the broker:
+		              a second client with the same id pushes the first off.
+		     pro_usr / pro_pwd  add them if the broker wants a login.
+		     pro_pfx  the first part of every topic of this connection -
+		              "FLD", the first half of the document name.
+		     pro_setsfx="set"  appended to every topic this side PUBLISHES
+		              (a write): FLD/S00/SETPOINT/val/set.
+		     pro_getsfx=""  what the broker appends to the topics it
+		              publishes. AyMON publishes plain addresses: nothing.
+		     con_keeptmo  keep-alive, SECONDS. con_rct  redial every 5 s
+		              while the broker is not there - start MON before FLD
+		              and it simply waits. -->
+		<con id="CN_MQ" xdb_fnc="[CON.tcp,PRO.mqtt]" desc="MQTT client"
+		     con_host="127.0.0.1" con_port="1884" con_mod="CLIENT"
+		     con_way="FULL" con_ses="0" con_tmo="2" con_clr="1" con_rct="5"
+		     con_keeptmo="60.0" con_idletmo="0"
+		     pro_role="MASTER" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="MON_S00" pro_pfx="FLD" pro_getsfx="" pro_setsfx="set"
+		     pro_subqos="0" pro_pubqos="0" pro_pubrtn="0"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- ONE PUBLISHER. pro_adr="S00" is the next topic level after
+		     pro_pfx: everything below lives under FLD/S00/... -->
+		<dev id="FIELD" pro_con="CN_MQ" pro_adr="S00" desc="the tank in FLD/S00"
+		     sta="0x0302" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+
+			<!-- ONE SUBSCRIPTION.
+			     The topic filter is pro_pfx / dev pro_adr / bi pro_adr:
+			         FLD/S00/+/val
+			     '+' is one level (any element), '#' would be the rest.
+			     Keep the filter as narrow as the points below: a message
+			     that matches the filter but no <io> is still received,
+			     parsed and thrown away. Here "+/val" leaves out every
+			     other attribute the field publishes. -->
+			<bi id="VALUES" xdb_fnc="[XDB.evt]" desc="FLD/S00/+/val"
+			    sta="0x0302" sta_typ="0x1142" sta_fnc="[EVT.sta,PRO.sta]"
+			    pro="" pro_typ="0xD402" pro_fnc="[]" pro_adr="+/val">
+
+				<!-- THE POINTS. pro_adr is the rest of the topic after the
+				     dev: LEVEL/val here means FLD/S00/LEVEL/val.
+				     The payload is TEXT ("47.3"); pro_typ says what to make
+				     of it, and pro_fnc="[VAL.put]" copies the wire value
+				     'pro' into the meaning 'val' - the same bridge as
+				     Modbus, and just as silent if you leave it out.
+				     pro_typ 0x1308 = double WITH the 0x1000 bit: without
+				     that bit pro_fnc is declared and never runs.
+
+				     The limits and alarms live HERE, not in the field. -->
+				<io id="LEVEL" pro="0" pro_typ="0x1308" pro_adr="LEVEL/val" pro_fnc="[VAL.put]"
+				    sta="0x0302" sta_typ="0x1142" sta_fnc="[main.on_alarm]" desc="tank level"
+				    val="0" val_typ="0x1308" val_fnc="[ATR.rou,ATR.lmt,ALM.onlvl]"
+				    val_rou="0.1" val_min="0" val_max="100" val_unt="%"
+				    val_alm_onlhi_alm="90" val_alm_onlhi_wrn="80"
+				    val_alm_onllo_wrn="20" val_alm_onllo_alm="10"/>
+
+				<io id="TEMP" pro="0" pro_typ="0x1308" pro_adr="TEMP/val" pro_fnc="[VAL.put]"
+				    sta="0x0302" sta_typ="0x1142" desc="water temperature"
+				    val="0" val_typ="0x1308" val_unt="C"/>
+
+				<io id="PUMP" pro="0" pro_typ="0x1104" pro_adr="PUMP/val" pro_fnc="[VAL.put]"
+				    sta="0x0302" sta_typ="0x1142" desc="inlet pump"
+				    val="0" val_typ="0x1104" val_fnc="[main.on_pump]"/>
+
+				<!-- A POINT THAT WRITES.
+				     pro_fnc="[PRO.out,VAL.put]": when 'pro' is written
+				     HERE (by main.move_setpoint, an operator, an HMI),
+				     PRO.out publishes it to
+				         FLD/S00/SETPOINT/val/set
+				     and the field stores it. The field then publishes the
+				     stored value, which arrives back on this same point as
+				     protocol input - and PRO.out does not send protocol
+				     input out again, so there is no echo loop. -->
+				<io id="SETPOINT" xdb_acl="0xFFFFFFF3" pro="0" pro_typ="0x1308" pro_adr="SETPOINT/val" pro_fnc="[PRO.out,VAL.put]"
+				    sta="0x0302" sta_typ="0x1142" desc="level the field's pump holds"
+				    val="0" val_typ="0x1308" val_unt="%"/>
+			</bi>
+		</dev>
+
+		<!-- A report line every ten seconds, and a new set point every
+		     thirty, so the log tells a story without anyone touching it. -->
+		<var id="REPORT" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="CN_MQ" evt_per="10" evt_dly="5" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.report]" desc="periodic log line + JSON summary"/>
+		<var id="MOVE_SP" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="CN_MQ" evt_per="30" evt_dly="15" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.move_setpoint]"
+		     cnt="0" cnt_typ="0x0104" desc="changes the set point every 30 s"/>
+
+		<!-- ================================================================
+		     THE PAGE - http://127.0.0.1:8104/  (only from this computer)
+		     A second MQTT, the other way round: CN_MQ above is this
+		     document as a CLIENT of the field's broker; CN_LIVE is this
+		     document as a broker for the page, inside a WebSocket on the
+		     page's port (/mqtt). It publishes this document's points, and
+		     takes one write: SETPOINT's pro (its own xdb_acl, above) - the page is a
+		     Guest (role 0), and the document gives a Guest read only.
+		     ================================================================ -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the page"
+		     con_host="127.0.0.1" con_port="8104" con_mod="SERVER" con_ses="8" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="the live values for the page"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_MONW" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//io" pro_retain_atr="val,sta"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

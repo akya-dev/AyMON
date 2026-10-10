@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_oee - AyMON example: OEE of a production line, shift by shift,
+     for an industrial engineering course.
+
+     One engine, two documents, joined the way a machine and a plant's
+     MES (manufacturing execution system) are - by a few counters on a
+     fieldbus:
+
+       LINE/S00  the MACHINE. It makes parts - product A or B, in lots -
+                 and loses time the way machines do: breakdowns, jams,
+                 running slow, a changeover between lots, material that
+                 does not come, parts that come out bad. All it tells the
+                 outside world is seven Modbus TCP holding registers on
+                 127.0.0.1:1505: running or not, why not (if it knows),
+                 two counters, the product.
+       OEE/S00   the MES. It reads those registers twice a second and
+                 turns them into time: planned, running, stopped - and
+                 why. From that it computes OEE = availability x
+                 performance x quality, live for the running shift and
+                 once per shift into a database. The operator tells it
+                 why the machine stopped when the machine does not know.
+
+     A shift here lasts EIGHT MINUTES (SHIFT_S in db_OEE.xml), so a
+     lesson sees several of them; everything else is in real seconds.
+
+     Five connections and three documents: inside the FREE edition.
+
+     Run:  run.bat,  then open  http://127.0.0.1:8100/
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO, AyPRO_sqlite" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="S01">
+	<config>
+		<doc id="LINE/S00" sta="0x0300" src="%DB%/db_LINE.xml" desc="the machine - a line that makes parts, and its seven registers" />
+		<doc id="OEE/S00"  sta="0x0300" src="%DB%/db_OEE.xml"  desc="the MES - time, losses, OEE, the shift report and the page" />
+	</config>
+	<data>
+	</data>
+</xdb>

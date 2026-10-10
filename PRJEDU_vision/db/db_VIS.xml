@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     VIS/S00 - a filling line, a camera, and an inspection that rejects.
+
+     Bottles of amber liquid pass a camera on a conveyor, one every 0.8 s.
+     Each one must have a red cap, pressed down, and be filled to the line.
+     The camera looks at them; the engine decides; the page shows it.
+
+       THE CAMERA    CN_CAM, a connection like any other (CON.cam): sta
+                     switches it on and off, con_rct redials it, and every
+                     frame arrives as a BLOB in its attribute frm. Here it
+                     plays the pictures in ..\frames (con_host "file:..."),
+                     ten a second, in a loop: 16 bottles, 4 of them faulty.
+                     SRC 1 makes it your webcam (usb:0).
+       TWO MORE VIEWS of the same camera, each a connection of its own
+                     with con_host "link:CN_CAM": a device opens once, and
+                     a link gets its frames in memory and puts them through
+                     ITS OWN settings.
+                       CN_INS   the inspection window: the middle of the
+                                picture (con_cam_crop), colour, as often as
+                                INS_FPS says. Its frm_fnc is the inspection.
+                       CN_VIEW  what the page shows live: the whole picture,
+                                smaller, as a JPEG, five a second, streamed
+                                over HTTP (/blob/.../CN_VIEW/frm?stream=1).
+       THE INSPECTION  JScript, db_VIS.js, on its own thread (TH_INS):
+                     where is the bottle, is there a cap, is it red, is it
+                     pressed down, is the liquid up to the line. The image
+                     functions are the engine's (IMG.*, AyLIB_vision); the
+                     colours, the window and the limits are below, as
+                     configuration.
+       THE RESULT    counters, the reject rate with an alarm, the last
+                     bottle as an annotated JPEG (SHOT), the last six
+                     rejects (REJ0..REJ5), all on MQTT and HTTP.
+       THE LINE, WATCHED WITHOUT A SCRIPT  a fourth view, CN_SEN, is a
+                     camera device (PRO.vision): blocks the engine runs on
+                     every frame - is the line moving, a light barrier, the
+                     light, has the camera moved - each an ordinary point
+                     with alarm limits. No line of script.
+
+     The page may write seven values: INS_FPS, SPEED, CAM_ON, SRC, VIEW_FPS,
+     RESET and SEN_REF (xdb_acl gives role 0 read + write on them and read
+     only everywhere else).
+     ===================================================================== -->
+<xdb id="VIS/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/VIS.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFF111111">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_VIS.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<!-- The inspection's own thread: frames are processed here, never on
+		     the document's thread. thr_per 10 ms: it looks for work often. -->
+		<thr id="TH_INS" xdb_fnc="[THR.cre]" thr_per="10" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- ================================================================
+		     THE CAMERA AND ITS TWO VIEWS
+		     ================================================================ -->
+
+		<!-- What every camera connection has (xdb_cls="cls_CAM"):
+		       frm             the frame, a blob. 0x750E = a blob (0x050E), not
+		                       published on MQTT (0x4000: the page fetches
+		                       pictures over HTTP), its frm_fnc queued to the
+		                       connection's evt_thr, newest frame only (0x3000):
+		                       a busy inspection skips frames, it never builds
+		                       a queue.
+		       con_cam_info    what was opened, written at every connect
+		       con_cam_rate    frames delivered a second (the last 4 s)
+		       con_cam_in      frames read from the source a second
+		       con_cam_err     why it was last lost, "" while it runs -->
+		<tio id="cls_CAM" frm="" frm_typ="0x750E"
+		     con_cam_info="" con_cam_info_typ="0x0401" con_cam_err="" con_cam_err_typ="0x0401"
+		     con_cam_rate="0" con_cam_rate_typ="0x0308" con_cam_in="0" con_cam_in_typ="0x0308"/>
+
+		<!-- THE CAMERA. con_host is the source:
+		       file:frames?fps=10&loop=1   the recorded conveyor (..\frames,
+		                                   relative to the directory run.bat
+		                                   starts in)
+		       usb:0                       the first camera of this computer
+		                                   (CAM.list() names them)
+		       http://<phone>:8080/video   a phone running an "IP camera" app
+		     con_cam_w / con_cam_h: whatever the source gives, frames are
+		     640 x 480 from here on, so the window below fits any camera.
+		     con_cam_fps 0: every frame the source gives. -->
+		<con id="CN_CAM" xdb_fnc="[CON.cam,PRO.cam]" xdb_cls="cls_CAM" desc="the camera"
+		     con_host="file:frames?fps=10&amp;loop=1" con_cam_w="640" con_cam_h="480" con_cam_fps="0"
+		     con_mod="CLIENT" pro_role="MASTER" con_ses="0" con_rct="2" con_tmo="1"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]" evt_thr="TH_INS"/>
+
+		<!-- THE INSPECTION WINDOW: CN_CAM's frames, cropped to the middle of
+		     the picture, in colour, as often as INS_FPS says (con_cam_fps is a
+		     LIVE field: main.on_ins_fps writes it, no reconnect). Each frame
+		     runs main.inspect on TH_INS. The crop comes from WIN below. -->
+		<con id="CN_INS" xdb_fnc="[CON.cam,PRO.cam]" xdb_cls="cls_CAM" desc="the inspection window"
+		     con_host="link:CN_CAM" con_cam_fps="10" con_cam_crop="200,64,240,320" con_cam_out="rgb"
+		     frm_fnc="[main.inspect]"
+		     con_mod="CLIENT" pro_role="MASTER" con_ses="0" con_rct="2" con_tmo="1"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]" evt_thr="TH_INS"/>
+
+		<!-- THE LIVE VIEW: the whole picture, 480 x 360, JPEG, VIEW_FPS a
+		     second. Nobody processes it: the page streams it straight from
+		     the engine's memory, GET /blob/VIS/S00/CN_VIEW/frm?stream=1. -->
+		<con id="CN_VIEW" xdb_fnc="[CON.cam,PRO.cam]" xdb_cls="cls_CAM" desc="the live view for the page"
+		     con_host="link:CN_CAM" con_cam_fps="5" con_cam_w="480" con_cam_h="360"
+		     con_cam_out="jpeg" con_cam_q="70"
+		     con_mod="CLIENT" pro_role="MASTER" con_ses="0" con_rct="2" con_tmo="1"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]" evt_thr="TH_INS"/>
+
+		<!-- ================================================================
+		     THE LINE, WATCHED WITHOUT A SCRIPT (PRO.vision)
+
+		     A fourth view of the same camera, CN_SEN, is a camera DEVICE:
+		     [CON.cam,PRO.vision] with con_ses="1" and one <dev>, DV_SEN. Its
+		     <bi> blocks are analyses the engine runs on every frame the view
+		     delivers - no script, no blob copied, no event per frame - and
+		     each block's numbers reach its <io> points like a Modbus
+		     register's: an <io> is an ordinary point, with alarms below.
+		       S_MOVE   diff   is the line moving: the share of pixels that
+		                       changed since the frame before, in the band
+		                       where the bottles pass
+		       S_GATE   count  a light barrier: a thin strip at the middle of
+		                       the picture, the share of it that is liquid
+		       S_LIGHT  roi    the light: the wall's mean brightness above
+		                       the bottles (the recording flickers a little;
+		                       a covered lens or a dead lamp falls)
+		       S_SHIFT  match  is the camera where it was: a bolt of the belt,
+		                       cut from the first frame, searched for in
+		                       every frame; dx/dy = how far it moved
+		     The view runs ten frames a second whatever the line does
+		     (con_cam_fps, a live field), grey (con_cam_out="gray": the
+		     analyses use the grey plane), and the picture's own pixels:
+		     the regions below are in the 640 x 480 picture.
+		     A block's poll is the device's WATCHDOG: no frame for
+		     con_cam_tmo (2 s) - the camera switched off - and the blocks and
+		     the device go WAITING, ALM.devsta marks the device.
+		     A link costs no camera licence (link: is free).
+		     ================================================================ -->
+
+		<!-- An analysis block: its pro is a buffer of 64-bit numbers
+		     (0xD418, never published), PRO.inp hands slot n to the <io> whose
+		     pro_adr is n. Its poll, once a second, only watches the frames. -->
+		<tio id="cls_VB" xdb_fnc="[XDB.evt]" sta="0x0302" sta_typ="0x1142" evt="0"
+		     pro="" pro_typ="0xD418" pro_fnc="[PRO.inp]"
+		     evt_per="1.0" evt_typ="0x5204" evt_fnc="[PRO.pol]" evt_cfg="0x0002" sta_fnc="[EVT.sta,PRO.sta]"/>
+		<!-- A result: its slot as a number (pro), copied to val (VAL.put),
+		     where the alarm limits are. -->
+		<tio id="cls_VR" sta="0x0302" sta_typ="0x1142" pro="0" pro_typ="0x1308" pro_fnc="[VAL.put]"
+		     val="0" val_typ="0x1308" val_fnc="[ATR.rou,ALM.onlvl]" val_rou="0.001"/>
+
+		<con id="CN_SEN" xdb_fnc="[CON.cam,PRO.vision]" desc="the line's sensors: PRO.vision on every frame"
+		     con_host="link:CN_CAM" con_cam_fps="10" con_cam_out="gray" con_cam_tmo="2"
+		     con_mod="CLIENT" pro_role="MASTER" con_ses="1" con_rct="2" con_tmo="1" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+		<!-- The camera device. What the view writes back - con_cam_info,
+		     con_cam_rate .. - lands here, on the <dev>, not on CN_SEN. -->
+		<dev id="DV_SEN" pro_con="CN_SEN" desc="the line's sensors"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta,ALM.devsta]"
+		     con_cam_info="" con_cam_info_typ="0x0401" con_cam_err="" con_cam_err_typ="0x0401"
+		     con_cam_rate="0" con_cam_rate_typ="0x0308" con_cam_in="0" con_cam_in_typ="0x0308">
+			<!-- slot 2 of diff = the share of pixels that changed by 25+ grey
+			     levels. The line runs at about 0.23; a line that stands, about 0. -->
+			<bi id="S_MOVE" xdb_cls="cls_VB" pro_fni="diff" pro_adr="0,180,640,200" pro_vision_lo="25"
+			    desc="motion in the band the bottles pass through">
+				<io id="MOVE" xdb_cls="cls_VR" pro_adr="2" val_unt="share"
+				    val_alm_onllo_wrn="0.02" val_alm_onllo_alm="0.005" desc="the line is moving"/>
+			</bi>
+			<!-- slot 1 of count = the share of the strip whose grey level is
+			     the liquid's (120..175): the wall is 212, the glass above the
+			     liquid 200+. A bottle stands in it three frames in eight. -->
+			<bi id="S_GATE" xdb_cls="cls_VB" pro_fni="count" pro_adr="316,336,8,36"
+			    pro_vision_lo="120" pro_vision_hi="175" desc="a light barrier at the middle of the picture">
+				<io id="GATE" xdb_cls="cls_VR" pro_adr="1" val_unt="share" desc="liquid in the barrier strip"/>
+			</bi>
+			<!-- slot 0 of roi = the mean grey level of the wall above the bottles -->
+			<bi id="S_LIGHT" xdb_cls="cls_VB" pro_fni="roi" pro_adr="0,0,640,36" desc="the light on the wall">
+				<io id="LIGHT" xdb_cls="cls_VR" pro_adr="0" val_rou="0.1"
+				    val_alm_onllo_wrn="140" val_alm_onllo_alm="80" desc="the wall's brightness, 0..255"/>
+			</bi>
+			<!-- match: the template is cut at pro_adr (a bolt under the belt,
+			     no bottle ever covers it) from the first frame, then found in
+			     every frame; pro_vision_area keeps the search within 40 px of it
+			     (the next bolt is 120 px away). Slots 2 score, 3 dx, 4 dy. -->
+			<bi id="S_SHIFT" xdb_cls="cls_VB" pro_fni="match" pro_adr="246,426,60,36"
+			    pro_vision_area="206,386,140,76" desc="is the camera where it was">
+				<io id="SHIFT_SCORE" xdb_cls="cls_VR" pro_adr="2" val_unt="score"
+				    val_alm_onllo_wrn="0.8" val_alm_onllo_alm="0.6" desc="how well the bolt matches, -1..1"/>
+				<io id="SHIFT_DX" xdb_cls="cls_VR" pro_adr="3" val_unt="px"
+				    val_alm_onlhi_wrn="4" val_alm_onlhi_alm="10" val_alm_onllo_wrn="-4" val_alm_onllo_alm="-10"
+				    desc="the camera moved sideways"/>
+				<io id="SHIFT_DY" xdb_cls="cls_VR" pro_adr="4" val_unt="px"
+				    val_alm_onlhi_wrn="4" val_alm_onlhi_alm="10" val_alm_onllo_wrn="-4" val_alm_onllo_alm="-10"
+				    desc="the camera moved up or down"/>
+			</bi>
+			<!-- A command: any write = every match (and diff "keep") block
+			     takes its reference again from the next frame. The page's
+			     button writes it (xdb_acl: role 0 may write this one). -->
+			<io id="SEN_REF" xdb_acl="0xFF111113" sta="0x0302" sta_typ="0x1142"
+			    pro="" pro_typ="0x1401" pro_fnc="[PRO.out]" pro_fno="ref"
+			    desc="request: the camera is where it should be - take the bolt again"/>
+		</dev>
+
+		<!-- ================================================================
+		     WHAT THE PAGE MAY CHANGE
+		     ================================================================ -->
+
+		<!-- How often the inspection looks, 0.5 .. 10 frames a second, or 0:
+		     every frame the camera gives. A bottle is in the window for half
+		     a dozen frames: look less often and the inspection starts to miss
+		     bottles, and a bottle nobody inspected is a reject (MISSED). -->
+		<var id="INS_FPS" xdb_acl="0xFF111113" sta="0x0303" val="10" val_typ="0x1308"
+		     val_fnc="[ATR.lmt,main.on_ins_fps]" val_min="0" val_max="10"
+		     desc="request: inspection frames a second (CN_INS con_cam_fps), 0 = every frame"/>
+
+		<!-- How fast the recorded line runs: the recording played at 10, 100
+		     or 1000 frames a second (con_host "file:frames?fps=N"). A bottle
+		     every 8 frames: 75, 750 or 7500 bottles a minute - if the engine
+		     keeps up; the page shows what it really does. con_host is read
+		     when the camera opens, so main.on_speed switches it off and
+		     main.second on again with the new rate, as for SRC. -->
+		<var id="SPEED" xdb_acl="0xFF111113" sta="0x0303" val="10" val_typ="0x3308"
+		     val_fnc="[ATR.rou,ATR.lmt,main.on_speed]" val_rou="1" val_min="1" val_max="1000" evt_thr="TH_INS"
+		     desc="request: frames a second the recording is played at"/>
+
+		<!-- How often the live view moves, 1 .. 10 a second (CN_VIEW). -->
+		<var id="VIEW_FPS" xdb_acl="0xFF111113" sta="0x0303" val="5" val_typ="0x1308"
+		     val_fnc="[ATR.rou,ATR.lmt,main.on_view_fps]" val_rou="1" val_min="1" val_max="10"
+		     desc="request: live view frames a second (CN_VIEW con_cam_fps)"/>
+
+		<!-- The camera on (1) or off (0): CN_CAM's sta. Its two views stay up
+		     and wait - idle, not lost - until it delivers again. -->
+		<var id="CAM_ON" xdb_acl="0xFF111113" sta="0x0303" val="1" val_typ="0x3308"
+		     val_fnc="[ATR.rou,ATR.lmt,main.on_cam_on]" val_rou="1" val_min="0" val_max="1" evt_thr="TH_INS"
+		     desc="request: 1 = camera on, 0 = off"/>
+
+		<!-- The source: 0 the recorded line (frames), 1 this computer's first
+		     camera (usb:0). con_host is read when the connection opens and
+		     cannot be written while it runs: main.on_src switches the camera
+		     off, and a second later main.second writes the new con_host and
+		     switches it on. 0x3308: the val_fnc runs on TH_INS (queued). -->
+		<var id="SRC" xdb_acl="0xFF111113" sta="0x0303" val="0" val_typ="0x3308"
+		     val_fnc="[ATR.rou,ATR.lmt,main.on_src]" val_rou="1" val_min="0" val_max="1" evt_thr="TH_INS"
+		     desc="request: 0 = the recorded line, 1 = usb:0"/>
+
+		<!-- Any new value: the counters start again (the page writes the
+		     time, so every press is a change). 0x3308: a number whose
+		     val_fnc is queued to TH_INS (evt_thr), the inspection's own
+		     thread - the counters are only ever touched there. -->
+		<var id="RESET" xdb_acl="0xFF111113" sta="0x0303" val="0" val_typ="0x3308"
+		     val_fnc="[main.on_reset]" evt_thr="TH_INS" desc="request: any new value = counters to zero"/>
+
+		<!-- ================================================================
+		     THE INSPECTION'S CONFIGURATION - what a technician sets once,
+		     standing at the line. The script reads it at every bottle, so a
+		     change here is used at the next one.
+		     Coordinates are in the INSPECTION WINDOW (WIN), not in the whole
+		     picture. Colours are HSV on the engine's 8-bit scale: H 0..179
+		     (degrees / 2), S and V 0..255; "lo" and "hi" per channel.
+		     ================================================================ -->
+		<var id="WIN" sta="0x0303" val="200,64,240,320" val_typ="0x0401"
+		     desc="the inspection window in the 640 x 480 picture: x,y,w,h (CN_INS con_cam_crop)"/>
+		<var id="LIQ_LO"  sta="0x0303" val="13,110,80"  val_typ="0x0401" desc="the liquid: amber"/>
+		<var id="LIQ_HI"  sta="0x0303" val="30,255,255" val_typ="0x0401"/>
+		<var id="CAP_LO"  sta="0x0303" val="0,130,80"   val_typ="0x0401" desc="the right cap: orange-red"/>
+		<var id="CAP_HI"  sta="0x0303" val="9,255,255"  val_typ="0x0401"/>
+		<var id="WRONG_LO" sta="0x0303" val="95,110,60"  val_typ="0x0401" desc="the other product's cap: blue"/>
+		<var id="WRONG_HI" sta="0x0303" val="130,255,255" val_typ="0x0401"/>
+		<var id="OPEN_K" sta="0x0303" val="3" val_typ="0x0308" val_unt="px"
+		     desc="the cap box's colour masks are cleaned with a k x k opening (IMG.erode, then IMG.dilate): specks smaller than k go; 1 = not cleaned"/>
+		<var id="FOOT_MIN" sta="0x0303" val="1500" val_typ="0x0308" val_unt="px"
+		     desc="the liquid below the label must be this big to be a bottle"/>
+		<var id="CENTRE_TOL" sta="0x0303" val="50" val_typ="0x0308" val_unt="px"
+		     desc="a bottle is inspected when it is this close to the window's middle"/>
+		<var id="CAP_MIN" sta="0x0303" val="400" val_typ="0x0308" val_unt="px"
+		     desc="a cap: at least this many pixels of its colour above the bottle"/>
+		<var id="CAP_Y_MIN" sta="0x0303" val="34" val_typ="0x0308" val_unt="px"
+		     desc="a cap pressed down has its middle at least this low in the window"/>
+		<var id="FILL_Y_MAX" sta="0x0303" val="160" val_typ="0x0308" val_unt="px"
+		     desc="the fill line: the liquid's top must be at least this high in the window"/>
+
+		<!-- ================================================================
+		     WHAT THE INSPECTION SAYS
+		     ================================================================ -->
+		<var id="INSPECTED" sta="0x0303" val="0" val_typ="0x0104" desc="bottles inspected"/>
+		<var id="GOOD"      sta="0x0303" val="0" val_typ="0x0104" desc="bottles that passed"/>
+		<var id="NOCAP"     sta="0x0303" val="0" val_typ="0x0104" desc="rejected: no cap"/>
+		<var id="WRONGCAP"  sta="0x0303" val="0" val_typ="0x0104" desc="rejected: the wrong cap"/>
+		<var id="CAPHIGH"   sta="0x0303" val="0" val_typ="0x0104" desc="rejected: cap not pressed down"/>
+		<var id="LOWFILL"   sta="0x0303" val="0" val_typ="0x0104" desc="rejected: not filled to the line"/>
+		<var id="MISSED"    sta="0x0303" val="0" val_typ="0x0104"
+		     desc="rejected: passed the camera and nobody inspected it (recorded line only)"/>
+		<var id="PASSED"    sta="0x0303" val="0" val_typ="0x0104"
+		     desc="bottles that passed the camera, from the recording itself (recorded line only)"/>
+
+		<!-- The reject rate over the last 20 bottles - the number a shift
+		     leader watches. The line itself rejects one bottle in four. -->
+		<var id="REJ_PCT" sta="0x0303" sta_typ="0x1142" val="0" val_typ="0x1308"
+		     val_fnc="[ATR.rou,ALM.onlvl]" val_rou="1" val_unt="%"
+		     val_alm_onlhi_wrn="35" val_alm_onlhi_alm="50"
+		     desc="rejects in the last 20 bottles"/>
+
+		<var id="LAST"  sta="0x0303" val="" val_typ="0x0401" desc="the last verdict: OK, NO CAP, WRONG CAP, CAP HIGH, LOW FILL"/>
+		<var id="LEVEL" sta="0x0303" val="0" val_typ="0x0308" val_unt="px" desc="the last bottle's liquid top, in the window"/>
+		<var id="CAP_Y" sta="0x0303" val="0" val_typ="0x0308" val_unt="px" desc="the last bottle's cap middle, in the window"/>
+		<var id="MS"    sta="0x0303" val="0" val_typ="0x0308" val_unt="ms" desc="time to inspect one bottle"/>
+
+		<!-- The last bottle inspected, drawn over: a JPEG blob. MQTT carries
+		     its descriptor; the page fetches the bytes when the seq moves,
+		     GET /blob/VIS/S00/SHOT/val. -->
+		<var id="SHOT" sta="0x0303" val="" val_typ="0x050E" desc="the last bottle, annotated, JPEG"/>
+
+		<!-- The last six rejects: six JPEG blobs used in turn, and what each
+		     one is (REJ_INFO, a JSON list, newest first). -->
+		<var id="REJ0" sta="0x0303" val="" val_typ="0x050E"/>
+		<var id="REJ1" sta="0x0303" val="" val_typ="0x050E"/>
+		<var id="REJ2" sta="0x0303" val="" val_typ="0x050E"/>
+		<var id="REJ3" sta="0x0303" val="" val_typ="0x050E"/>
+		<var id="REJ4" sta="0x0303" val="" val_typ="0x050E"/>
+		<var id="REJ5" sta="0x0303" val="" val_typ="0x050E"/>
+		<var id="REJ_INFO" sta="0x0303" val="[]" val_typ="0x0401" desc="[{slot, why, no, at}], newest first"/>
+
+		<!-- Once a second, on TH_INS like the inspection: count the bottles
+		     that passed the camera (recorded line), the missed ones, the rate. -->
+		<var id="T_SEC" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_INS" evt_per="1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.second]" desc="once a second"/>
+
+		<!-- ================================================================
+		     THE WEB SIDE - http://127.0.0.1:8113/
+		     ================================================================ -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the web listener, and the pictures under /blob"
+		     con_host="127.0.0.1" con_port="8113" con_mod="SERVER" con_ses="12"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     pro_blob="/blob"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="live values"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_VIS" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//var | //con[@frm] | //dev | //bi | //io"
+		     pro_retain_atr="val,sta,con_cam_info,con_cam_err,con_cam_rate,con_cam_in,con_cam_fps,con_cam_crop,pro_adr"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

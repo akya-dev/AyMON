@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     GAU/S00 - a gauge nobody can wire, read by a camera.
+
+     The situation is common in old plants: a mechanical dial gauge on a
+     tank, no transmitter, no cable, and nobody willing to open the line to
+     fit one. A camera looking at the dial is the retrofit. This document is
+     that retrofit, in three parts:
+
+       THE PROCESS   a compressor tank (script, main.tick). Its pressure is
+                     TRUE - the value nobody could measure. The camera never
+                     reads TRUE; the page shows it so you can see how wrong
+                     the camera is.
+       THE CAMERA    Python (db_GAU.py, "vision"). Once a second (ten
+                     times with SIZE 1) it draws the gauge as a camera would
+                     see it: the dial, the needle
+                     where TRUE puts it, and the trouble a real camera has -
+                     noise, blur, uneven light, glare, a shadow, a camera
+                     that is knocked a few pixels sideways. NOISE sets how
+                     much of that there is.
+       THE READER    Python again: find the dial, find the needle, turn its
+                     angle into bar through the calibration below, and say
+                     how sure it is (CONF). A reading below CONF_MIN is not
+                     used: PRESS keeps the last good one and READ says why.
+
+     From there PRESS is an ordinary point: rounded, limited, alarmed, on
+     MQTT, on the page - nothing downstream knows it came from a picture.
+
+     THE PICTURE is a blob, the engine's value for large binary data: Python
+     hands the frame over as a numpy array (FRAME), the script measures it
+     natively and the engine encodes it (PIC), and the page fetches it over
+     HTTP. MQTT carries only its descriptor. The old way - a PNG in a
+     base64 string over MQTT (IMG) - is kept on PATH 0 to compare.
+
+     Python runs through the engine's Python module (AyLIB_Python, beside
+     AyXDB.exe) and an installed 64-bit Python 3.11 with numpy. Only
+     numpy: the picture and the reader are written with it and the standard
+     library, so there is nothing else to install. Encoding and the native
+     reading are the engine's picture module, AyLIB_vision (root AyXDB.xml).
+     ===================================================================== -->
+<xdb id="GAU/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/GAU.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFF111111">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_GAU.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+
+		<!-- THE PYTHON SIDE. language="Python" is all it takes: the engine
+		     attaches its Python module the first time it sees it.
+		     id="vision" is the script's scope AND the id of the one thread
+		     every Python script of the engine runs on.
+		     thr_per="100": the thread's cycle. The camera takes a picture
+		     when one is due: once a second, or ten times with SIZE 1.
+		     thr_tmo="5": on the way down, wait at most 5 s for it (the
+		     default for Python is 30 s; nothing here needs that long). -->
+		<script id="vision" xdb_fnc="[SCR.prs]" src="%DB%/db_GAU.py" language="Python"
+		        thr_per="100" thr_tmo="5"></script>
+	</config>
+
+	<data>
+		<thr id="TH_MAIN" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- ================================================================
+		     THE PROCESS
+		     ================================================================ -->
+		<var id="T_SIM" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_MAIN" evt_per="0.5" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.tick]" desc="process step"/>
+
+		<var id="TRUE" sta="0x0303" val="5" val_typ="0x0308" val_unt="bar"
+		     desc="the real pressure - what nobody can measure"/>
+		<var id="COMP" sta="0x0303" val="0" val_typ="0x0104" desc="compressor, 1 = running"/>
+		<var id="STEPS" sta="0x0303" val="0" val_typ="0x4104" desc="process steps, local"/>
+
+		<!-- ================================================================
+		     WHAT THE CAMERA SEES
+		     ================================================================ -->
+
+		<!-- THE FRAME. Python hands every picture to the engine here as a
+		     numpy array: one copy, and from then on it is a BLOB (0x150E: a
+		     blob, and run val_fnc on every write). Nothing copies it again:
+		     the script below measures it natively (IMG.stats), Python reads
+		     the gauge from the same bytes, and the encoder takes it from here.
+		     MQTT carries only its descriptor, never the bytes. -->
+		<var id="FRAME" sta="0x0303" val="" val_typ="0x150E" val_fnc="[main.on_frame]"
+		     desc="the raw frame, u8 [h,w], written by Python"/>
+
+		<!-- THE PICTURE FOR THE PAGE: the frame, encoded by the engine
+		     (IMG.encode, AyLIB_vision). Python writes the frame's blob back here
+		     at the end of each frame (a reference, not a copy); main.encode
+		     turns it into a JPEG or PNG and numbers it. The page gets the
+		     descriptor over MQTT and fetches the bytes over HTTP:
+		     GET /blob/GAU/S00/PIC/val (the pro_blob mount on CN_WEB). -->
+		<var id="PIC" sta="0x0303" val="" val_typ="0x150E" val_fnc="[main.encode]"
+		     desc="the encoded picture, fetched by the page over HTTP"/>
+
+		<!-- THE OLD WAY, kept to compare: a PNG in a data: URL, a plain string
+		     published over MQTT like any other value. Written only while PATH
+		     is 0. -->
+		<var id="IMG" sta="0x0303" val="" val_typ="0x0401" desc="PATH 0: the last frame, data:image/png;base64,..."/>
+
+		<!-- How the picture travels to the page - one of the four values the
+		     page may write, so the ways can be compared in one run:
+		       0  base64: Python writes a PNG by hand, base64 in a string, MQTT
+		       1  blob, PNG:  the engine encodes, the page fetches over HTTP
+		       2  blob, JPEG: the same, as a JPEG (JPG_Q) -->
+		<var id="PATH" xdb_acl="0xFF111113" sta="0x0303" val="2" val_typ="0x1308"
+		     val_fnc="[ATR.rou,ATR.lmt,main.on_path]" val_rou="1" val_min="0" val_max="2"
+		     desc="request: 0 = base64 in MQTT, 1 = PNG blob, 2 = JPEG blob"/>
+
+		<!-- How big the camera is: 0 = 240 x 240 once a second (the dial
+		     fills the picture), 1 = 640 x 480 ten times a second (the dial is
+		     one part of a panel; the reader looks at its region only). -->
+		<var id="SIZE" xdb_acl="0xFF111113" sta="0x0303" val="0" val_typ="0x1308"
+		     val_fnc="[ATR.rou,ATR.lmt,main.on_size]" val_rou="1" val_min="0" val_max="1"
+		     desc="request: 0 = 240x240 at 1/s, 1 = 640x480 at 10/s"/>
+
+		<var id="JPG_Q" sta="0x0303" val="80" val_typ="0x0308" desc="JPEG quality for PATH 2, 1..100"/>
+		<var id="ROI_X" sta="0x0303" val="0" val_typ="0x0308" val_unt="px" desc="where the dial's 240 x 240 region starts in the frame"/>
+		<var id="ROI_Y" sta="0x0303" val="0" val_typ="0x0308" val_unt="px"/>
+		<var id="CAP" sta="0x0303" val="0" val_typ="0x0308" val_unt="ms"
+		     desc="when the frame was taken, ms since 1970 - the page works out the picture's age from it"/>
+
+		<!-- THE SECOND READING, done natively on the same frame: how much
+		     light falls on the dial (IMG.stats over the face, main.on_frame).
+		     FRAME_AT is the address of the frame's bytes as the script saw
+		     them; SAME is 1 when Python read the gauge from that very
+		     address - one frame, two readers, no copy. -->
+		<var id="LIGHT"    sta="0x0303" val="0" val_typ="0x0308" desc="mean brightness of the dial's face, 0..255 (IMG.stats)"/>
+		<var id="FRAME_AT" sta="0x0303" val="" val_typ="0x0401" desc="address of the frame's bytes, seen from the script"/>
+		<var id="SAME"     sta="0x0303" val="0" val_typ="0x0104" desc="1 = Python read the frame at FRAME_AT"/>
+
+		<!-- How hard the camera's life is: 0 clean, 1 noise and blur,
+		     2 + uneven light and glare, 3 + a passing shadow and a camera
+		     that has been knocked. One of the four values the page may write
+		     (METHOD, PATH and SIZE are the others): xdb_acl gives role 0 read + write here and
+		     read only everywhere else. ATR.lmt clamps it, so a page that
+		     sends 9 gets 3. -->
+		<var id="NOISE" xdb_acl="0xFF111113" sta="0x0303" val="1" val_typ="0x1308"
+		     val_fnc="[ATR.rou,ATR.lmt,main.on_noise]" val_rou="1" val_min="0" val_max="3"
+		     desc="request: how hard the picture is, 0..3"/>
+
+		<!-- Which needle finder the reader uses: 0 the one described in
+		     db_GAU.py, 1 the first version (the darkest ray). The page may
+		     write it too, so the two can be compared on the same pictures. -->
+		<var id="METHOD" xdb_acl="0xFF111113" sta="0x0303" val="0" val_typ="0x1308"
+		     val_fnc="[ATR.rou,ATR.lmt,main.on_method]" val_rou="1" val_min="0" val_max="1"
+		     desc="request: 0 = darker than its neighbours, 1 = darkest ray"/>
+
+		<!-- ================================================================
+		     WHAT THE READER SAYS
+		     ================================================================ -->
+
+		<!-- THE MEASUREMENT. Written by Python only when the reading is
+		     trusted. After that it is a point like any other: rounded, and
+		     alarmed by the same ALM.onlvl as a 4-20 mA transmitter would be. -->
+		<var id="PRESS" sta="0x0303" sta_typ="0x1142" val="0" val_typ="0x1308"
+		     val_fnc="[ATR.rou,ALM.onlvl]" val_rou="0.01" val_unt="bar"
+		     val_alm_onlhi_wrn="8.5" val_alm_onlhi_alm="9.0"
+		     desc="tank pressure, read from the gauge"/>
+
+		<!-- How sure the reader is, 0..1: how dark the needle is against
+		     the dial, and how far ahead of the second-best candidate. -->
+		<var id="CONF" sta="0x0303" sta_typ="0x1142" val="0" val_typ="0x1308"
+		     val_fnc="[ATR.rou,ALM.onlvl]" val_rou="0.01"
+		     val_alm_onllo_wrn="0.5" val_alm_onllo_alm="0.3"
+		     desc="confidence of the last reading"/>
+		<var id="READ"   sta="0x0303" val="" val_typ="0x0401" desc="'ok', or why the last frame was not used"/>
+		<var id="ANGLE"  sta="0x0303" val="0" val_typ="0x0308" val_unt="deg" desc="needle angle, clockwise from 12 o'clock"/>
+		<var id="CX"     sta="0x0303" val="0" val_typ="0x0308" val_unt="px" desc="dial centre found in the frame"/>
+		<var id="CY"     sta="0x0303" val="0" val_typ="0x0308" val_unt="px"/>
+		<var id="SEEN"   sta="0x0303" val="0" val_typ="0x0308" val_unt="bar" desc="TRUE when the frame was taken - what the reading is compared with"/>
+		<var id="ERR"    sta="0x0303" val="0" val_typ="0x0308" val_unt="bar" desc="last reading minus SEEN"/>
+		<var id="FRAMES" sta="0x0303" val="0" val_typ="0x0104" desc="frames read"/>
+		<var id="REJECTS" sta="0x0303" val="0" val_typ="0x0104" desc="frames not trusted"/>
+		<var id="MS"     sta="0x0303" val="0" val_typ="0x0308" val_unt="ms" desc="Python time per frame"/>
+
+		<!-- ================================================================
+		     THE CALIBRATION - what a technician writes down once, standing
+		     in front of the real gauge: the scale, where its ends are, and
+		     how big the dial is in the picture. Python reads these every
+		     frame, so they are configuration, not code. They tell the
+		     READER about the gauge; the camera draws the real one (GAUGE in
+		     db_GAU.py), so a wrong value here gives a wrong reading.
+		     Angles are clockwise from 12 o'clock: this dial sweeps 270
+		     degrees, from -135 (0 bar) to +135 (10 bar).
+		     ================================================================ -->
+		<var id="CAL_V0"   sta="0x0303" val="0"    val_typ="0x0308" val_unt="bar" desc="value at the start of the scale"/>
+		<var id="CAL_V1"   sta="0x0303" val="10"   val_typ="0x0308" val_unt="bar" desc="value at the end of the scale"/>
+		<var id="CAL_A0"   sta="0x0303" val="-135" val_typ="0x0308" val_unt="deg" desc="needle angle at CAL_V0"/>
+		<var id="CAL_A1"   sta="0x0303" val="135"  val_typ="0x0308" val_unt="deg" desc="needle angle at CAL_V1"/>
+		<var id="CAL_R"    sta="0x0303" val="100"  val_typ="0x0308" val_unt="px"  desc="dial radius in the picture"/>
+		<var id="CONF_MIN" sta="0x0303" val="0.3"  val_typ="0x0308" desc="below this a frame is not used"/>
+
+		<!-- ================================================================
+		     THE WEB SIDE - http://127.0.0.1:8091/
+		     ================================================================ -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the web listener, and the pictures under /blob"
+		     con_host="127.0.0.1" con_port="8091" con_mod="SERVER" con_ses="8"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     pro_blob="/blob"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="live values (and, with PATH 0, the picture)"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_GAU" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//var" pro_retain_atr="val,sta"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

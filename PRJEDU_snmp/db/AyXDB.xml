@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_snmp - AyMON example: SNMP, both ends, nothing to install.
+
+     One engine, two documents, real SNMP packets on a loopback socket:
+
+       AGT/S00   the device. An SNMP v2c AGENT, written in script on top of
+                 PRO.raw, serving a handful of OIDs from a simulated tank.
+       MON/S00   the monitoring side. AyMON in the role it really has:
+                 an SNMP MANAGER polling those OIDs into <io> points with
+                 units, scaling and alarms.
+
+     WHY THE AGENT IS SCRIPT. AyMON's PRO.snmp is a manager only - it asks,
+     it does not answer. The other examples put both ends in one engine
+     with two built-in roles (PRJEDU_modbus) or one built-in broker
+     (PRJEDU_mqtt); SNMP has no such second role, so the device end is
+     built from the three pieces the engine gives a script for exactly
+     this purpose: PRO.raw (a connection with no protocol), pro_onparse
+     (the framing hook) and CODEC.HEX_dec / HEX_enc (bytes <-> text).
+     It needs engine 4.3.4.444 or later.
+
+     Read db_MON.xml if you came for SNMP: that file is what you would
+     write for a real device. Read db_AGT.js if you ever have to speak a
+     protocol AyMON does not know yet.
+
+     Run:  run.bat
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="S01">
+	<config>
+		<doc id="AGT/S00" sta="0x0300" src="%DB%/db_AGT.xml" desc="the device - an SNMP agent in script" />
+		<doc id="MON/S00" sta="0x0300" src="%DB%/db_MON.xml" desc="the monitoring side - SNMP manager" />
+	</config>
+	<data>
+	</data>
+</xdb>

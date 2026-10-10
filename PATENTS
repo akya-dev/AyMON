@@ -1,0 +1,88 @@
+AyMON -- patents
+Copyright (c) 2026 Senol Ercetin, exclusively licensed to AKYA Canada Inc.
+
+This file exists so that a reader of this repository can see, from the
+repository itself, that the engine it runs on implements patent-pending
+mechanisms, and on what terms.
+
+-----------------------------------------------------------------------------
+P01 -- Canadian patent application (CIPO)
+
+  Application no.:   3307314 (Canadian application number, regular
+                     application)
+  Filing date:       2026-04-06 (date of receipt, CIPO electronic submission)
+  Title:             Deterministic Event-Driven Industrial Execution Engine
+                     with Unified Bitfield State Architecture and
+                     Type-Driven Queue Scheduling
+  Applicant:         Senol Ercetin (individual application; sole inventor)
+  Rights holder:     the applicant. AKYA Canada Inc. holds an EXCLUSIVE
+                     LICENCE by the patent licence agreement of the filing
+                     date; the application itself is not assigned. The same
+                     structure applies to the copyright in the software.
+  Status:            filed, pending
+
+  Abstract (as filed):
+
+    A deterministic industrial execution engine is disclosed comprising a
+    hierarchical configuration-based data model and a unified bitfield state
+    architecture. Each element includes attributes such as value and state,
+    wherein the state is encoded as a unified bitfield representing runtime
+    and alarm semantics. Attribute modification triggers deterministic event
+    propagation across related elements. Cascaded propagation is protected
+    against self-referential re-triggering and is depth-bounded to prevent
+    unbounded recursion. The engine further comprises manager queues and
+    worker queues for scheduling and executing events, wherein queue
+    insertion behavior is determined by attribute type metadata and
+    duplicate queue insertion is governed by predefined conflict resolution
+    semantics. Lower-order bits of the unified bitfield encode I/O data
+    quality states. The engine is deployable across heterogeneous automation
+    tiers including Intelligent Electronic Devices, Remote Terminal Units,
+    operator interface stations, supervisory control stations, distributed
+    SCADA clusters, and cloud-based platforms.
+
+-----------------------------------------------------------------------------
+WHAT THIS MEANS FOR THIS REPOSITORY
+
+  The claimed mechanisms are in the ENGINE -- AyPRO and, for the attribute
+  type word, AyDATA (bin/win-x64/AyPRO.dll and AyDATA.dll,
+  bin/linux-x64/libAyPRO.so and libAyDATA.so). They are not in the example
+  projects.
+
+  The example projects CONFIGURE those mechanisms, and their comments
+  DESCRIBE them -- the 16-bit 'sta' field and its runtime / alarm
+  configuration / command / restriction bit groups, the attribute function
+  chains, the element hierarchy, the timer and queue attributes. That
+  description is deliberate: an example that hides how the engine works
+  teaches nothing, and this material is in the application named above,
+  which will be published by CIPO in the ordinary course.
+
+  Describing a mechanism is not a licence to implement it.
+
+-----------------------------------------------------------------------------
+TERMS
+
+  Running the binaries supplied in bin/, as permitted by Part B of /LICENSE,
+  includes the right to practise the listed patent application only to the
+  extent needed to run them.
+
+  No other patent licence is granted, expressly, by implication, by estoppel
+  or otherwise. In particular, neither /LICENSE nor this file grants any
+  licence to implement the described mechanisms in another engine, product
+  or service.
+
+  Copying, adapting and publishing the example configuration files under
+  Part A of /LICENSE does not carry a patent licence either. Part A clause 2
+  says so expressly.
+
+-----------------------------------------------------------------------------
+NOTE ON THE PLUG-INS
+
+  The plug-ins in bin/ (AyPRO_*) are supplied under Part B of /LICENSE, like
+  the rest of the Engine. If the plug-in SDK or plug-in source is published
+  later under the Apache License 2.0, the patent licence of its section 3
+  is limited to the contribution it accompanies -- the plug-in code and the
+  C calling contract -- and does not reach the engine mechanisms claimed in
+  P01, which are not part of those files.
+
+-----------------------------------------------------------------------------
+Enquiries and commercial licensing: aymon@akya.ca

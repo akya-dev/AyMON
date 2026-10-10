@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_opcua - the page. Served by UA/S00 on 127.0.0.1:8102; the live
+     values come over MQTT inside a WebSocket on the same port (/mqtt).
+
+     The page never talks OPC UA. It shows what the engine read from the
+     machine, and it leaves requests in REQ - the engine carries them out
+     on the right session, on the right thread, and answers in RES.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Moulding Machine OPC UA</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>Moulding machine IMM1 <span class="doc">UA/S00 &middot; OPC UA client</span></h1>
+    <div class="chips">
+        <span id="c-ua" class="chip">CN_UA --</span>
+        <span id="c-uap" class="chip">CN_UAP --</span>
+        <span id="c-uas" class="chip">CN_UAS --</span>
+        <span id="c-live" class="chip">page --</span>
+    </div>
+</header>
+
+<main>
+    <!-- ================= the machine ================= -->
+    <section class="card">
+        <div class="label">The machine <span class="muted">read over CN_UA, anonymous</span></div>
+        <div class="state" id="state">--</div>
+        <div class="kv">
+            <span>job</span><b id="job">--</b>
+            <span>mould temperature</span><b><span id="mould">--</span> <span class="muted">(setpoint <span id="sp">--</span>)</span></b>
+            <span>last cycle</span><b id="cycle">--</b>
+            <span>shots</span><b id="count">--</b>
+        </div>
+        <div class="zones" id="zones"></div>
+        <div class="small muted">Barrel zones 1-4: IMM1.BarrelTemp, one Double[4] array (ZONES).
+            Zone 4 alone, with pro_rng="3": <b id="z4">--</b></div>
+    </section>
+
+    <!-- ================= commands ================= -->
+    <section class="card">
+        <div class="label">Commands <span class="muted">over CN_UAS, signed and encrypted, as 'setter'</span></div>
+        <div class="ctl">
+            <label>mould temperature setpoint, C
+                <span class="row"><input id="in-sp" type="number" min="30" max="90" step="1" value="60">
+                <button data-op="sp">Write</button></span></label>
+            <div class="row"><button data-op="run" data-v="1">Start</button><button data-op="run" data-v="0">Stop</button></div>
+            <label>job (method SetJob)
+                <span class="row"><input id="in-job" value="J-2002 lid 38 mm">
+                <button data-op="job">Call</button></span></label>
+            <div class="row"><button data-op="reset">Reset the shot counter</button> <span class="small muted">method ResetCounter()</span></div>
+        </div>
+        <div class="try">
+            <div class="small">The same Stop, over the <b>anonymous</b> connection:</div>
+            <div class="row"><button data-op="anon_run" data-v="0">Stop, anonymously</button> <span class="small muted">the machine should refuse</span></div>
+        </div>
+        <div class="msg small" id="res"></div>
+    </section>
+
+    <!-- ================= poll vs subscription ================= -->
+    <section class="card wide">
+        <div class="label">One value, two ways <span class="muted">the mould temperature, polled every second and subscribed</span></div>
+        <canvas id="chart" height="170"></canvas>
+        <div class="table-wrap"><table class="cmp">
+            <thead><tr><th></th><th>updates, last 30 s</th><th>age when it reached the engine</th><th>the engine's side</th></tr></thead>
+            <tbody>
+                <tr><td><i class="dot poll"></i>poll <span class="muted">MOULD_P, CN_UA</span></td><td id="p-n">--</td><td id="p-age">--</td><td id="p-eng">--</td></tr>
+                <tr><td><i class="dot sub"></i>subscription <span class="muted">MOULD_S, CN_UAP</span></td><td id="s-n">--</td><td id="s-age">--</td><td id="s-eng">--</td></tr>
+            </tbody>
+        </table></div>
+        <div class="small muted">Age = when the value reached the engine minus the machine's own timestamp of it
+            (the source timestamp, xdb_tim). Change the setpoint: while the mould heats or cools, its temperature
+            changes up to five times a second.</div>
+    </section>
+
+    <!-- ================= connections ================= -->
+    <section class="card wide">
+        <div class="label">The three connections <span class="muted">three sessions with the same machine</span></div>
+        <div class="table-wrap"><table class="con">
+            <thead><tr><th></th><th>security</th><th>identity</th><th>state</th><th>requests</th></tr></thead>
+            <tbody>
+                <tr><td><b>CN_UA</b> <span class="muted">poll</span></td><td>None</td><td>Anonymous - may read</td><td id="ua-st">--</td><td id="ua-rq">--</td></tr>
+                <tr><td><b>CN_UAP</b> <span class="muted">subscription</span></td><td>None</td><td>Anonymous - may read</td><td id="uap-st">--</td><td id="uap-rq">--</td></tr>
+                <tr><td><b>CN_UAS</b> <span class="muted">commands</span></td><td>Basic256Sha256, SignAndEncrypt</td><td>setter - may write and call</td><td id="uas-st">--</td><td id="uas-rq">--</td></tr>
+            </tbody>
+        </table></div>
+        <div class="hint small" id="hint"></div>
+    </section>
+
+    <!-- ================= browse ================= -->
+    <section class="card wide">
+        <div class="label">What the machine has <span class="muted">OPC.browse of IMM1 - where every pro_adr comes from</span></div>
+        <div class="table-wrap"><table class="browse"><thead><tr><th>NodeId</th><th>name</th><th>class</th></tr></thead>
+            <tbody id="browse"><tr><td colspan="3" class="muted">not yet - the engine browses once the anonymous session is up</td></tr></tbody></table></div>
+        <div class="small muted">The engine also wrote a draft configuration of the same nodes: log/IMM1_generated.xml (OPC.gen).</div>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

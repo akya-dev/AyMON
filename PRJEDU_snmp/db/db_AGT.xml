@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     AGT/S00 - the device: a tank, and an SNMP v2c agent in script.
+
+     The connection is the point of this file:
+
+       CON.udp    SNMP is UDP, and an agent LISTENS: con_mod="SERVER".
+       PRO.raw    "no protocol" - the engine reads the datagram and hands
+                  it over as bytes. pro_onparse names the script that gets
+                  them, and that script answers on the same socket.
+
+     Everything else here is an ordinary document: five values that a
+     timer moves, exactly as in PRJEDU_101.
+
+     WHAT PRO.raw IS FOR. A protocol AyMON does not speak - a vendor's
+     serial dialect, a UDP telemetry format, a licence dongle - can be
+     written in script first and only then, if it earns it, in C or as a
+     plug-in. The script sees one frame at a time and says what a frame
+     is, which is all a framing layer ever does.
+     ===================================================================== -->
+<xdb id="AGT/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/AGT.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_AGT.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<thr id="TH_AGT" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- THE AGENT'S SOCKET.
+		     con_ses="4"  a UDP listener has no sessions of its own, but the
+		              engine wants the list; four is plenty for a loopback.
+		     con_rcvlen  the largest datagram accepted. An SNMP request for a
+		              handful of OIDs is well under 1 KB.
+		     pro_onparse  the script that turns bytes into an answer. It is
+		              called with the exchange (exc): exc.buf_recv holds what
+		              arrived, exc.buf_send is what goes back, exc.send()
+		              sends it - to whoever sent the request. -->
+		<con id="CN_AGT" xdb_fnc="[CON.udp,PRO.raw]" desc="SNMP agent socket"
+		     con_host="127.0.0.1" con_port="1161" con_mod="SERVER" con_acl="127.0.0.1"
+		     con_way="FULL" con_ses="4" con_tmo="5" con_clr="1" con_rcvlen="2048"
+		     con_keeptmo="0" con_idletmo="0"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD411" pro_fnc="[]"
+		     pro_onparse="main.onparse(exc);"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- The process, once a second. -->
+		<var id="T_SIM" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_AGT" evt_per="1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.tick]" desc="process step"/>
+
+		<!-- WHAT THE AGENT SERVES. SNMP has no floating point, so these are
+		     the integers a real device would hold: the temperature is in
+		     TENTHS of a degree and the manager scales it back. -->
+		<var id="LEVEL" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="50" val_typ="0x0104" desc="tank level, % (served as Gauge32)"/>
+		<var id="TEMP" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="180" val_typ="0x0204" desc="temperature, tenths of C (INTEGER)"/>
+		<var id="PUMP" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="0" val_typ="0x0104" desc="pump, 0 or 1 (INTEGER)"/>
+		<var id="STARTS" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="0" val_typ="0x0104" desc="pump starts (Counter32)"/>
+		<var id="UPTIME" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="0" val_typ="0x0104" desc="hundredths of a second (TimeTicks)"/>
+
+		<!-- The step counter stays home: 0x4000 is the LOCAL bit. -->
+		<var id="STEPS" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="0" val_typ="0x4104" desc="process steps, not served"/>
+	</data>
+</xdb>

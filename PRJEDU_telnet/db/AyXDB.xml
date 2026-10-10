@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_telnet - AyMON example: the maintenance shell (PRO.telnet)
+     No hardware, no database, nothing to install.
+
+     THE ROOT DOCUMENT. It names the engine and loads one child document,
+     SHL/S00, which holds a small simulated plant AND the two shells that
+     let you get inside the running engine:
+
+         telnet 127.0.0.1 2323          CN_TEL    plain, loopback only
+         TLS    127.0.0.1 2324          CN_TELS   the form to prefer
+
+     Run:   run.bat
+     Then, in a second window:   shell.ps1        (or shell.ps1 -Tls)
+
+     Path macros: %PRJ% = this project directory, %DB% = this db directory.
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="S01">
+	<config>
+		<doc id="SHL/S00" sta="0x0300" src="%DB%/db_SHL.xml" desc="a small plant, and a shell into it" />
+	</config>
+	<data>
+	</data>
+</xdb>

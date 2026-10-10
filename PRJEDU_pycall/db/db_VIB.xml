@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     VIB/S00 - vibration analysis in Python, called from the XML and from
+     JScript.
+
+     THE TWO WAYS IN. A Python function marked @xdb_fnc (db_VIB.py) gets a
+     JScript wrapper in its script's scope - here 'vib', the <script>'s id.
+     What the wrapper does depends on the function's parameters:
+
+       analyse(evt)            one parameter named 'evt': an EVENT call.
+                               Hang it on a point like any *_fnc:
+                                   <var id="WAVE" val_fnc="[vib.analyse]">
+                               A write to WAVE queues the call; Python sees
+                               the new value as evt.valn. The engine stores
+                               WAVE after the function has returned.
+
+       forecast(limit, stamp)  any other parameters: an ARGUMENT call, from
+                               JScript:  vib.forecast(4.5, Time.GetTimeMs())
+                               The caller gets 1 back ("queued") at once -
+                               never the result. Python writes the result
+                               where it belongs (FORECAST).
+
+     Both are asynchronous. The JScript timer that writes a block into WAVE
+     is finished before Python has seen the block; Python runs on its own
+     thread, one call after the other. JS_CALL and PY_CALL on the page say
+     how long the JScript call took, how long the Python call waited in the
+     queue and how long it ran.
+
+     Why asynchronous: a Python function may take 30 ms or 3 s. Were the
+     engine to wait, a slow analysis would stop the thread that every
+     timer, connection and value of that thread sits on. Queued, it costs
+     the caller next to nothing and Python works at its own pace. When the
+     result is needed, Python writes it into a point - and that point can
+     have its own val_fnc, alarm and history like any measurement: RMS
+     below is alarmed by the same ALM.onlvl a 4-20 mA transmitter would be.
+     ===================================================================== -->
+<xdb id="VIB/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/VIB.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFFFFFFF1">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_VIB.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+
+		<!-- THE PYTHON SIDE. language="Python" is all it takes: the engine
+		     attaches its Python module the first time it sees it.
+		     id="vib"     the scope of the wrappers: [vib.analyse], vib.forecast()
+		     thr_per="20" the Python thread's cycle in ms. The queued calls
+		                  run on that thread; the page shows what they waited.
+		     thr_tmo="5"  on the way down, wait at most 5 s for it. -->
+		<script id="vib" xdb_fnc="[SCR.prs]" src="%DB%/db_VIB.py" language="Python"
+		        thr_per="20" thr_tmo="5"></script>
+	</config>
+
+	<data>
+		<thr id="TH_MAIN" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- ================================================================
+		     THE SENSOR (JScript) and the question (JScript -> Python)
+		     ================================================================ -->
+		<var id="T_SENSE" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_MAIN" evt_per="2" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.sense]" desc="a block of samples every 2 s"/>
+		<var id="T_ASK" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_MAIN" evt_per="5" evt_dly="1" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.ask]" desc="ask Python for a forecast every 5 s"/>
+
+		<!-- THE CALL FROM THE XML. The block, as JSON: {t, fs, x:[512]}.
+		     val_typ 0x1401: text, with the 0x1000 bit - without that bit a
+		     value runs no *_fnc and Python would never be called. -->
+		<var id="WAVE" sta="0x0303" val="" val_typ="0x1401" val_fnc="[vib.analyse]"
+		     desc="the last block of samples, mm/s, JSON"/>
+
+		<!-- the bearing's condition in the simulation: grows by itself -->
+		<var id="FAULT" sta="0x0303" val="0.8" val_typ="0x0308" val_unt="mm/s"
+		     desc="the simulated bearing defect's amplitude"/>
+
+		<!-- The page's one button, "Replace the bearing". The only point the
+		     page may write: role 0 read + write here, read only elsewhere.
+		     The page writes the number of replacements so far + 1, so every
+		     press is a new value. -->
+		<var id="SERVICE" xdb_acl="0xFFFFFFF3" sta="0x0303" val="0" val_typ="0x1104"
+		     val_fnc="[main.service]" desc="request: replace the bearing (a counter)"/>
+
+		<!-- ================================================================
+		     WHAT PYTHON WRITES
+		     ================================================================ -->
+
+		<!-- THE MEASUREMENT. From here on RMS is a point like any other:
+		     rounded and alarmed. 2.8 and 4.5 mm/s: zone limits of the kind
+		     ISO 10816-3 gives for a medium-sized machine. -->
+		<var id="RMS" sta="0x0303" sta_typ="0x1142" val="0" val_typ="0x1308"
+		     val_fnc="[ATR.rou,ALM.onlvl]" val_rou="0.01" val_unt="mm/s"
+		     val_alm_onlhi_wrn="2.8" val_alm_onlhi_alm="4.5"
+		     desc="vibration velocity, RMS"/>
+		<var id="PEAK"  sta="0x0303" val="0" val_typ="0x0308" val_unt="mm/s" desc="largest sample of the block"/>
+		<var id="CREST" sta="0x0303" val="0" val_typ="0x0308" desc="peak / RMS"/>
+		<var id="FREQ"  sta="0x0303" val="0" val_typ="0x0308" val_unt="Hz" desc="the strongest line of the spectrum"/>
+		<var id="BPFO"  sta="0x0303" sta_typ="0x1142" val="0" val_typ="0x1308"
+		     val_fnc="[ATR.rou,ALM.onlvl]" val_rou="0.01" val_unt="mm/s"
+		     val_alm_onlhi_wrn="1.5" val_alm_onlhi_alm="3.0"
+		     desc="RMS in the bearing's band, 80..100 Hz"/>
+		<var id="SPEC"  sta="0x0303" val="" val_typ="0x0401" desc="amplitude spectrum 0..400 Hz, JSON {df, a:[...]}"/>
+
+		<!-- the forecast: when does RMS reach the limit at the present rate -->
+		<var id="FORECAST" sta="0x0303" val="" val_typ="0x0401" desc="JSON from vib.forecast()"/>
+
+		<!-- the timings the page shows -->
+		<var id="PY_CALL" sta="0x0303" val="" val_typ="0x0401" desc="the last analyse(): waited, took"/>
+		<var id="JS_CALL" sta="0x0303" val="" val_typ="0x0401" desc="the last vib.forecast() as JScript saw it"/>
+
+		<!-- ================================================================
+		     THE WEB SIDE - http://127.0.0.1:8112/
+		     ================================================================ -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the web listener"
+		     con_host="127.0.0.1" con_port="8112" con_mod="SERVER" con_ses="8" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="live values"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_VIB" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//var" pro_retain_atr="val,sta"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

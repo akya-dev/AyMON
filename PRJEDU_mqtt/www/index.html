@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_mqtt - the monitoring side's page. Served by MON/S00 on
+     127.0.0.1:8104. MON/S00 is an MQTT CLIENT of the field's broker
+     (FLD/S00 on 1884); this page is a second MQTT client, of MON/S00
+     itself, inside a WebSocket on the same port (/mqtt).
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MQTT Tank</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>The field, over MQTT <span class="doc">MON/S00 &larr; broker FLD/S00 @ 127.0.0.1:1884</span></h1>
+    <div class="chips"><span id="c-live" class="chip">--</span></div>
+</header>
+
+<main>
+    <section class="card wide">
+        <div class="label">What MON/S00 receives <span class="muted">subscribed to FLD/S00/+/val - one message per change</span></div>
+        <div class="tiles">
+            <div class="tile" id="t-LEVEL"><div class="t">level</div><div class="v"><span id="v-LEVEL">--</span><span class="u"> %</span></div><div class="s" id="s-LEVEL">--</div></div>
+            <div class="tile" id="t-SETPOINT"><div class="t">set point</div><div class="v"><span id="v-SETPOINT">--</span><span class="u"> %</span></div><div class="s" id="s-SETPOINT">--</div></div>
+            <div class="tile" id="t-TEMP"><div class="t">temperature</div><div class="v"><span id="v-TEMP">--</span><span class="u"> C</span></div><div class="s" id="s-TEMP">--</div></div>
+            <div class="tile" id="t-PUMP"><div class="t">inlet pump</div><div class="v"><span id="v-PUMP">--</span></div><div class="s" id="s-PUMP">--</div></div>
+        </div>
+        <canvas id="trend" style="margin-top:14px"></canvas>
+    </section>
+
+    <section class="card">
+        <div class="label">Ask the field for a set point</div>
+        <div class="ctl">
+            <input type="range" id="sp" min="0" max="100" step="5" value="50">
+            <b id="sp-v">50</b> %
+            <button id="send">Send</button>
+        </div>
+        <div class="note">The page writes <code>MON/S00/SETPOINT/pro/set</code>. Writing a point's
+            <b>pro</b> runs its <code>PRO.out</code>, which publishes <code>FLD/S00/SETPOINT/val/set</code> to the
+            field's broker. The field stores it and publishes the stored value; it arrives here as protocol input, which
+            <code>PRO.out</code> does not send again - no echo loop.
+            <code>main.move_setpoint</code> also moves it every 30 s, so the log tells a story.</div>
+    </section>
+
+    <section class="card">
+        <div class="label">The round trip</div>
+        <div class="table-wrap"><table><tbody id="trip">
+            <tr><td class="muted">send a set point</td></tr>
+        </tbody></table></div>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="kit.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

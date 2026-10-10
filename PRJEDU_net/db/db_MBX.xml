@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     MBX/S00 - the other end: a mail server, in script.
+
+     SMTP is a conversation of text lines, and the SERVER speaks first:
+     a client connects, waits for "220 ...", and only then says EHLO.
+     That is why this needs two hooks on a PRO.raw connection:
+
+       pro_onaccept  called ONCE for every connection the listener
+                     accepts, before anything is read: the greeting.
+                     (4.3.4.565; before, a script server could only
+                     answer, never begin.)
+       pro_onparse   called with what arrived: the script finds whole
+                     lines in it, answers each command, and collects the
+                     message between DATA and the line with a single dot.
+
+     It is a mail SINK, not a mail server for anything real: it takes
+     every message from 127.0.0.1, keeps the last ten, and hands each
+     one to the page (PLT/S00, INBOX). No relaying, no authentication,
+     no TLS - the client side says so out loud (pro_smtp_tls="none").
+     ===================================================================== -->
+<xdb id="MBX/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/MBX.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_MBX.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<!-- THE LISTENER. A TCP listener needs con_ses > 0: that is how many
+		     clients may be connected at once. con_acl: only this computer.
+		     con_idletmo 120: a client that says nothing for two minutes is
+		     let go. con_rcvlen: one arrival; a longer message simply arrives
+		     in several, and the script carries what is left over.
+		     con_role="3": an accepted connection is a Guest (role 0) unless
+		     its <con> says otherwise, and the scripts run with that role.
+		     The mail server hands each message to the page's document,
+		     whose INBOX only an Operator (3) may write. -->
+		<con id="CN_SMTP" xdb_fnc="[CON.tcp,PRO.raw]" desc="SMTP, in script"
+		     con_host="127.0.0.1" con_port="2525" con_mod="SERVER" con_acl="127.0.0.1" con_role="3"
+		     con_way="FULL" con_ses="4" con_tmo="5" con_clr="0" con_rcvlen="8192"
+		     con_keeptmo="0" con_idletmo="120"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD411" pro_fnc="[]"
+		     pro_onaccept="main.onaccept(exc);"
+		     pro_onparse="main.onparse(exc);"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<var id="RECEIVED" sta="0x0303" val="0" val_typ="0x0104" desc="messages taken"/>
+		<var id="SESSIONS" sta="0x0303" val="0" val_typ="0x0104" desc="connections greeted"/>
+		<var id="INBOX" sta="0x0303" val="[]" val_typ="0x0401"
+		     desc="the last ten messages, newest first: [{no, at, from, to, subject, body, ..}]"/>
+	</data>
+</xdb>

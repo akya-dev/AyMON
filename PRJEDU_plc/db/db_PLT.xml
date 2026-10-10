@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PLT/S00 - the machine: a bottle filling line.
+
+         entry        filling position          exit
+         x = 0 ...... x = 100 (nozzle, PE_FILL) .. x = 150 (PE_EXIT) .. 170
+         ================== conveyor, 10 cm/s ==================
+                              |
+                          [ supply tank ]
+
+     Bottles arrive on the conveyor 30 cm apart. At x = 100 a photo-eye
+     (PE_FILL) sees the bottle under the nozzle; the nozzle only hits the
+     bottle's mouth within 3 cm of it - anywhere else the product goes on
+     the floor (SPILL). The photo-eye sees exactly those 3 cm, no more: the
+     PLC's valve interlock trusts PE_FILL, so PE_FILL = 1 must mean the
+     nozzle would fill that bottle. A level switch (LS_FULL) says the bottle under the
+     nozzle is full - it sits at 92 %, because the valve closes a scan and
+     a poll after it switches, and the bottle goes on filling meanwhile. At x = 150 a second photo-eye (PE_EXIT) sees every
+     bottle leave: one filled to 90 % or more counts GOOD, anything else
+     REJECT. A bottle filled past 100 % overflows.
+
+     The supply tank empties by 2 % per bottle; below 15 % it says so
+     (TANK_LOW); empty, nothing flows. TANK_REFILL fills it again.
+
+     THE BUTTONS are the machine's, not the PLC's: START, STOP, RESET are
+     push buttons - press one and it springs back half a second later.
+     EMERGENCY STOP latches until it is pulled out again. STOP and the
+     emergency stop are NORMALLY CLOSED contacts, as they are on every
+     real machine: the input is 1 while all is well, so a cut wire stops
+     the machine instead of hiding the button.
+
+     THE REMOTE I/O. Everything the PLC knows about the machine is four
+     Modbus holding registers on 127.0.0.1:1503, unit 1:
+       reg 0  inputs  bit0 PE_FILL  bit1 LS_FULL  bit2 PE_EXIT
+                      bit3 ESTOP_OK bit4 START    bit5 STOP_OK
+                      bit6 RESET    bit7 TANK_LOW
+       reg 1  level of the bottle at the nozzle, 0.1 %
+       reg 2  supply tank level, 0.1 %
+       reg 3  outputs, WRITTEN BY THE PLC
+                      bit0 CONVEYOR bit1 VALVE bit2 RUN lamp bit3 FAULT lamp
+                      bit15 LIFE - the PLC flips it every 500 ms
+     The simulation reads reg 3 and nothing else of the PLC.
+
+     THE FAULT STATE. A remote I/O keeps its outputs at their last value
+     unless it is told otherwise - and a cut cable would leave the valve
+     open. So this one watches the PLC's life bit: no flip for 1.5 s and
+     every output goes OFF until the PLC is back (RIO_FS). Real remote I/O
+     modules have the same setting ("fault state: hold last / clear");
+     the PLC watches the link from its end too.
+
+     No xdb_acl here: this is the machine on the bench, and the page
+     presses its buttons. The page reaches it on its own port, 8094.
+     ===================================================================== -->
+<xdb id="PLT/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/PLT.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_PLT.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<thr id="TH_SIM" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- ================================================================
+		     THE REMOTE I/O: a Modbus TCP slave, the same shape as the
+		     plant in PRJEDU_modbus.
+		     ================================================================ -->
+		<con id="CN_RIO" xdb_fnc="[CON.tcp,PRO.modbus]" desc="remote I/O, Modbus TCP slave"
+		     con_host="127.0.0.1" con_port="1503" con_mod="SERVER" pro_role="SLAVE" pro_mod="TCP"
+		     con_acl="127.0.0.1"
+		     con_way="FULL" con_ses="4" thr_wrk="1" con_clr="1" con_tmo="1.0" con_comdly="0"
+		     con_rct="5" con_idletmo="0" con_keeptmo="0"
+		     pro_tmo="1" pro_try="1" pro_typ="0xD411" pro="" pro_fnc="[]"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]" evt_thr="CN_RIO"/>
+
+		<dev id="RIO" pro_slave_con="CN_RIO" pro_slave_adr="1"
+		     desc="unit 1" sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+			<bi id="RIO_BLK" desc="holding registers 0..3"
+			    sta="0x0303" sta_typ="0x1142"
+			    pro_typ="0xD412" pro="" pro_adr="0" pro_len="4">
+				<io id="R_IN"   pro="40" pro_typ="0x1102" pro_adr="0" sta="0x0303" sta_typ="0x1142" desc="the input bits"/>
+				<io id="R_BLVL" pro="0"  pro_typ="0x1102" pro_adr="1" sta="0x0303" sta_typ="0x1142" desc="bottle level, 0.1 %"/>
+				<io id="R_TANK" pro="1000" pro_typ="0x1102" pro_adr="2" sta="0x0303" sta_typ="0x1142" desc="tank level, 0.1 %"/>
+				<io id="R_OUT"  pro="0"  pro_typ="0x1102" pro_adr="3" sta="0x0303" sta_typ="0x1142" desc="the output bits - the PLC writes here"/>
+			</bi>
+		</dev>
+
+		<!-- The machine, ten steps a second. -->
+		<var id="T_SIM" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_SIM" evt_per="0.1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.step]" desc="machine step, 0.1 s"/>
+
+		<!-- ================================================================
+		     THE BUTTONS - what the page presses
+		     ================================================================ -->
+		<var id="START_PB" sta="0x0303" val="0" val_typ="0x1104" val_fnc="[main.on_button]" desc="push button, springs back"/>
+		<var id="STOP_PB"  sta="0x0303" val="0" val_typ="0x1104" val_fnc="[main.on_button]" desc="push button, springs back; wired normally closed"/>
+		<var id="RESET_PB" sta="0x0303" val="0" val_typ="0x1104" val_fnc="[main.on_button]" desc="push button, springs back"/>
+		<var id="ESTOP"    sta="0x0303" val="0" val_typ="0x1104" val_fnc="[main.on_button]" desc="1 = pressed in (latched); wired normally closed"/>
+		<var id="TANK_REFILL" sta="0x0303" val="0" val_typ="0x0104" desc="1 = fill the supply tank to 100 % (main.step does it and resets it)"/>
+		<var id="PB_MS" sta="0x0303" val="0" val_typ="0x4108" desc="when a push button was last pressed"/>
+
+		<!-- the remote I/O's watchdog on the PLC's life bit -->
+		<var id="LIFE"    sta="0x0303" val="0" val_typ="0x4104" desc="the life bit as last seen, local"/>
+		<var id="LIFE_MS" sta="0x0303" val="0" val_typ="0x4108" desc="when it last flipped, local"/>
+		<var id="RIO_FS"  sta="0x0303" val="1" val_typ="0x0104" desc="1 = fault state: no life sign from the PLC, all outputs off"/>
+
+		<!-- ================================================================
+		     THE MACHINE'S STATE
+		     ================================================================ -->
+		<!-- the bottles on the conveyor: [[x, level], ...], x in cm -->
+		<var id="BOTTLES" sta="0x0303" val="[[70,0],[40,0],[10,0]]" val_typ="0x0401" desc="bottles on the line"/>
+		<var id="SPEED"   sta="0x0303" val="10"  val_typ="0x0308" val_unt="cm/s" desc="conveyor speed"/>
+		<var id="FLOW"    sta="0x0303" val="20"  val_typ="0x0308" val_unt="%/s"  desc="how fast the nozzle fills a bottle"/>
+		<var id="TANK"    sta="0x0303" val="100" val_typ="0x0308" val_unt="%"    desc="supply tank"/>
+
+		<!-- what the machine is doing, for the page (the outputs as the
+		     remote I/O sees them, and the sensors) -->
+		<var id="CONV"     sta="0x0303" val="0" val_typ="0x0104" desc="conveyor running"/>
+		<var id="VALVE"    sta="0x0303" val="0" val_typ="0x0104" desc="filling valve open"/>
+		<var id="LAMP_RUN" sta="0x0303" val="0" val_typ="0x0104"/>
+		<var id="LAMP_FLT" sta="0x0303" val="0" val_typ="0x0104"/>
+		<var id="PE_FILL"  sta="0x0303" val="0" val_typ="0x0104"/>
+		<var id="PE_EXIT"  sta="0x0303" val="0" val_typ="0x0104"/>
+		<var id="LS_FULL"  sta="0x0303" val="0" val_typ="0x0104"/>
+
+		<!-- what came out of the machine -->
+		<var id="GOOD"     sta="0x0303" val="0" val_typ="0x0104" desc="bottles out, 90 % or more"/>
+		<var id="REJECT"   sta="0x0303" val="0" val_typ="0x0104" desc="bottles out, under 90 %"/>
+		<var id="SPILL"    sta="0x0303" val="0" val_typ="0x0308" val_unt="%" desc="product on the floor, in bottle-%"/>
+		<var id="OVERFLOW" sta="0x0303" val="0" val_typ="0x0104" desc="bottles filled past 100 %"/>
+
+		<!-- ================================================================
+		     THE MACHINE'S OWN PORT - the picture of the line and the
+		     buttons, for the page: http://127.0.0.1:8094 (the page itself
+		     is served by the PLC on 8093).
+		     ================================================================ -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the machine's web listener"
+		     con_host="127.0.0.1" con_port="8094" con_mod="SERVER" con_ses="8"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="the machine, live"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_PLT" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//var" pro_retain_atr="val"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     CTL/S00 - the PLC: remote I/O over Modbus, a scan, and a program.
+
+     THE I/O. A Modbus TCP master polls the machine's remote I/O every
+     100 ms (one request, four registers). The input word is taken apart
+     by the engine, not by the program: each input is an <io> with a BIT
+     address - pro_adr="0.3" is register 0, bit 3 - so the program reads
+     I_ESTOP_OK, not "register 0 AND 8". The outputs go back as ONE
+     register, Q_WORD, written with function 6 whenever the program's
+     wish (Q_CMD) differs from what the remote I/O reports.
+
+     THE SCAN. Every 100 ms main.scan runs once from top to bottom, like a
+     PLC scan: read the input image, run the program, write the output
+     image. It is a STEP SEQUENCE (the SFC / GRAFCET of the course):
+
+       0 IDLE      all off.            START (rising edge)        -> 1
+       1 CONVEY    conveyor on.        bottle at PE_FILL           -> 2
+       2 POSITION  conveyor off.       0.3 s to let it settle      -> 3
+       3 FILL      valve open.         LS_FULL                     -> 4
+                                       10 s without it             -> FAULT
+       4 DRIP      valve closed.       0.5 s                       -> 5
+       5 RELEASE   conveyor on.        the bottle has left PE_FILL -> 1
+                                       (or 0, if STOP was pressed)
+       8 FAULT     all off, lamp flashing.       RESET             -> 0
+       9 E-STOP    all off, lamp steady. ESTOP pulled out + RESET  -> 0
+
+     Around the sequence, the things a PLC program is judged on:
+       * EDGES: START and RESET act on the moment they are pressed, not
+         for as long as they are held
+       * an INTERLOCK: the valve output is (step 3) AND (a bottle under
+         the nozzle), whatever the sequence says. A program bug cannot
+         open it over an empty conveyor
+       * STOP finishes the bottle under the nozzle, then stops. EMERGENCY
+         STOP stops everything at once and needs a RESET to come back
+       * a WATCHDOG on the remote I/O: no answer for 1 s is a FAULT
+       * a LIFE BIT the other way: bit 15 of the output word flips every
+         500 ms, and the remote I/O switches its outputs off when it
+         stops (PLT/S00). Each end watches the other
+
+     WHO MAY WRITE. xdb_acl="0xFF111111": the page reads everything here
+     and writes nothing - except CABLE, the bench's way to pull the
+     fieldbus cable. Operators press the MACHINE's buttons (PLT/S00); the
+     PLC's program and state are not theirs to change.
+     ===================================================================== -->
+<xdb id="CTL/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/CTL.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFF111111">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_CTL.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<thr id="TH_PLC" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- ================================================================
+		     THE I/O - a Modbus TCP master, as in PRJEDU_modbus
+		     ================================================================ -->
+		<con id="CN_MB" xdb_fnc="[CON.tcp,PRO.modbus]" desc="Modbus TCP master to the remote I/O"
+		     con_host="" con_port="" con_mod="CLIENT" pro_role="MASTER" pro_mod="TCP"
+		     con_way="FULL" con_ses="4" con_clr="1" con_tmo="1.0" con_comdly="0" con_rct="2"
+		     pro_tmo="0.5" pro_try="1" pro="1" pro_typ="0xD411" pro_fnc="[]"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]" evt_thr="CN_MB"/>
+
+		<dev id="RIO" pro_adr="1" pro_con="CN_MB" con_host="127.0.0.1" con_port="1503"
+		     desc="the machine's remote I/O" sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+
+			<!-- ONE request every 100 ms: registers 0..3. main.on_poll, last
+			     in the block's pro_fnc, notes the time of every answer - the
+			     watchdog's heartbeat. -->
+			<bi id="RIO_BLK" xdb_fnc="[XDB.evt]" desc="holding registers 0..3"
+			    sta="0x0302" sta_typ="0x1142" sta_fnc="[EVT.sta,PRO.sta]"
+			    evt="0" evt_typ="0x1204" evt_fnc="[PRO.pol]" evt_cfg="0x0002"
+			    evt_per="0.1" evt_thr=""
+			    pro_typ="0xD412" pro="" pro_fnc="[PRO.inp,main.on_poll]"
+			    pro_adr="0" pro_ado="0" pro_len="4" pro_fni="3">
+
+				<!-- the input word, one <io> per bit -->
+				<io id="I_PE_FILL"  pro="0" pro_typ="0x1111" pro_adr="0.0" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x0104" desc="bottle under the nozzle"/>
+				<io id="I_LS_FULL"  pro="0" pro_typ="0x1111" pro_adr="0.1" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x0104" desc="bottle full"/>
+				<io id="I_PE_EXIT"  pro="0" pro_typ="0x1111" pro_adr="0.2" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x0104" desc="bottle at the exit"/>
+				<io id="I_ESTOP_OK" pro="0" pro_typ="0x1111" pro_adr="0.3" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x0104" desc="emergency stop NOT pressed (normally closed)"/>
+				<io id="I_START"    pro="0" pro_typ="0x1111" pro_adr="0.4" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x0104" desc="START pressed"/>
+				<io id="I_STOP_OK"  pro="0" pro_typ="0x1111" pro_adr="0.5" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x0104" desc="STOP NOT pressed (normally closed)"/>
+				<io id="I_RESET"    pro="0" pro_typ="0x1111" pro_adr="0.6" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x0104" desc="RESET pressed"/>
+				<io id="I_TANK_LOW" pro="0" pro_typ="0x1111" pro_adr="0.7" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x0104" desc="supply tank below 15 %"/>
+
+				<!-- two analog inputs, scaled from 0.1 % counts -->
+				<io id="I_BLVL" pro="0" pro_typ="0x1102" pro_adr="1" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142"
+				    val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou]" val_cnv_dlt="0.1" val_rou="0.1" val_unt="%"
+				    desc="level of the bottle at the nozzle"/>
+				<io id="I_TANK" pro="0" pro_typ="0x1102" pro_adr="2" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142"
+				    val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou,ALM.onlvl]" val_cnv_dlt="0.1" val_rou="0.1" val_unt="%"
+				    val_alm_onllo_wrn="20" val_alm_onllo_alm="10" desc="supply tank"/>
+
+				<!-- THE OUTPUT WORD. Read back by every poll (what the remote
+				     I/O actually has), and written with Modbus function 6 when
+				     the program writes its 'pro': PRO.out sends it to register
+				     pro_ado. -->
+				<io id="Q_WORD" pro="0" pro_typ="0x1102" pro_adr="3" pro_ado="3" pro_fnc="[PRO.out]" pro_fno="6"
+				    sta="0x0302" sta_typ="0x1142" desc="the outputs, as the remote I/O has them"/>
+			</bi>
+		</dev>
+
+		<!-- ================================================================
+		     THE SCAN
+		     ================================================================ -->
+		<var id="T_SCAN" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_PLC" evt_per="0.1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.scan]" desc="the PLC scan, 100 ms"/>
+
+		<!-- the program's timers, as settings -->
+		<var id="T_SETTLE"   sta="0x0303" val="0.3" val_typ="0x0308" val_unt="s" desc="step 2: let the bottle settle"/>
+		<var id="T_FILL_MAX" sta="0x0303" val="10"  val_typ="0x0308" val_unt="s" desc="step 3: longer than this is a fault"/>
+		<var id="T_DRIP"     sta="0x0303" val="0.5" val_typ="0x0308" val_unt="s" desc="step 4: let the nozzle drip"/>
+		<var id="T_WATCHDOG" sta="0x0303" val="1"   val_typ="0x0308" val_unt="s" desc="no answer from the remote I/O for this long is a fault"/>
+
+		<!-- ================================================================
+		     THE PROGRAM'S STATE - the page shows all of it
+		     ================================================================ -->
+		<var id="STEP"      sta="0x0303" val="0"  val_typ="0x0104" desc="the active step"/>
+		<var id="STEP_NAME" sta="0x0303" val="IDLE" val_typ="0x0401"/>
+		<var id="STEP_T"    sta="0x0303" val="0"  val_typ="0x0308" val_unt="s" desc="time in the active step"/>
+		<var id="STOP_REQ"  sta="0x0303" val="0"  val_typ="0x0104" desc="1 = stop after this bottle"/>
+		<var id="FAULT"     sta="0x0303" val=""   val_typ="0x0401" desc="why the machine stopped, empty if it did not"/>
+		<var id="Q_CMD"     sta="0x0303" val="0"  val_typ="0x0104" desc="the output word the program wants"/>
+		<var id="Q_CONV"    sta="0x0303" val="0"  val_typ="0x0104"/>
+		<var id="Q_VALVE"   sta="0x0303" val="0"  val_typ="0x0104"/>
+		<var id="Q_LRUN"    sta="0x0303" val="0"  val_typ="0x0104"/>
+		<var id="Q_LFLT"    sta="0x0303" val="0"  val_typ="0x0104"/>
+		<var id="COMM_OK"   sta="0x0303" val="0"  val_typ="0x0104" desc="the remote I/O answers"/>
+		<var id="FILLED"    sta="0x0303" val="0"  val_typ="0x0104" desc="bottles the program filled"/>
+		<var id="CYCLE"     sta="0x0303" val="0"  val_typ="0x0308" val_unt="s" desc="the last bottle, from CONVEY to CONVEY"/>
+		<var id="SCANS"     sta="0x0303" val="0"  val_typ="0x4104" desc="scans so far, local"/>
+
+		<!-- the program's memory, local: last scan's inputs (for edges) and
+		     the times the timers count from -->
+		<var id="M_START"   sta="0x0303" val="0" val_typ="0x4104"/>
+		<var id="M_RESET"   sta="0x0303" val="0" val_typ="0x4104"/>
+		<var id="M_STOP_OK" sta="0x0303" val="1" val_typ="0x4104"/>
+		<var id="STEP_MS"   sta="0x0303" val="0" val_typ="0x4108" desc="when the active step started"/>
+		<var id="CYCLE_MS"  sta="0x0303" val="0" val_typ="0x4108" desc="when the last bottle cycle started"/>
+		<var id="POLL_MS"   sta="0x0303" val="0" val_typ="0x4108" desc="when the remote I/O last answered"/>
+
+		<var id="MSG" sta="0x0303" val="" val_typ="0x0401" desc="the last thing the program said"/>
+
+		<!-- THE FIELDBUS CABLE, for the bench: 0 pulls it (CN_MB is stopped,
+		     sta 0x0000), 1 plugs it back in (0x0303). The page may write
+		     this and nothing else of the PLC's; main.on_cable does the rest.
+		     Pulled at the PLC's end, because that is where AyMON's master
+		     reconnects on its own. -->
+		<var id="CABLE" xdb_acl="0xFF111113" sta="0x0303" val="1" val_typ="0x1104"
+		     val_fnc="[ATR.lmt,main.on_cable]" val_min="0" val_max="1" desc="request: 0 = pull the fieldbus cable"/>
+
+		<!-- ================================================================
+		     THE HMI - http://127.0.0.1:8093/
+		     ================================================================ -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the HMI's web listener"
+		     con_host="127.0.0.1" con_port="8093" con_mod="SERVER" con_ses="8"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="the PLC, live"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_CTL" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//*[@val]" pro_retain_atr="val,sta"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_odbc - the history's page. Served by HIS/S00 on
+     127.0.0.1:8107; the values come over MQTT inside a WebSocket on the
+     same port (/mqtt). The page writes one thing: a tag to search for.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ODBC History</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>One history, any database <span class="doc">HIS/S00 &rarr; <span id="db">ConnStr</span></span></h1>
+    <div class="chips"><span id="c-live" class="chip">--</span></div>
+</header>
+
+<main>
+    <section class="card wide">
+        <div class="label">Written once a second <span class="muted">a prepared INSERT, four bound values</span></div>
+        <div class="tiles">
+            <div class="tile"><div class="t">the last reading</div><div class="v"><span id="now">--</span><span class="u"> C</span></div></div>
+            <div class="tile"><div class="t">rows (TANK_TEMP)</div><div class="v" id="n">--</div></div>
+            <div class="tile"><div class="t">min .. max</div><div class="v" style="font-size:18px" id="mm">--</div></div>
+            <div class="tile"><div class="t">mean</div><div class="v"><span id="avg">--</span><span class="u"> C</span></div></div>
+            <div class="tile"><div class="t">rows whose tag looks like an attack</div><div class="v" id="attack">--</div><div class="s muted">stored as text</div></div>
+        </div>
+        <canvas id="trend" style="margin-top:14px"></canvas>
+        <div class="note">The summary is asked of the database every ten seconds (<span id="at">--</span>).</div>
+    </section>
+
+    <section class="card">
+        <div class="label">The last five rows <span class="muted">SQL.qry: rows become &lt;item&gt; elements</span></div>
+        <div class="table-wrap"><table>
+            <thead id="rhead"></thead><tbody id="rows"><tr><td class="muted">the first summary comes after ~10 s</td></tr></tbody>
+        </table></div>
+        <div class="note">An SQL NULL, read back in script: <code id="nul">--</code></div>
+    </section>
+
+    <section class="card">
+        <div class="label">Look for a tag <span class="muted">the tag is BOUND, never pasted into the SQL</span></div>
+        <div class="ctl">
+            <input id="tag" value="TANK_TEMP" style="flex:1 1 200px">
+            <button id="go">Count its rows</button>
+        </div>
+        <div class="ctl" style="margin-top:8px">
+            <button class="try" data-t="TANK_TEMP">TANK_TEMP</button>
+            <button class="try" data-t="x'; DROP TABLE reading; --">x'; DROP TABLE reading; --</button>
+            <button class="try" data-t="nothing">nothing</button>
+        </div>
+        <div class="note" id="found">The engine runs <code>SELECT count(*), max(ts) FROM reading WHERE tag = ?</code>
+            with what you typed as the one parameter. Try the attack: it finds the rows that carry that text - and the table is still there.</div>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="kit.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_mcp / AI/S00 - the doors an AI assistant comes in through.
+
+     MCP (Model Context Protocol) is how an AI assistant - Claude Desktop,
+     Claude Code, or any MCP client - calls tools on another system. PRO.mcp
+     makes the engine an MCP server: JSON-RPC over HTTP POST, stateless, one
+     request one answer. The engine already knows what an element, a value,
+     an alarm state and a history row are, so the built-in tools need no
+     code: system_info, browse, tree, find_points, read_points, get_summary,
+     get_connections, get_metrics, aggregate ... and, when writing is on,
+     set_value / add_value / xor_value / msk_value / ask_value.
+
+     THIS DOCUMENT IS NOT PUBLISHED (no mcp_pub on the root), so neither
+     endpoint below can see it - including its own configuration.
+
+     Two endpoints, deliberately different:
+
+       CN_MCP    127.0.0.1:8095   pro_mcp_acc="ro"   pro_mcp_role="2"
+                 Read only. The write tools are not even in its tool list.
+                 Reads are filtered as role 2 (Monitor).
+
+       CN_MCPW   127.0.0.1:8096   pro_mcp_acc="rw"   pro_mcp_role="3"
+                 Read and write, as role 3 (Operator). Whether a write lands
+                 is xdb_acl's decision on the element, not this endpoint's:
+                 SETPOINT is writable for role 3, LEVEL and PUMP are not.
+
+     THE FOUR ATTRIBUTES THAT MATTER ON A REAL SITE
+       pro_mcp_key   the Bearer key. Left EMPTY, PRO.mcp performs NO
+                     authentication at all and says so in the log at start.
+                     (PRO.telnet is the opposite: no login hook = nobody
+                     gets in.) Both keys here are in this public file - they
+                     are examples, not secrets.
+       con_acl       who may open a socket at all. Checked at accept time.
+       pro_mcp_role  the role the endpoint reads AND writes as. Without it
+                     reads are not filtered at all and writes run as the
+                     session's con_role (Guest when absent).
+       pro_mcp_acc   "ro" (default) or "rw".
+
+     LICENCE. MCP is not in FREE - but an unlicensed feature is a LOCAL
+     feature: on a loopback address it runs with no licence at all. Move
+     con_host off 127.0.0.1 and the connection is refused unless a licence
+     carries 'mcp'.
+     ===================================================================== -->
+<xdb id="AI/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/AI.log"
+     sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100">
+	<config>
+		<!-- The project's own MCP tools. The script id is the scope name:
+		     pro_mcp_tools="mcp.tools" below means "call tools() in here". -->
+		<script id="mcp" xdb_fnc="[SCR.prs]" src="%DB%/db_AI_mcp.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+		<!-- The public script surface. system_info shows api.help() to the
+		     assistant; api_call (rw endpoints) may call what is in here. -->
+		<script id="api" xdb_fnc="[SCR.prs]" src="%DB%/db_AI_api.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<!-- READ ONLY, AS A MONITOR.
+		     con_ses        at most four clients at once
+		     con_idletmo    an HTTP keep-alive that goes quiet is dropped
+		     pro_mcp_usr    the name this endpoint writes into the log and
+		                    into every audit line (evt.ses.user in script)
+		     pro_mcp_log    enables the read_logs tool, up to this level
+		                    (4 = WARN). The log is free text and not covered
+		                    by the mcp_pub whitelist, so it is opt-in.
+		     pro_mcp_tools  the script function that declares extra tools -->
+		<con id="CN_MCP" xdb_fnc="[CON.tcp,PRO.mcp]" desc="AI ENDPOINT, READ ONLY"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"
+		     con_host="127.0.0.1" con_port="8095" con_mod="SERVER" con_acl="127.0.0.1"
+		     con_ses="4" thr_wrk="1" thr_per="50" con_tmo="5" con_comdly="0" con_rct="0"
+		     con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="120"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1"
+		     pro_mcp_key="demo-read-key" pro_mcp_acc="ro" pro_mcp_role="2"
+		     pro_mcp_usr="ai-reader" pro_mcp_log="4"
+		     pro_mcp_tools="mcp.tools"/>
+
+		<!-- READ AND WRITE, AS AN OPERATOR.
+		     pro_mcp_wmax   a single write may touch at most this many
+		                    elements; above it nothing is written. Bulk
+		                    writes should be tried with dry_run first.
+		     A write xdb_acl refused is always in the log, at ALERT, in the
+		     document of the element (log\PLT-*.log). Raise this document's
+		     xdb_log and every tool call and write attempt is logged too. -->
+		<con id="CN_MCPW" xdb_fnc="[CON.tcp,PRO.mcp]" desc="AI ENDPOINT, READ AND WRITE"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"
+		     con_host="127.0.0.1" con_port="8096" con_mod="SERVER" con_acl="127.0.0.1"
+		     con_ses="4" thr_wrk="1" thr_per="50" con_tmo="5" con_comdly="0" con_rct="0"
+		     con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="120"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1"
+		     pro_mcp_key="demo-write-key" pro_mcp_acc="rw" pro_mcp_role="3"
+		     pro_mcp_usr="ai-operator" pro_mcp_log="4" pro_mcp_wmax="10"
+		     pro_mcp_tools="mcp.tools"/>
+	</data>
+</xdb>

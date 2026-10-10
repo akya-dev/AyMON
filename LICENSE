@@ -1,0 +1,166 @@
+AyMON -- the engine and its example projects (repository "AyMON")
+Copyright (c) 2026 Senol Ercetin. All rights reserved.
+Licensed exclusively to AKYA Canada Inc., the commercial licensor.
+
+This repository contains TWO kinds of material under TWO different sets of
+terms. Read both parts before copying anything.
+
+=============================================================================
+PART A -- THE EXAMPLE PROJECTS
+=============================================================================
+
+Covered: everything in this repository EXCEPT bin/ and licenses/ -- that is,
+the PRJEDU_* / PRJDEV_* / PRJPER_* directories (their XML configuration,
+scripts, web pages and README files), docs/, tools/, .github/, and the
+top-level README.md, SECURITY.md, CONTRIBUTING.md, CODE_OF_CONDUCT.md,
+.gitignore and .gitattributes (together, the "Example Projects").
+licenses/ holds third-party licence texts, each under its own terms.
+
+These files exist to be copied. Permission is hereby granted by the copyright
+owner, free of charge, to any person obtaining a copy of the Example Projects,
+to use, copy, modify, merge, publish, distribute and sublicense them, and to
+incorporate them into that person's own AyMON projects, subject to the
+following:
+
+  1. The above copyright notice and this Part A shall be included in any
+     substantial redistribution of the Example Projects themselves.
+     Configuration files derived from them and used to operate a plant do NOT
+     count as redistribution and carry no notice obligation.
+
+  2. NO PATENT LICENCE IS GRANTED. The Example Projects are configuration
+     data for an engine whose mechanisms are the subject of the patent
+     application listed in /PATENTS. Nothing in Part A -- expressly, by
+     implication, by estoppel or otherwise -- grants any licence under any
+     patent or patent application held by Senol Ercetin or licensed to AKYA
+     Canada Inc. Running these examples on the AyMON engine supplied in bin/
+     is permitted under Part B; implementing the mechanisms they describe in
+     another engine is not covered by this licence.
+
+  3. NO TRADEMARK LICENCE IS GRANTED. "AyMON", "AyPRO", "AyDATA", "AyLIB"
+     and "AKYA" are used here to identify the product and its maker and are
+     not licensed as marks.
+
+  4. THE EXAMPLE PROJECTS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+     MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+     IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+     CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+     TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+     EXAMPLE PROJECTS OR THE USE OR OTHER DEALINGS IN THEM.
+
+  5. THESE ARE TEACHING EXAMPLES, NOT PLANT CONFIGURATION. They are written
+     to be read, and they take shortcuts a real installation must not take
+     (no access control, no authentication, loopback addresses, no
+     redundancy). Do not put them, or anything derived from them, in control
+     of equipment, a process or anything else that can hurt somebody or
+     damage property without an engineering review of your own.
+
+=============================================================================
+PART B -- THE ENGINE IN bin/
+=============================================================================
+
+Covered: every file in bin/ -- bin/win-x64/, bin/linux-x64/ and bin/lic/
+(together, the "Engine").
+
+The Engine is NOT open source and is NOT covered by Part A. It is supplied
+here so that the Example Projects, and projects of your own, can be run
+without a separate download.
+
+WHAT YOU MAY DO
+
+  a. Run the Engine to run the Example Projects.
+
+  b. Run the Engine for AyMON projects of your own, for any purpose --
+     commercial and production use included -- within the limits of the
+     FREE edition, which the Engine enforces by itself when it runs without
+     a licence file. The FREE edition does not expire. Its limits are part of
+     these terms, not merely a technical measure.
+
+  c. Use the education licence file bin/lic/AyMON.lic only for teaching,
+     training, courses and workshops, and for trying AyMON out or developing
+     a project before it is put into service -- never for production use.
+     The Engine accepts that file only for project directories named
+     PRJEDU* or PRJDEV*; that is a technical measure, and the condition is
+     this paragraph. (The PRJPER_* examples run on the FREE edition.)
+
+  d. Anything beyond the FREE edition's limits -- more documents,
+     connections, devices or users, the licensed features, or the education
+     licence's capacity in production -- needs a written licence from
+     AKYA Canada Inc.
+
+WHAT YOU MAY NOT DO
+
+  e. Redistribute, publish, mirror, repackage, rent, lend or sublicense the
+     Engine, or make it available as part of another product or service.
+     Link to this repository instead.
+
+  f. Reverse engineer, decompile or disassemble the Engine, except to the
+     extent that applicable law expressly permits despite this limitation,
+     and except as an open-source licence recorded in /NOTICE requires for
+     the component it covers.
+
+  g. Work around the Engine's limits or its licence check -- by altering,
+     patching or emulating it, or by altering a licence file -- or remove or
+     alter any notice in the Engine.
+
+COMPONENT TERMS
+
+  Every AyMON binary in bin/ -- AyXDB, AyDATA, AyPRO, the plug-ins AyPRO_*
+  and the engine modules AyLIB_*, the Windows .exe / .dll and the Linux
+  executable / lib*.so alike -- is the proprietary software of Senol
+  Ercetin, exclusively licensed to AKYA Canada Inc., supplied in binary form
+  only, under this Part B. Some of them have third-party open-source code
+  compiled in; /NOTICE lists it, and that code's own licence applies to it.
+
+  libssl-3-x64.dll    OpenSSL 3.5.1, Apache License 2.0 -- see /NOTICE.
+  libcrypto-3-x64.dll (Windows only; on Linux the Engine uses the system's
+                      OpenSSL 3.)
+
+  AyLIB_Python        Loads only beside a 64-bit Python 3.11 that you
+                      install yourself (PRJEDU_gauge, PRJEDU_pycall). Python
+                      is not supplied here and is used under its own
+                      licence.
+
+  bin/lic/AyMON.lic   A signed AKYA licence file. It is data, not software;
+                      see paragraph c.
+
+  The plug-in SDK, and the source of some plug-ins, may later be published
+  in a repository of their own under an open-source licence. Such a licence
+  applies to what is published there; it does not change the terms for the
+  binaries in this repository.
+
+PATENTS
+
+  The mechanisms implemented by the Engine are the subject of the patent
+  application listed in /PATENTS. No patent licence is granted by Part A or
+  Part B beyond the right to RUN the Engine as permitted above.
+
+NO WARRANTY, LIMITATION OF LIABILITY
+
+  The Engine is provided "AS IS", without warranty of any kind; paragraph 4
+  of Part A applies equally to it, and paragraph 5 applies with more force:
+  this is industrial control software. To the maximum extent permitted by
+  law, neither Senol Ercetin nor AKYA Canada Inc. is liable for any
+  indirect, incidental, special or consequential damages, or for loss of
+  production, data or profit, arising from the use of the Engine or the
+  inability to use it.
+
+TERMINATION
+
+  The rights in Part B end automatically if you do not comply with it. You
+  must then stop using the Engine and delete your copies of it.
+
+=============================================================================
+GOVERNING LAW
+=============================================================================
+
+These terms are governed by the laws of the Province of British Columbia
+and the federal laws of Canada applicable there, without regard to
+conflict-of-laws rules. The courts of British Columbia have exclusive
+jurisdiction over any dispute arising from them. The United Nations
+Convention on Contracts for the International Sale of Goods does not apply.
+
+The copyright in AyMON belongs to Senol Ercetin; AKYA Canada Inc. holds an
+exclusive licence to it and is the commercial licensor.
+
+Enquiries and commercial licensing: aymon@akya.ca

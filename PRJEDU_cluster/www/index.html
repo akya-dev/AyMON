@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_cluster -- the cluster, both nodes side by side. Served by each
+     node's CN_EXT (PRO.http); the same four files on both.
+
+     The page opens TWO live connections: one to S01 (127.0.0.1:9201/mqtt)
+     and one to S02 (127.0.0.1:9202/mqtt). Each column is what THAT node
+     says - its role, the master it knows, the job as it has it. Stop one
+     engine and its column goes dark while the other one takes over.
+
+     What it writes: SYS/S00/CLT_CMD on a node (a hand-over), and
+     APP/S00/RUN, RATE on a node - on the spare that write is forwarded
+     to the master.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cluster Failover</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>Cluster <span class="doc">APP/S00 on S01 and S02</span></h1>
+    <div class="chips"><span id="c-master" class="chip">master: --</span><span id="c-term" class="chip">term --</span></div>
+</header>
+
+<main id="nodes">
+    <!-- one column per node, filled by app.js -->
+</main>
+
+<section class="card wide foot-card">
+    <div class="label">Try it</div>
+    <ul class="small">
+        <li>Stop the master: <b>CTRL-C</b> in its window (or close it). The other column turns MASTER within a few seconds and the count goes on from where it was.</li>
+        <li>Start it again: it comes back as SPARE (<code>pro_clt_preempt="0"</code>: a live master is not pushed aside), pulls the job once and follows.</li>
+        <li><b>Hand over</b> on the master, or <b>Take over</b> on the spare: a planned switch, no engine stopped.</li>
+        <li>Change the rate on the SPARE's column: the spare does not apply it - it forwards it to the master, and the new value comes back by replication.</li>
+    </ul>
+</section>
+
+<template id="node-tpl">
+    <section class="card node">
+        <div class="node-head">
+            <div>
+                <div class="label">Node <b class="nid"></b> <span class="muted small addr"></span></div>
+                <div class="role">--</div>
+            </div>
+            <div class="chips"><span class="chip link">connecting</span><span class="chip peer">peer</span></div>
+        </div>
+        <div class="kv">
+            <span>knows the master is</span><b class="master">--</b>
+            <span>election round (term)</span><b class="term">--</b>
+            <span>APP/S00 sta here</span><b class="appsta">--</b>
+        </div>
+
+        <div class="label sub">The job, as this node has it</div>
+        <div class="count">--</div>
+        <div class="kv">
+            <span>batch being made</span><b class="batch">--</b>
+            <span>last unit made by</span><b class="by">--</b>
+            <span>last unit, seconds ago</span><b class="age">--</b>
+            <span>rate, units a second</span><b><span class="rate">--</span></b>
+        </div>
+        <div class="controls">
+            <label class="switch"><input type="checkbox" class="run"> running</label>
+            <input type="range" class="rate-in" min="1" max="20" step="1" value="5" aria-label="rate">
+        </div>
+        <div class="buttons">
+            <button class="standdown">Hand over (standdown)</button>
+            <button class="takeover">Take over</button>
+        </div>
+
+        <div class="label sub">Finished batches <span class="muted">(ten kept, newest first)</span></div>
+        <table class="batches"><thead><tr><th>batch</th><th>id</th><th>made on</th><th>at</th></tr></thead><tbody></tbody></table>
+
+        <div class="label sub">Role changes this node saw</div>
+        <div class="roles small muted">--</div>
+    </section>
+</template>
+
+<script src="mqtt-lite.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

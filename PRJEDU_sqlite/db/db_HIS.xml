@@ -1,0 +1,135 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     HIS/S00 - the history document.
+
+     Three moving parts and one of them is not script:
+
+       <con id="CN_SQL">    the database. A file, opened through the
+                            embedded SQLite driver.
+       <var id="T_READ">    a timer: produce a reading, write it (script).
+       <list id="L_RECENT"> a QUERY THAT BECOMES ELEMENTS. Nothing copies
+                            its rows; writing the SQL into @qry is the whole
+                            mechanism. This is how a web front end gets a
+                            table out of AyMON.
+     ===================================================================== -->
+<xdb id="HIS/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/HIS.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFFFFFFF1">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_HIS.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<!-- The thread the timers below run on. -->
+		<thr id="TH_MAIN" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="1"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- THE DATABASE.
+		     xdb_fnc="[CON.sqlite,PRO.sql]"
+		                   CON.sqlite is published by the SQLite driver
+		                   plug-in named in AyXDB.xml. PRO.sql is the query
+		                   executor that sits on top of it. (CON.odbc /
+		                   PRO.odbc are the older names of the same pair and
+		                   still work - 'sql' is what to write in new files.)
+		     con_host      THE DATABASE. For this driver that is a FILE PATH,
+		                   and the path macros are expanded: %PRJ% is this
+		                   project's directory, %DB% its db\ directory,
+		                   %ROOT% the installation. The file is created on
+		                   first connect.
+		     con_pool="2"  two connections kept open and handed out as
+		                   needed. A script that asks for the connection gets
+		                   one from the pool; it does not open its own.
+		     con_tmo       how long a statement may wait for the database,
+		                   in SECONDS. SQLite locks the whole file while
+		                   writing, so this is what a second writer waits. -->
+		<con id="CN_SQL" xdb_fnc="[CON.sqlite,PRO.sql]" desc="the plant history file"
+		     con_host="%PRJ%/log/plant.db"
+		     con_mod="CLIENT" con_pool="2" con_ses="0" con_clr="1"
+		     con_tmo="5" con_comdly="1" con_rcvdly="100" con_rct="2"
+		     con_keeptmo="0" con_idletmo="0"
+		     pro_role="MASTER" pro_tmo="10" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- A QUERY THAT BECOMES ELEMENTS.
+		     Write SQL into @qry and SQL.qry runs it on qry_con and turns
+		     every row into an <item> child of this element. EACH COLUMN
+		     BECOMES AN ATTRIBUTE NAMED AFTER THE COLUMN, so after
+
+		         SELECT ts, tag, val FROM ...
+
+		     you can read id('L_RECENT')/item[2]/@tag like any other
+		     attribute in the tree - from script, from the web front end,
+		     from a replication peer.
+
+		     qry_max="10"  at most ten <item> children; older ones are
+		                   dropped. A query that can return a million rows
+		                   needs this.
+		     qry_con       which <con> runs it.
+
+		     TRAP: do NOT select a column called 'id'. In AyMON 'id' is the
+		     element's identifier and goes into the document's id index;
+		     a row that carries one would fight with it. Alias it -
+		     SELECT rowid AS rid - as db_HIS.js does. -->
+		<list id="L_RECENT" desc="the last ten readings, as elements"
+		      qry="" qry_typ="0x1401" qry_fnc="[SQL.qry]" qry_max="10" qry_con="CN_SQL"
+		      sta="0x0303" sta_typ="0x0142"/>
+
+		<!-- Once a second: produce a reading and write it. -->
+		<var id="T_READ" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="TH_MAIN" evt_per="1" evt_dly="1" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.read]"
+		     cnt="0" cnt_typ="0x5104" desc="sampling timer"/>
+
+		<!-- Every ten seconds: ask the database what it has. -->
+		<var id="T_SUM" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="TH_MAIN" evt_per="10" evt_dly="6" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.summary]" desc="reporting timer"/>
+
+		<!-- ================================================================
+		     WHAT THE PAGE SHOWS - written by db_HIS.js, published to the page
+		       NOW     the reading just written
+		       STATS   what the database says, every ten seconds (JSON)
+		       RECENT  L_RECENT's rows, as one JSON value
+		       FIND    the page's search: it writes a tag here (the one
+		               thing it may write - its own xdb_acl), main.find
+		               (val_typ 0x1401: the 0x1000 bit is what makes
+		               val_fnc run)
+		               counts that tag's rows with the tag BOUND, and
+		       FOUND   the answer (JSON)
+		     ================================================================ -->
+		<var id="NOW"    sta="0x0303" val="0"  val_typ="0x0308" val_unt="C" desc="the last reading"/>
+		<var id="STATS"  sta="0x0303" val=""   val_typ="0x0401" desc="count, min, max, mean, attack-shaped rows, NULL test - JSON"/>
+		<var id="RECENT" sta="0x0303" val=""   val_typ="0x0401" desc="the last five rows - JSON"/>
+		<var id="FIND"   sta="0x0303" val=""   val_typ="0x1401" xdb_acl="0xFFFFFFF3"
+		     val_fnc="[main.find]" desc="a tag to look for - written by the page"/>
+		<var id="FOUND"  sta="0x0303" val=""   val_typ="0x0401" desc="how many rows carry it - JSON"/>
+
+		<!-- ================================================================
+		     THE PAGE - http://127.0.0.1:8106/  (only from this computer)
+		     CN_WEB serves www/; CN_LIVE is MQTT inside a WebSocket on the
+		     same port (/mqtt) and publishes this document: a new
+		     subscription gets the current values at once (retain), and
+		     every change after that.
+		     The page reads everything and writes one thing, FIND (its own
+		     xdb_acl); xdb_acl="0xFFFFFFF1" on the document gives a Guest (role
+		     0, a page that did not log in) read and nothing else.
+		     ================================================================ -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the page"
+		     con_host="127.0.0.1" con_port="8106" con_mod="SERVER" con_ses="8" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="the live values for the page"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_HISW" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//var" pro_retain_atr="val"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

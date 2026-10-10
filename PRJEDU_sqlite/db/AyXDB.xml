@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_sqlite - AyMON example 3: history in a database, no server.
+
+     A plant that only shows you the current value forgets everything. This
+     example keeps readings in a database file: one timer writes, another
+     asks the database what it has, and a third query arrives as ELEMENTS
+     you can address like anything else in the tree.
+
+     The database is SQLite, embedded in the engine through a plug-in. There
+     is nothing to install: no server, no ODBC data source, no driver setup,
+     no password. The whole database is one file in log\.
+
+       xdb_lib="AyPRO, AyPRO_sqlite"
+                    ^-  the SQL driver plug-in. It has to be named HERE
+                        because a <con> below asks for CON.sqlite, and that
+                        name does not exist until the plug-in registers it.
+                        (The old DRIVER=... connection string attaches the
+                        plug-in on first use instead; this way is clearer.)
+
+     Run:  run.bat     Stop with CTRL-C, start it again - the readings are
+                       still there. That is the point of the example.
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO, AyPRO_sqlite" xdb_log="4" log_cfg="0x39C0"
+     log_lnk="%PRJ%/log/XDB.log" sta="0x0300" tid="S01">
+	<config>
+		<doc id="HIS/S00" sta="0x0300" src="%DB%/db_HIS.xml" desc="the plant history" />
+	</config>
+	<data>
+	</data>
+</xdb>

@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_web / PLT/S00 - a tank on a web page.
+
+     Two halves:
+       THE PLANT     a thread, a timer and five values: a tank level with
+                     alarm limits, a temperature, a pump, a set point the
+                     browser may change, and a counter. Same shape as
+                     PRJEDU_101; read that one first if <var> is new to you.
+       THE WEB SIDE  ONE listening port and three connections behind it:
+
+         http://127.0.0.1:8080/            CN_WEB   PRO.http  files from ..\www
+         http://127.0.0.1:8080/api/values  CN_API   PRO.rest  a JSON snapshot
+         ws://127.0.0.1:8080/mqtt          CN_LIVE  PRO.mqtt  live values, and
+                                                              writes back
+
+     Why three and not one: each answers a different question.
+       HTTP   "give me the page"                  - once
+       REST   "what is the value NOW"             - once, on page load
+       MQTT   "tell me whenever it changes"       - for as long as the page
+              over a WebSocket, because a browser    is open, and "set this"
+              cannot open a raw TCP socket           in the other direction
+
+     The same three again on 8443 behind TLS - https, and MQTT over wss -
+     at the end of the file.
+
+     Six connections: exactly the FREE edition's limit. The licence in
+     ..\bin\lic gives eight, so there is room for one of your own.
+
+     Everything listens on 127.0.0.1 only. See the README for how to open it
+     to other machines and what you should put in front of it first.
+     ===================================================================== -->
+<xdb id="PLT/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/PLT.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_PLT.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<!-- ================================================================
+		     THE PLANT
+		     ================================================================ -->
+		<thr id="TH_MAIN" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- The simulator: twice a second, main.tick moves the tank.
+		     Half a second so the page has something to watch. -->
+		<var id="T_SIM" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="TH_MAIN" evt_per="0.5" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.tick]" desc="process step"/>
+
+		<!-- The tank level, with the alarm chain from PRJEDU_101.
+		     ALM.onlvl moves the alarm bits inside 'sta' (0x0004 warning,
+		     0x0008 alarm), and a change of 'sta' is published exactly like a
+		     change of 'val' - which is how the page colours the gauge
+		     without knowing a single limit.
+		     val_typ 0x1308: the 0x1000 bit is what makes val_fnc run at all. -->
+		<var id="LEVEL" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x1142" sta_fnc="[EVT.sta]"
+		     val="50" val_typ="0x1308" val_fnc="[ATR.rou,ATR.lmt,ALM.onlvl]"
+		     val_min="0" val_max="100" val_rou="0.1" val_unt="%"
+		     val_alm_onlhi_alm="90" val_alm_onlhi_wrn="80"
+		     val_alm_onllo_wrn="20" val_alm_onllo_alm="10"
+		     desc="tank level"/>
+
+		<var id="TEMP" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x1142" sta_fnc="[EVT.sta]"
+		     val="20" val_typ="0x1308" val_fnc="[ATR.rou]" val_rou="0.1" val_unt="C"
+		     desc="water temperature"/>
+
+		<var id="PUMP" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="0" val_typ="0x1104" desc="inlet pump, 1 = running"/>
+
+		<!-- THE ONE VALUE THE BROWSER WRITES.
+		     The page publishes to  PLT/S00/SETPOINT/val/set  and the engine
+		     turns that topic into  id('SETPOINT')/@val.  The write then runs
+		     this element's val_fnc exactly as a script write would: rounded,
+		     clamped to 0..100 - a browser that sends 250 gets 100 - and
+		     logged by main.on_setpoint. Nothing on the web side knows about
+		     limits; the element does. -->
+		<var id="SETPOINT" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="50" val_typ="0x1308" val_fnc="[ATR.rou,ATR.lmt,main.on_setpoint]"
+		     val_min="0" val_max="100" val_rou="1" val_unt="%"
+		     desc="level the pump controller holds"/>
+
+		<var id="COUNT" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="0" val_typ="0x0104" desc="process steps so far"/>
+
+		<!-- ================================================================
+		     THE WEB SIDE
+		     ================================================================ -->
+
+		<!-- 1 - THE LISTENER, and the static files.
+		     PRO.http serves files from pro_http_root; a request for a
+		     directory gets pro_http_index. %PRJ% is the project directory, so
+		     the page lives in PRJEDU_web\www - next to db\, not inside it:
+		     the engine's configuration and what a browser may download are
+		     kept apart.
+		     A path with '..' in it is refused, so a URL cannot climb out of
+		     www\ into db\.
+		     This is also the ONLY open port. The two connections below do not
+		     listen: con_host="#CN_WEB" means "hand me the requests that arrive
+		     on CN_WEB whose path starts with my con_port". -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the web listener"
+		     con_host="127.0.0.1" con_port="8080" con_mod="SERVER" con_ses="8"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- 2 - REST: a snapshot as JSON.
+		     PRO.rest hands EVERY request under /api to pro_onreq, and the
+		     script writes the whole HTTP answer itself (main.api in
+		     db_PLT.js). The page calls it once, so it has numbers to show
+		     before the first live change arrives. -->
+		<con id="CN_API" xdb_fnc="[CON.tcp,PRO.rest]" desc="JSON snapshot"
+		     con_host="#CN_WEB" con_port="/api" con_mod="SERVER" con_ses="4"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD401" pro_fnc="[]"
+		     pro_onreq="main.api(exc,msg);"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- 3 - MQTT over a WebSocket: the live part.
+		     The browser upgrades  GET /mqtt  to a WebSocket and speaks
+		     MQTT 3.1.1 inside it; CON.ws does the WebSocket, PRO.mqtt is the
+		     broker. The page's own ~150-line client is in www\mqtt-lite.js.
+
+		     TOPIC = <document>/<element id>/<attribute>
+		       pro_pfx="+/+"   the first two topic levels are the document
+		                       name, so  id('LEVEL')/@val  in PLT/S00  is
+		                       PLT/S00/LEVEL/val
+		       payload         the value as text: "47.3", "0x0347" - not JSON
+		       .../set         a PUBLISH to  PLT/S00/SETPOINT/val/set  WRITES
+		                       the attribute
+
+		     What gets published: every change of an attribute of THIS
+		     document, to every client whose subscription matches it. The
+		     page subscribes to  PLT/S00/+/val  and  PLT/S00/+/sta.
+
+		     con_idletmo="-1"  a page may sit open and silent for hours;
+		              keep-alive (con_keeptmo) is what notices a dead one.
+		     No login here, and no xdb_acl on this document: every client may
+		     read and write every value. That is fine on 127.0.0.1 and nowhere
+		     else - see the README. -->
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="live values for the page"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_WEB" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- ================================================================
+		     THE SAME THREE, ENCRYPTED:  https://127.0.0.1:8443/
+
+		       https://127.0.0.1:8443/            CN_WEBS   CON.tls + PRO.http
+		       https://127.0.0.1:8443/api/values  CN_APIS   CON.tls + PRO.rest
+		       wss://127.0.0.1:8443/mqtt          CN_LIVES  CON.wss + PRO.mqtt
+
+		     The page is the SAME page. app.js builds its WebSocket address
+		     from the address bar - ws:// under http, wss:// under https -
+		     because a browser refuses a plain ws:// from an https page.
+
+		     TLS lives on the LISTENER. It holds the certificate and does the
+		     handshake; the two connections behind it take over an already
+		     encrypted session, which is why they carry no con_ssl_* of their
+		     own. Their transport names still say so - CON.tls, CON.wss -
+		     so each end of the link knows it speaks through TLS.
+
+		     THE CERTIFICATE IN db\cert\ IS PUBLIC. It is self-signed for
+		     localhost / 127.0.0.1, and its private key is in this repository
+		     for anyone to read - it encrypts nothing that is secret from
+		     anyone who has cloned it. It exists so https works with nothing
+		     installed. The browser will warn the first time; that warning is
+		     correct. For anything but this example, put your own certificate
+		     and key in their place (see the README).
+		     ================================================================ -->
+		<con id="CN_WEBS" xdb_fnc="[CON.tls,PRO.http]" desc="the web listener, TLS"
+		     con_host="127.0.0.1" con_port="8443" con_mod="SERVER" con_ses="8"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     con_ssl_cert="%DB%/cert/demo_cert.pem" con_ssl_key="%DB%/cert/demo_key.pem" con_ssl_pwd=""
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_APIS" xdb_fnc="[CON.tls,PRO.rest]" desc="JSON snapshot, TLS"
+		     con_host="#CN_WEBS" con_port="/api" con_mod="SERVER" con_ses="4"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD401" pro_fnc="[]"
+		     pro_onreq="main.api(exc,msg);"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVES" xdb_fnc="[CON.wss,PRO.mqtt]" desc="live values for the page, TLS"
+		     con_host="#CN_WEBS" con_port="/mqtt" con_mod="SERVER" con_ses="4"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_WEBS" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

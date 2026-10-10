@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_odbc - AyMON example: one plant, any SQL database, chosen by
+     a CONNECTION STRING.
+
+     The twin of PRJEDU_sqlite. The same plant, the same timers, the same
+     script surface (SQL.attach, exec_direct, prepare, SQL.qry). What is new
+     is where the database comes from: not a fixed <con>, but a connection
+     string kept here, in the root document, and handed to the connection
+     by script when the history document starts.
+
+     THE CONVENTION: the entry whose id is exactly "ConnStr" is the one in
+     use. The others are parked under other ids (ConnStrMSSQL, ...). To
+     move the plant to another database, swap two ids:
+
+         <var id="ConnStrSQLITE" eng="SQLITE3" ... />   was ConnStr
+         <var id="ConnStr"       eng="MSSQL"   ... />   was ConnStrMSSQL
+
+     and create the empty database that string names (see the README).
+     Out of the box ConnStr is the embedded SQLite, so run.bat works at
+     once and the database file appears in log\ - nothing to install.
+
+     Each entry carries:
+       val   the connection string. Path macros (%PRJ%, %DB%, %ROOT%, %BIN%)
+             are expanded by the script: a connection string in con_host is
+             handed to the driver exactly as written, so %PRJ% there would
+             reach SQLite as five literal characters.
+       eng   which database ENGINE it is: SQLITE3, MSSQL or PGSQL. The script
+             reads it for the one statement it cannot write the same way
+             for every engine - "does the table exist?". Everything else
+             is written once, in SQL all three accept.
+
+     The ODBC driver lives in AyPRO_odbc.dll, the embedded SQLite in
+     AyPRO_sqlite.dll. Neither is named in xdb_lib: each is attached by
+     itself the first time a connection string reaches it. Both have to sit
+     next to AyPRO.dll - that is all.
+
+     A connection string may carry a password (PWD=...). The engine writes
+     it to the log as PWD=*** - but it is in THIS file in clear text, so
+     this file is as secret as the password.
+
+     Run:  run.bat     Stop with CTRL-C, start it again - the readings are
+                       still there.
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0"
+     log_lnk="%PRJ%/log/XDB.log" sta="0x0300" tid="S01">
+	<config>
+		<doc id="HIS/S00" sta="0x0300" src="%DB%/db_HIS.xml" desc="the plant history" />
+	</config>
+	<data>
+		<!-- IN USE: the embedded SQLite, reached through a connection string
+		     (DRIVER=SQLite3i). Nothing to install; the file is created on
+		     first connect. -->
+		<var id="ConnStr" eng="SQLITE3" desc="embedded SQLite, a file in log\"
+		     val="DRIVER=SQLite3i;Database=%PRJ%/log/plant.db;"/>
+
+		<!-- SQL Server (Express is enough), Windows authentication: no
+		     password in this file. The driver named {SQL Server} ships with
+		     every Windows; {ODBC Driver 17 for SQL Server} or 18 are newer
+		     and are written the same way. The database must exist:
+		         sqlcmd -S .\SQLEXPRESS -E -Q "CREATE DATABASE aymon_edu" -->
+		<var id="ConnStrMSSQL" eng="MSSQL" desc="SQL Server Express on this machine"
+		     val="DRIVER={SQL Server};SERVER=.\SQLEXPRESS;DATABASE=aymon_edu;Trusted_Connection=Yes;APP=AyMON;"/>
+
+		<!-- PostgreSQL through psqlODBC. Use the driver name ODBC Data
+		     Sources (64-bit) lists on YOUR machine - installers name it
+		     differently ({PostgreSQL Unicode(x64)}, {PostgreSQL ODBC
+		     Driver(UNICODE)}). The database must exist:
+		         createdb -U postgres aymon_edu -->
+		<var id="ConnStrPGSQL" eng="PGSQL" desc="PostgreSQL on this machine"
+		     val="DRIVER={PostgreSQL Unicode(x64)};SERVER=127.0.0.1;PORT=5432;DATABASE=aymon_edu;UID=postgres;PWD=change-me;"/>
+	</data>
+</xdb>

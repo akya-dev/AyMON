@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     UA/S00 - AyMON as an OPC UA CLIENT of a moulding machine.
+
+     This file is what you would write for a real machine. The four
+     levels, with OPC UA meanings:
+
+       <con>  the client: security policy, our certificate, which server
+              certificates we trust
+       <dev>  ONE SERVER = one secure channel + one session: its endpoint
+              URL, and who we log in as
+       <bi>   one request: READ (a poll) or PUBLISH (a subscription)
+       <io>   one node, one point: its NodeId in pro_adr
+
+     NODEIDS BY NAMESPACE URI. Every pro_adr below starts with
+     nsu=urn:aymon:examples:moulding - the namespace's NAME. The server
+     numbers its namespaces in the order it creates them (ns=2 today); a
+     server update that adds one before ours makes it ns=3, and every
+     ns=2 in a configuration then reads somebody else's nodes or none.
+     The engine reads the server's namespace table at connect and turns
+     the URI into today's number.
+
+     THREE CONNECTIONS to the same machine, three sessions:
+       CN_UA    in the clear, Anonymous: the poll, and what is read once
+       CN_UAP   in the clear, Anonymous: the subscription
+       CN_UAS   signed and encrypted, as 'setter': writes and methods
+
+     ONE SESSION, ONE THREAD. OPC UA numbers every message of a session,
+     and the numbers must come without a gap - a gap is a replay attack
+     to the server, which closes the channel. So everything that uses a
+     <dev>'s session runs on ONE thread: its <bi>s (evt_thr) and the
+     script that writes and calls methods on it (the command timers
+     below). The page's buttons do not write the machine: they leave a
+     request in REQ, and the timer on the right thread carries it out.
+
+     WHERE TO START. run_machine.bat, then run.bat, then
+     http://127.0.0.1:8102/ - the README walks through it.
+     ===================================================================== -->
+<xdb id="UA/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/UA.log"
+     xdb_init="main.init(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFFFFFFF1">
+	<!-- The page connects without logging in, as a Guest (role 0): it may
+	     READ everything here, and write one thing - REQ, below. Without
+	     this it could write any point's 'pro' over MQTT, and that write
+	     would run on the MQTT thread, not the session's. -->
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_UA.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+
+		<!-- ================================================================
+		     POINT CLASSES - the type a node is read into, and what happens
+		     next. pro_typ is the type on the wire side; its 0x1000 bit is
+		     what makes pro_fnc run at all. [VAL.put] copies pro to val.
+		     The W classes add PRO.out: writing 'pro' HERE sends a Write
+		     to the server (with pro_fno="WRITE" on the point). A value
+		     that arrives FROM the server is not sent back - no echo.
+		     ================================================================ -->
+		<tio id="cls_XD"  pro_typ="0x1308" pro_fnc="[VAL.put]" val_typ="0x0308" sta_typ="0x1142"/>  <!-- Double  -->
+		<tio id="cls_XI"  pro_typ="0x1204" pro_fnc="[VAL.put]" val_typ="0x0204" sta_typ="0x1142"/>  <!-- Int32   -->
+		<tio id="cls_XU"  pro_typ="0x1104" pro_fnc="[VAL.put]" val_typ="0x0104" sta_typ="0x1142"/>  <!-- UInt32  -->
+		<tio id="cls_XB"  pro_typ="0x1101" pro_fnc="[VAL.put]" val_typ="0x0101" sta_typ="0x1142"/>  <!-- Boolean -->
+		<tio id="cls_XS"  pro_typ="0x1401" pro_fnc="[VAL.put]" val_typ="0x0401" sta_typ="0x1142"/>  <!-- String  -->
+		<tio id="cls_XL"  pro_typ="0x1208" pro_fnc="[VAL.put]" val_typ="0x0208" sta_typ="0x1142"/>  <!-- Int64, DateTime (Unix ms) -->
+		<tio id="cls_XUL" pro_typ="0x1108" pro_fnc="[VAL.put]" val_typ="0x0108" sta_typ="0x1142"/>  <!-- UInt64  -->
+		<tio id="cls_XA"  pro_typ="0x1401" pro_fnc="[VAL.put]" val_typ="0x0401" sta_typ="0x1142"/>  <!-- array, as JSON text "[..]" -->
+		<tio id="cls_XW"  pro_typ="0x1308" pro_fnc="[PRO.out,VAL.put]" val_typ="0x0308" sta_typ="0x1142"/>  <!-- Double, writable  -->
+		<tio id="cls_XWB" pro_typ="0x1101" pro_fnc="[PRO.out,VAL.put]" val_typ="0x0101" sta_typ="0x1142"/>  <!-- Boolean, writable -->
+	</config>
+
+	<data>
+		<!-- One thread per session (see the top of this file). -->
+		<thr id="TH_UA"  xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]" desc="everything on the CN_UA session"/>
+		<thr id="TH_UAP" xdb_fnc="[THR.cre]" thr_per="20" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]" desc="everything on the CN_UAP session"/>
+		<thr id="TH_UAS" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]" desc="everything on the CN_UAS session"/>
+
+		<!-- ================================================================
+		     CONNECTION 1 - in the clear, Anonymous
+		       con_ses   one session per <dev> under it
+		       pro_tmo   answer timeout, s
+		       pro_sec / pro_mod   None / None: nothing signed, nothing
+		                 encrypted. Both None or neither - a mix is a
+		                 configuration error, not a silent downgrade.
+		       pro_trust  the server certificates we trust (see CN_UAS).
+		                 Not needed to talk in the clear - but without it
+		                 the engine cannot tell this machine from one that
+		                 pretends to be it, and says so at every connect
+		                 ("sunucu sertifikasi DOGRULANMADI").
+		     ================================================================ -->
+		<con id="CN_UA" xdb_fnc="[CON.tcp,PRO.opc]" desc="OPC UA, in the clear, Anonymous"
+		     con_mod="CLIENT" con_way="FULL" con_ses="1"
+		     con_host="" con_port="" con_tmo="3.0" con_rct="5"
+		     pro_role="MASTER" pro_tmo="5.0" pro_sec="None" pro_mod="None"
+		     pro_trust="%DB%/../sim/pki/own/server_cert.pem"
+		     pro="" pro_typ="0xD411" pro_fnc="[]"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- THE SERVER. con_host/con_port open the socket; pro_adr is the
+		     endpoint URL the server is TOLD - the two must agree, or the
+		     server may turn the session down (BadTcpEndpointUrlInvalid).
+		     pro_usr="" = Anonymous.
+		     pro_pol_* / pro_pub_* are counters the protocol fills in: the
+		     attributes have to exist for it to write them. -->
+		<dev id="IMM" pro_con="CN_UA" con_host="127.0.0.1" con_port="4840"
+		     pro_adr="opc.tcp://127.0.0.1:4840/moulding/" pro_usr=""
+		     desc="moulding machine IMM1, anonymous session"
+		     pro_pol_snd="0" pro_pol_rcv="0"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+
+			<!-- A POLL, every second: every point below goes into ONE
+			     ReadRequest (up to pro_mx, 50 by default). The
+			     subscription is on CN_UAP, below. -->
+			<bi id="IMM_READ" xdb_fnc="[XDB.evt]" desc="read every second"
+			    sta="0x0303" sta_typ="0x1142" sta_fnc="[EVT.sta,PRO.sta]"
+			    evt="0" evt_typ="0x1204" evt_fnc="[PRO.pol]" evt_cfg="0x0002"
+			    evt_per="1.0" evt_dly="0" evt_thr="TH_UA"
+			    pro="" pro_typ="0xC412" pro_fnc="[]" pro_fni="READ" pro_mx="50">
+
+				<io id="STATE"  xdb_cls="cls_XI" pro="" val="" sta="0x0303" desc="0 stopped, 1 heating, 2 running"
+				    pro_adr="nsu=urn:aymon:examples:moulding;s=IMM1.State"/>
+				<io id="JOB"    xdb_cls="cls_XS" pro="" val="" sta="0x0303" desc="the job on the machine"
+				    pro_adr="nsu=urn:aymon:examples:moulding;s=IMM1.Job"/>
+				<io id="CYCLE"  xdb_cls="cls_XD" pro="" val="" sta="0x0303" val_unt="s" desc="the last cycle"
+				    pro_adr="nsu=urn:aymon:examples:moulding;s=IMM1.CycleTime"/>
+				<io id="SP"     xdb_cls="cls_XD" pro="" val="" sta="0x0303" val_unt="C" desc="mould temperature setpoint"
+				    pro_adr="nsu=urn:aymon:examples:moulding;s=IMM1.MouldTempSP"/>
+
+				<!-- The same mould temperature as MOULD_S (CN_UAP), by poll:
+				     the page puts the two side by side. xdb_tim takes the
+				     server's source timestamp - when the value came into
+				     being on the machine, not when we read it - and
+				     main.age writes how old the value was when it got here
+				     (ms) into 'age'. -->
+				<io id="MOULD_P" xdb_cls="cls_XD" pro="" val="" sta="0x0303" val_unt="C" desc="mould temperature, polled"
+				    xdb_tim="0" xdb_tim_typ="0x0208" pro_fnc="[VAL.put,main.age]" age="0" age_typ="0x0204"
+				    pro_adr="nsu=urn:aymon:examples:moulding;s=IMM1.MouldTemp"/>
+
+				<!-- AN ARRAY. BarrelTemp is Double[4] on the server. What it
+				     becomes is decided by the point's declared type: a text
+				     type (cls_XA, 0x1401) takes it as JSON text,
+				     "[185.2,194.3,203.4,212.5]" - what the page parses.
+				     A scalar point takes ONE element, named by pro_rng
+				     (IndexRange, from 0). This machine's server ignores the
+				     IndexRange and sends the whole array; the engine applies
+				     the range itself and says so, once per session. -->
+				<io id="ZONES" xdb_cls="cls_XA" pro="" val="" sta="0x0303" desc="the four barrel zones, as one array"
+				    pro_adr="nsu=urn:aymon:examples:moulding;s=IMM1.BarrelTemp"/>
+				<io id="Z4"    xdb_cls="cls_XD" pro="" val="" sta="0x0303" val_unt="C" pro_rng="3" desc="barrel zone 4, the nozzle end"
+				    pro_adr="nsu=urn:aymon:examples:moulding;s=IMM1.BarrelTemp"/>
+
+				<!-- Run, read AND writable - on THIS connection, which is
+				     anonymous. The page's "try it anonymously" button writes
+				     it; the server refuses (BadUserAccessDenied) and the
+				     value stays where it was. -->
+				<io id="RUN_A" xdb_cls="cls_XWB" pro="" val="" sta="0x0303" desc="start/stop, over the anonymous session"
+				    pro_adr="nsu=urn:aymon:examples:moulding;s=IMM1.Run" pro_fno="WRITE" pro_dtyp="Boolean"/>
+			</bi>
+
+		</dev>
+
+		<!-- ================================================================
+		     CONNECTION 2 - the subscription, on a connection of its own
+		     A Publish WAITS at the server until there is news - up to
+		     2 s here when nothing changes. Everything on one session
+		     runs on one thread, so on CN_UA's session that wait would
+		     hold up the poll too: measured, the 1 s poll fell to 0.65
+		     reads a second while the machine stood still. Its own <con>
+		     and <dev> give it its own session and its own thread.
+		     ================================================================ -->
+		<con id="CN_UAP" xdb_fnc="[CON.tcp,PRO.opc]" desc="OPC UA subscription, in the clear, Anonymous"
+		     con_mod="CLIENT" con_way="FULL" con_ses="1"
+		     con_host="" con_port="" con_tmo="3.0" con_rct="5"
+		     pro_role="MASTER" pro_tmo="5.0" pro_sec="None" pro_mod="None"
+		     pro_trust="%DB%/../sim/pki/own/server_cert.pem"
+		     pro="" pro_typ="0xD411" pro_fnc="[]"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- pro_pub_lag / _dur / _rcv: the protocol's subscription
+		     counters - how long the last notification took from the
+		     server to here, how long the last Publish waited, how many
+		     notifications came. -->
+		<dev id="IMMP" pro_con="CN_UAP" con_host="127.0.0.1" con_port="4840"
+		     pro_adr="opc.tcp://127.0.0.1:4840/moulding/" pro_usr=""
+		     desc="moulding machine IMM1, anonymous session for the subscription"
+		     pro_pol_snd="0" pro_pol_rcv="0" pro_pub_lag="0" pro_pub_dur="0" pro_pub_rcv="0"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+
+			<!-- THE SUBSCRIPTION. The server reports a point when it
+			     CHANGES. OPC UA servers do not send on their own: the
+			     engine parks a PublishRequest with the server, and the
+			     server answers it when it has something - or, with
+			     nothing to say, after pro_pub_keep empty intervals.
+			       pro_pub_int    the server's publishing interval, ms:
+			                      changes are sent together at most this
+			                      often
+			       pro_pub_keep   'still here' after this many empty
+			                      intervals (20 x 100 ms = 2 s)
+			       pro_pub_queue  values kept per point between two
+			                      answers; 1 = the latest only
+			       evt_per        how soon the next envelope follows an
+			                      answer. The engine keeps ONE envelope
+			                      at the server, so this does cap the
+			                      rate - measured: evt_per 0.5 delivered
+			                      2 changes a second while the machine
+			                      made 5. TH_UAP runs every 20 ms
+			                      (thr_per) so that 0.05 s here means it. -->
+			<bi id="IMMP_SUB" xdb_fnc="[XDB.evt]" desc="subscription"
+			    sta="0x0303" sta_typ="0x1142" sta_fnc="[EVT.sta,PRO.sta]"
+			    evt="0" evt_typ="0x1204" evt_fnc="[PRO.pol]" evt_cfg="0x0002"
+			    evt_per="0.05" evt_dly="0" evt_thr="TH_UAP"
+			    pro="" pro_typ="0xC412" pro_fnc="[]" pro_fni="PUBLISH"
+			    pro_pub_int="100" pro_pub_keep="20" pro_pub_queue="1">
+
+				<io id="MOULD_S" xdb_cls="cls_XD" pro="" val="" sta="0x0303" val_unt="C" desc="mould temperature, subscribed"
+				    xdb_tim="0" xdb_tim_typ="0x0208" pro_fnc="[VAL.put,main.age]" age="0" age_typ="0x0204"
+				    pro_adr="nsu=urn:aymon:examples:moulding;s=IMM1.MouldTemp"/>
+				<io id="COUNT"   xdb_cls="cls_XU" pro="" val="" sta="0x0303" desc="shots since the last reset"
+				    xdb_tim="0" xdb_tim_typ="0x0208"
+				    pro_adr="nsu=urn:aymon:examples:moulding;s=IMM1.CycleCount"/>
+			</bi>
+		</dev>
+
+		<!-- ================================================================
+		     CONNECTION 3 - signed and encrypted, logged in
+		       pro_sec / pro_mod   Basic256Sha256 / SignAndEncrypt
+		       pro_cert / pro_key  OUR certificate and key (PEM). main.init
+		                 makes them at the first run, with OPC.cert - once:
+		                 a new certificate would have to be trusted again.
+		                 It runs in xdb_init, because the connections are
+		                 configured before xdb_start and this one loads its
+		                 certificate then.
+		       pro_app_uri   must be the URI inside that certificate
+		                 (BadCertificateUriInvalid otherwise)
+		       pro_trust  the server certificates WE trust - a FILE (one or
+		                 more PEM certificates), not a directory. Here it
+		                 points straight at the simulated machine's own,
+		                 because it is on this computer; for a real machine
+		                 you copy its certificate here.
+		       pro_tmo   the first handshake of a secure channel takes a
+		                 while; 10 s
+		     ================================================================ -->
+		<con id="CN_UAS" xdb_fnc="[CON.tcp,PRO.opc]" desc="OPC UA, signed and encrypted, as 'setter'"
+		     con_mod="CLIENT" con_way="FULL" con_ses="1"
+		     con_host="" con_port="" con_tmo="3.0" con_rct="5"
+		     pro_role="MASTER" pro_tmo="10.0"
+		     pro_sec="Basic256Sha256" pro_mod="SignAndEncrypt"
+		     pro_cert="%DB%/pki/aymon_cert.pem" pro_key="%DB%/pki/aymon_key.pem"
+		     pro_app_uri="urn:AyMON:PRJEDU_opcua" pro_app_name="AyMON PRJEDU_opcua"
+		     pro_trust="%DB%/../sim/pki/own/server_cert.pem"
+		     pro="" pro_typ="0xD411" pro_fnc="[]"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- The same server, a second session: logged in as 'setter'. In a
+		     plant the password would not sit in the file in clear text -
+		     it is here because the machine is a simulation. -->
+		<dev id="IMMS" pro_con="CN_UAS" con_host="127.0.0.1" con_port="4840"
+		     pro_adr="opc.tcp://127.0.0.1:4840/moulding/" pro_usr="setter" pro_pwd="setter123"
+		     desc="moulding machine IMM1, secure session as 'setter'"
+		     pro_pol_snd="0" pro_pol_rcv="0"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+
+			<bi id="IMMS_READ" xdb_fnc="[XDB.evt]" desc="read back what we write, every second"
+			    sta="0x0303" sta_typ="0x1142" sta_fnc="[EVT.sta,PRO.sta]"
+			    evt="0" evt_typ="0x1204" evt_fnc="[PRO.pol]" evt_cfg="0x0002"
+			    evt_per="1.0" evt_dly="0.5" evt_thr="TH_UAS"
+			    pro="" pro_typ="0xC412" pro_fnc="[]" pro_fni="READ">
+
+				<!-- WRITABLE POINTS. pro_fno="WRITE" + PRO.out in the
+				     class. pro_dtyp names the UA type to write: servers
+				     are strict, and an Int32 written to a Double node is
+				     BadTypeMismatch. -->
+				<io id="SP_W"  xdb_cls="cls_XW" pro="" val="" sta="0x0303" val_unt="C" desc="mould temperature setpoint, writable"
+				    pro_adr="nsu=urn:aymon:examples:moulding;s=IMM1.MouldTempSP" pro_fno="WRITE" pro_dtyp="Double"/>
+				<io id="RUN_W" xdb_cls="cls_XWB" pro="" val="" sta="0x0303" desc="start/stop, writable"
+				    pro_adr="nsu=urn:aymon:examples:moulding;s=IMM1.Run" pro_fno="WRITE" pro_dtyp="Boolean"/>
+			</bi>
+		</dev>
+
+		<!-- ================================================================
+		     THE PAGE'S REQUESTS, and the timers that carry them out.
+		     The page writes REQ = {"id":n,"op":...,"v":...}; the timer on
+		     the thread of the session the request needs picks it up
+		     (main.cmd_s on TH_UAS, main.cmd_a on TH_UA) and writes the
+		     answer to RES with the same id.
+		     ================================================================ -->
+		<var id="REQ" sta="0x0303" val="" val_typ="0x0401" xdb_acl="0xFFFFFFF3" desc="the page's request, JSON"/>
+		<var id="RES" sta="0x0303" val="" val_typ="0x0401" desc="the answer to it, JSON"/>
+
+		<var id="T_CMD_S" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_UAS" evt_per="0.2" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.cmd_s]" desc="requests for the secure session"/>
+		<var id="T_CMD_A" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_UA" evt_per="0.2" evt_dly="0.1" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.cmd_a]" desc="requests for the anonymous session"/>
+
+		<!-- What the machine has: OPC.browse at the first chance, and an
+		     OPC.gen draft of this file's <bi>/<io> in log/. -->
+		<var id="T_BROWSE" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_UA" evt_per="2" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x4042" evt_fnc="[main.browse]" desc="browse the machine once"/>
+		<var id="BROWSE" sta="0x0303" val="" val_typ="0x0401" desc="the machine's nodes, JSON"/>
+
+		<!-- The three connections as the page shows them, every second. -->
+		<var id="T_STATUS" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_UA" evt_per="1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x4042" evt_fnc="[main.status]" desc="connection status for the page"/>
+		<var id="STATUS" sta="0x0303" val="" val_typ="0x0401" desc="connection status, JSON"/>
+
+		<!-- ================================================================
+		     THE PAGE - http://127.0.0.1:8102/  (only from this computer)
+		     ================================================================ -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the page"
+		     con_host="127.0.0.1" con_port="8102" con_mod="SERVER" con_ses="8" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="the live values, and the page's requests"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_UA" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//*[@val]" pro_retain_atr="val,sta"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

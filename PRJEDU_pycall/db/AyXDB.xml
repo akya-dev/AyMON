@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_pycall - AyMON example: call Python from the XML and from
+     JScript, asynchronously.
+
+     One document, VIB/S00:
+       a pump with a bearing that is slowly going. A vibration sensor
+       (simulated in JScript) sends a block of 512 samples every 2 s.
+       Python analyses each block - RMS, peak, spectrum, the bearing's
+       band - because the XML says so:  <var id="WAVE" val_fnc="[vib.analyse]">.
+       Every 5 s JScript asks Python when the RMS will reach the alarm
+       limit:  vib.forecast(4.5, Time.GetTimeMs()).  Neither waits for
+       Python; the page shows how long each call waited and took.
+
+     Needs a 64-bit Python 3.11 - nothing else, only its standard library.
+
+     Run:  run.bat,  then open  http://127.0.0.1:8112/
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="S01">
+	<config>
+		<doc id="VIB/S00" sta="0x0300" src="%DB%/db_VIB.xml" desc="a pump, a vibration sensor and Python" />
+	</config>
+	<data>
+	</data>
+</xdb>

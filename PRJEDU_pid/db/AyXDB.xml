@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_pid - AyMON example: a PID controller on a heater, for a
+     control course.
+
+     One engine, two documents, kept apart the way a plant and its
+     controller are:
+
+       PLT/S00   the PLANT. A heater block with a temperature sensor: first
+                 order, a dead time, sensor noise, and a fan you can switch
+                 on as a disturbance. It only knows its heater power (MV)
+                 and gives back a temperature.
+       CTL/S00   the CONTROLLER. A PID in script: reads the temperature,
+                 writes the heater power, measures every set-point step
+                 (overshoot, rise, settling, IAE), runs a step test and
+                 suggests a tuning from it. And the web page to do all of
+                 that from: http://127.0.0.1:8092/
+
+     The two meet only at two values: the controller reads
+     doc('PLT/S00')/id('TM')/@val and the plant reads
+     doc('CTL/S00')/id('MV')/@val - which is where a real heater would
+     be wired in instead.
+
+     Run:  run.bat,  then open  http://127.0.0.1:8092/
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="S01">
+	<config>
+		<doc id="PLT/S00" sta="0x0300" src="%DB%/db_PLT.xml" desc="the plant - a heater block" />
+		<doc id="CTL/S00" sta="0x0300" src="%DB%/db_CTL.xml" desc="the controller - PID, and its web page" />
+	</config>
+	<data>
+	</data>
+</xdb>

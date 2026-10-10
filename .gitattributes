@@ -1,0 +1,5 @@
+# Linux scripts must keep LF on every checkout (a CRLF shebang does not run)
+*.sh    text eol=lf
+*.py    text eol=lf
+# The engines are binaries, whatever their names
+bin/**  binary

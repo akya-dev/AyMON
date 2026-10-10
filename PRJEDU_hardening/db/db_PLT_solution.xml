@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PLT/S00 - the plant, HARDENED: one way to fix the seven weaknesses of
+     db_PLT.xml. Every change is marked FIX n below.
+
+       FIX 1  con_acl on both listeners: only 127.0.0.1 may connect
+       FIX 2  CN_LIVE logs every session in (con_auth), and a session
+              starts as Guest (con_role removed)
+       FIX 3  the document refuses by default: xdb_acl gives Guest nothing
+              and the other user roles read only
+       FIX 4  the trip level is the engineer's: its own xdb_acl (the one
+              that let operators write it) is gone, so the document's
+              applies - engineer and admin write, the rest read
+       FIX 5  the recipe: engineer and admin only - the others do not
+              even see it
+       FIX 6  passwords stored as PBKDF2 hashes; the account list readable
+              by the administrator only
+       FIX 7  five wrong passwords from one address lock the account for
+              a minute
+     The operator's two controls (SETPOINT, PUMP_CMD) got their own
+     xdb_acl, because FIX 3 made everything else read-only.
+
+     (What follows is the original description.)
+
+     THE PROCESS. A tank fills through an inlet valve (2 % a second) and a
+     pump empties it (3 % a second). The pump follows the operator's
+     command: AUTO keeps the level near SETPOINT, STOP stops it. A
+     high-level TRIP closes the inlet valve when the level reaches
+     TRIP_LEVEL and opens it again ten points lower. Above 100 % the tank
+     overflows, and OVERFLOW counts what went on the floor. RECIPE is the
+     product's recipe - the customer's secret.
+
+     WHO WORKS HERE. Three people have an account in A_PLANT (their
+     passwords are in the README):
+       mon  monitor    watches
+       opr  operator   sets the setpoint and starts or stops the pump
+       eng  engineer   also sets the trip level and keeps the recipe
+     Nobody else should see or change anything.
+
+     THE WAY IN. One port, 127.0.0.1:8101: the page (CN_WEB) and, inside a
+     WebSocket on the same port, the live values over MQTT (CN_LIVE). The
+     page reads and writes the plant through CN_LIVE.
+
+     The configuration as delivered worked, and had seven weaknesses in
+     how it decided who may do what; this one fixes them.
+     ===================================================================== -->
+<xdb id="PLT/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/PLT.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFF111110">
+	<!-- FIX 3 above: roles 7 and 6 everything, 5..1 read, Guest nothing -->
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_PLT.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<thr id="TH_PLT" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- ================================================================
+		     THE ACCOUNTS
+		       auth_prv    where the users are: 'local' = the <usr> below
+		       auth_map    group -> role
+		       auth_rehash 1 = a password stored in clear text is replaced
+		                   by its hash at the first login (in memory)
+		       usr_pwd     the password, or its hash
+		                   ($pbkdf2-sha256$<rounds>$<salt>$<key>)
+		     The user name attribute is usr_id, not id.
+		     ================================================================ -->
+		<!-- FIX 6: hashes (made with AUTH.hash, or any PBKDF2-SHA256 tool),
+		     auth_rehash="1" for any clear-text password added later, and an
+		     xdb_acl that only the administrator (role 7) passes.
+		     FIX 7: auth_try / auth_lock. -->
+		<auth id="A_PLANT" xdb_acl="0xF0000000"
+		      auth_prv="local"
+		      auth_map="engineer:6, operator:3, monitor:2" auth_map_def="0"
+		      auth_try="5" auth_lock="60" auth_rehash="1">
+			<usr usr_id="mon" usr_grp="monitor"  usr_pwd="$pbkdf2-sha256$100000$y7qqEfsGwbCn2GcAz5g4oQ$6GjU6uOQ2UyxYNRzY8n9rBr51KnyfxC4DEGYC58Wu5A"/>
+			<usr usr_id="opr" usr_grp="operator" usr_pwd="$pbkdf2-sha256$100000$qw2C6FQt_JzRg87Zed1nkQ$iEVdwDpYYRRxAdDIQZiaOTguPFADzTbeSklg6QhAFf4"/>
+			<usr usr_id="eng" usr_grp="engineer" usr_pwd="$pbkdf2-sha256$100000$tP4IIdtEKIqW9cMSJA3CPw$gY4ZqUrrCtzrjsAI-aoAijjvN8RSMKDUuPI4LKHNAso"/>
+		</auth>
+
+		<!-- ================================================================
+		     THE WAY IN - 127.0.0.1:8101
+		       con_role   the role a session starts with
+		       con_auth   the <auth> that logs a session in
+		       con_acl    the addresses that may open a connection at all
+		     ================================================================ -->
+		<!-- FIX 1: con_acl on both listeners. FIX 2: CN_LIVE con_auth, no con_role. -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the page"
+		     con_host="127.0.0.1" con_port="8101" con_mod="SERVER" con_ses="8"
+		     con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="the live values, and the page's writes"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="8"
+		     con_acl="127.0.0.1" con_auth="A_PLANT"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_PLT" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//var" pro_retain_atr="val"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- ================================================================
+		     THE PROCESS
+		     ================================================================ -->
+		<var id="T_SIM" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_PLT" evt_per="0.5" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.step]" desc="the process, twice a second"/>
+
+		<var id="LEVEL"    sta="0x0303" val="40" val_typ="0x0308" val_unt="%" desc="tank level"/>
+		<var id="VALVE"    sta="0x0303" val="1"  val_typ="0x0104" desc="inlet valve open"/>
+		<var id="PUMP"     sta="0x0303" val="0"  val_typ="0x0104" desc="pump running"/>
+		<var id="TRIPPED"  sta="0x0303" val="0"  val_typ="0x0104" desc="the high-level trip has closed the inlet"/>
+		<var id="OVERFLOW" sta="0x0303" val="0"  val_typ="0x0308" val_unt="%" desc="what went over the top, in tank-%"/>
+
+		<!-- the operator's two controls: operator writes, 1..5 read, Guest nothing -->
+		<var id="SETPOINT"   sta="0x0303" val="60"   val_typ="0x1308" val_fnc="[ATR.lmt]" val_min="10" val_max="90" val_unt="%"
+		     xdb_acl="0xFF113110" desc="the level the pump holds in AUTO - the operator's"/>
+		<var id="PUMP_CMD"   sta="0x0303" val="AUTO" val_typ="0x0401" xdb_acl="0xFF113110" desc="AUTO or STOP - the operator's"/>
+		<!-- FIX 4: no xdb_acl of its own - the document's applies -->
+		<var id="TRIP_LEVEL" sta="0x0303" val="95"   val_typ="0x1308" val_fnc="[ATR.lmt]" val_min="0" val_max="150" val_unt="%"
+		     desc="the high-level trip - the engineer's"/>
+		<!-- FIX 5: engineer and admin only -->
+		<var id="RECIPE"     sta="0x0303" val="sugar 12.5 %, citric acid 0.3 %, flavour B-7 1.1 %" val_typ="0x0401"
+		     xdb_acl="0xFF000000" desc="the recipe - the engineer's, and the customer's secret"/>
+		<var id="MSG"        sta="0x0303" val=""     val_typ="0x0401"/>
+
+		<!-- ================================================================
+		     THE SELF-CHECK: what the plant can see of its own configuration,
+		     every five seconds, as JSON for the page (main.self_check)
+		     ================================================================ -->
+		<var id="T_CHECK" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_PLT" evt_per="5" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x4042" evt_fnc="[main.self_check]" desc="the self-check, at start and every 5 s"/>
+		<var id="SELF_CHECK" sta="0x0303" val="[]" val_typ="0x0401" desc="the self-check's findings, JSON"/>
+	</data>
+</xdb>

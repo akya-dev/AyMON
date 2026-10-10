@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     CTL/S00 - the controller: a PID in script, and its lab page.
+
+     THE LOOP. Every T_PID period (0.5 s - the sample time, h) main.tick
+     reads the temperature from the plant, runs the PID and writes the
+     heater power MV. The PID is the textbook ISA form, discrete:
+
+         u = Kp * ( e  +  (1/Ti) * integral(e)  +  Td * de/dt )
+
+       * the derivative acts on the MEASUREMENT, not on e: a set-point step
+         gives no derivative kick. It is filtered (N = 10), or the sensor
+         noise would come through Td amplified
+       * MANUAL mode: MV is MV_MAN, and the integral quietly TRACKS it, so
+         switching back to AUTO does not bump the output
+       * ANTI-WINDUP (AW = 1): while the output is at 0 or 100 %, the
+         integral stops growing in the direction that cannot help. Set
+         AW = 0 and ask for a set point the heater cannot reach to see
+         what happens without it
+       * a TRIP at T_TRIP: the heater is switched off and the loop put in
+         manual, whatever the tuning says
+
+     MEASURING. Every set-point change is a step response: rise time
+     (10 -> 90 %), overshoot, settling time (2 % band) and IAE are worked
+     out while it settles, and logged when it has.
+
+     TUNING. TUNE = 1 runs a step test: the loop goes to manual, waits for
+     the temperature to be steady, steps the heater by TUNE_STEP %,
+     records the answer, fits a first-order-plus-dead-time model to it
+     (ID_K, ID_TAU, ID_THETA) and suggests a PI tuning from the SIMC rules
+     (SUG_KP, SUG_TI). Then it puts the loop back as it found it. The
+     suggestion is not applied: that is the student's decision.
+
+     WHO MAY WRITE. xdb_acl="0xFF111111" on <xdb>: a page reads
+     everything and writes nothing - except the lab's controls (SP, MODE,
+     MV_MAN, KP, TI, TD, AW, TUNE), which carry 0xFF111113. Each of those
+     is clamped by ATR.lmt: a page that sends a set point of 500 gets 85.
+     ===================================================================== -->
+<xdb id="CTL/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/CTL.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFF111111">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_CTL.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<thr id="TH_CTL" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- THE SAMPLE TIME. main.tick reads evt_per from here, so changing
+		     it changes the controller's h too - try 2 s and watch a fast
+		     tuning go unstable. -->
+		<var id="T_PID" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_CTL" evt_per="0.5" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.tick]" desc="controller sample, 0.5 s"/>
+
+		<!-- ================================================================
+		     THE LOOP
+		     ================================================================ -->
+		<var id="PV" sta="0x0303" sta_typ="0x1142" val="40" val_typ="0x1308"
+		     val_fnc="[ALM.onlvl]" val_alm_onlhi_wrn="80" val_alm_onlhi_alm="90"
+		     val_unt="C" desc="process value: the measured temperature"/>
+
+		<var id="SP" xdb_acl="0xFF111113" sta="0x0303" val="40" val_typ="0x1308"
+		     val_fnc="[ATR.rou,ATR.lmt,main.on_sp]" val_rou="0.1" val_min="20" val_max="85"
+		     val_unt="C" desc="request: set point"/>
+
+		<!-- 28.33 %: what holds the block at 40 C - the loop starts in
+		     balance (see PLT/S00), with the integral carrying all of it. -->
+		<var id="MV" sta="0x0303" val="28.33" val_typ="0x0308" val_unt="%" desc="manipulated value: heater power"/>
+
+		<var id="MODE" xdb_acl="0xFF111113" sta="0x0303" val="1" val_typ="0x1104"
+		     val_fnc="[ATR.lmt,main.on_mode]" val_min="0" val_max="1"
+		     desc="request: 1 AUTO (the PID drives MV), 0 MANUAL (MV = MV_MAN)"/>
+		<var id="MV_MAN" xdb_acl="0xFF111113" sta="0x0303" val="28.3" val_typ="0x1308"
+		     val_fnc="[ATR.rou,ATR.lmt]" val_rou="0.1" val_min="0" val_max="100"
+		     val_unt="%" desc="request: heater power in MANUAL"/>
+
+		<!-- The tuning. Deliberately sluggish to start with: a working loop
+		     that leaves the student something to do. -->
+		<var id="KP" xdb_acl="0xFF111113" sta="0x0303" val="2" val_typ="0x1308"
+		     val_fnc="[ATR.lmt,main.on_tuning]" val_min="0" val_max="100"
+		     val_unt="%/C" desc="request: proportional gain"/>
+		<var id="TI" xdb_acl="0xFF111113" sta="0x0303" val="60" val_typ="0x1308"
+		     val_fnc="[ATR.lmt,main.on_tuning]" val_min="0" val_max="3600"
+		     val_unt="s" desc="request: integral time, 0 = no integral action"/>
+		<var id="TD" xdb_acl="0xFF111113" sta="0x0303" val="0" val_typ="0x1308"
+		     val_fnc="[ATR.lmt,main.on_tuning]" val_min="0" val_max="600"
+		     val_unt="s" desc="request: derivative time"/>
+		<var id="AW" xdb_acl="0xFF111113" sta="0x0303" val="1" val_typ="0x1104"
+		     val_fnc="[ATR.lmt,main.on_aw]" val_min="0" val_max="1"
+		     desc="request: 1 = anti-windup on"/>
+		<var id="N_FILT" sta="0x0303" val="10" val_typ="0x0308" desc="derivative filter: Td/N is its time constant"/>
+
+		<!-- The three terms of the last sample, so they can be watched. -->
+		<var id="P_TERM" sta="0x0303" val="0" val_typ="0x0308" val_unt="%"/>
+		<var id="I_TERM" sta="0x0303" val="28.33" val_typ="0x0308" val_unt="%" desc="the integral - also the controller's memory"/>
+		<var id="D_TERM" sta="0x0303" val="0" val_typ="0x0308" val_unt="%"/>
+		<var id="PV_PREV" sta="0x0303" val="40" val_typ="0x4308" desc="PV of the last sample, local"/>
+		<var id="I_STATE" sta="0x0303" val="28.33" val_typ="0x4308" desc="the integral at full precision, local"/>
+		<var id="D_STATE" sta="0x0303" val="0"  val_typ="0x4308" desc="the filtered derivative at full precision, local"/>
+
+		<!-- The trip: at T_TRIP the heater goes off and the loop to MANUAL. -->
+		<var id="T_TRIP"  sta="0x0303" val="90" val_typ="0x0308" val_unt="C" desc="trip temperature"/>
+		<var id="TRIPPED" sta="0x0303" val="0"  val_typ="0x0104" desc="1 after a trip, until the block is 10 C below T_TRIP"/>
+
+		<!-- ================================================================
+		     THE LAST STEP RESPONSE - measured while it settles
+		     ================================================================ -->
+		<var id="STEP_ON"   sta="0x0303" val="0"  val_typ="0x0104" desc="1 while a set-point step is being measured"/>
+		<var id="STEP_FROM" sta="0x0303" val="0"  val_typ="0x0308" val_unt="C"/>
+		<var id="STEP_TO"   sta="0x0303" val="0"  val_typ="0x0308" val_unt="C"/>
+		<var id="STEP_T"    sta="0x0303" val="0"  val_typ="0x0308" val_unt="s" desc="seconds since the step"/>
+		<var id="T10"       sta="0x0303" val="-1" val_typ="0x4308" val_unt="s"/>
+		<var id="T90"       sta="0x0303" val="-1" val_typ="0x4308" val_unt="s"/>
+		<var id="RISE"      sta="0x0303" val="-1" val_typ="0x0308" val_unt="s" desc="10 -> 90 % of the step, -1 not yet"/>
+		<var id="OVERSHOOT" sta="0x0303" val="0"  val_typ="0x0308" val_unt="%" desc="past the new set point, % of the step"/>
+		<var id="SETTLE"    sta="0x0303" val="-1" val_typ="0x0308" val_unt="s" desc="last time outside the 2 % band"/>
+		<var id="IAE"       sta="0x0303" val="0"  val_typ="0x0308" val_unt="C.s" desc="integral of |error| since the step"/>
+
+		<!-- ================================================================
+		     THE STEP TEST AND THE SUGGESTED TUNING
+		     ================================================================ -->
+		<var id="TUNE" xdb_acl="0xFF111113" sta="0x0303" val="0" val_typ="0x1104"
+		     val_fnc="[ATR.lmt,main.on_tune]" val_min="0" val_max="1"
+		     desc="request: 1 starts a step test, 0 stops it"/>
+		<var id="TUNE_STEP"  sta="0x0303" val="20" val_typ="0x0308" val_unt="%" desc="how big the heater step is"/>
+		<var id="TUNE_STATE" sta="0x0303" val="" val_typ="0x0401" desc="what the step test is doing"/>
+		<var id="TUNE_PHASE" sta="0x0303" val="0" val_typ="0x4104" desc="0 idle, 1 waiting for steady, 2 recording"/>
+		<var id="TUNE_T"     sta="0x0303" val="0" val_typ="0x4308" val_unt="s" desc="seconds in the phase"/>
+		<var id="TUNE_REF"   sta="0x0303" val="0" val_typ="0x4308"/>
+		<var id="TUNE_PV0"   sta="0x0303" val="0" val_typ="0x4308"/>
+		<var id="TUNE_MV0"   sta="0x0303" val="0" val_typ="0x4308"/>
+		<var id="TUNE_DMV"   sta="0x0303" val="0" val_typ="0x4308"/>
+		<var id="TUNE_MODE0" sta="0x0303" val="1" val_typ="0x4104"/>
+		<var id="TUNE_DATA"  sta="0x0303" val="[]" val_typ="0x4401" desc="the recorded answer, one PV per sample, local"/>
+
+		<var id="ID_K"     sta="0x0303" val="0" val_typ="0x0308" val_unt="C/%" desc="identified gain"/>
+		<var id="ID_TAU"   sta="0x0303" val="0" val_typ="0x0308" val_unt="s"   desc="identified time constant"/>
+		<var id="ID_THETA" sta="0x0303" val="0" val_typ="0x0308" val_unt="s"   desc="identified dead time"/>
+		<var id="SUG_KP"   sta="0x0303" val="0" val_typ="0x0308" val_unt="%/C" desc="suggested Kp (SIMC PI)"/>
+		<var id="SUG_TI"   sta="0x0303" val="0" val_typ="0x0308" val_unt="s"   desc="suggested Ti (SIMC PI)"/>
+
+		<var id="MSG" sta="0x0303" val="" val_typ="0x0401" desc="the last thing the controller decided"/>
+
+		<!-- The fan is the plant's (PLT/S00/FAN), and an MQTT connection
+		     publishes the changes of its own document only - so the page
+		     would never hear that it was switched. main.tick copies it
+		     here, for the page and nothing else: the PID does not read it,
+		     a real controller does not know there is a fan. -->
+		<var id="FAN_SEEN" sta="0x0303" val="0" val_typ="0x0104" desc="PLT/S00/FAN, mirrored for the page"/>
+
+		<!-- ================================================================
+		     THE WEB SIDE - http://127.0.0.1:8092/
+		     ================================================================ -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the web listener"
+		     con_host="127.0.0.1" con_port="8092" con_mod="SERVER" con_ses="8"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="live values and the lab's controls"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_CTL" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//var" pro_retain_atr="val,sta"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

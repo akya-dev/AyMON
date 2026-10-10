@@ -1,0 +1,67 @@
+:root {
+    --bg: #f5f6f8; --card: #ffffff; --ink: #1d2330; --muted: #6b7385; --line: #dfe3ea; --grid: #e7eaf0;
+    --ok: #2e8b57; --wrn: #d99a00; --alm: #d0402b; --btn: #eef1f5; --btn-h: #e2e6ec;
+    --water: #3b82c4;
+    color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #14171d; --card: #1d2129; --ink: #e6e9ef; --muted: #8d95a7; --line: #2d333f; --grid: #262b35;
+        --ok: #4cb37a; --wrn: #e8b02e; --alm: #ec5f49; --btn: #272c36; --btn-h: #313744;
+        --water: #4a93d6;
+    }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+       font: 15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+         gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--line); background: var(--card); }
+h1 { font-size: 18px; margin: 0; }
+.doc { color: var(--muted); font-weight: 400; font-family: ui-monospace, Consolas, monospace; font-size: 14px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { font-size: 12px; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.chip.ok  { color: var(--ok);  border-color: var(--ok); }
+.chip.bad { color: var(--alm); border-color: var(--alm); }
+
+main { display: grid; gap: 16px; padding: 16px; max-width: 1150px; margin: 0 auto;
+       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.wide { grid-column: 1 / -1; }
+@media (max-width: 760px) { main { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin: 0 0 10px;
+         display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.muted { color: var(--muted); text-transform: none; letter-spacing: 0; }
+.small { font-size: 13px; }
+.ok { color: var(--ok); font-weight: 600; }
+.bad { color: var(--alm); font-weight: 600; }
+
+.login { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.login input { font: inherit; font-size: 14px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px;
+               background: var(--bg); color: var(--ink); min-width: 0; flex: 1 1 120px; }
+.who { margin-top: 10px; min-height: 1.4em; }
+
+.tank-row { display: flex; gap: 18px; align-items: stretch; margin-bottom: 12px; }
+.tank { position: relative; width: 70px; min-height: 150px; border: 2px solid var(--muted); border-top: 0;
+        border-radius: 0 0 8px 8px; background: var(--grid); flex: none; }
+.tank i { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: var(--water); transition: height .4s;
+          border-radius: 0 0 6px 6px; }
+.tank .trip, .tank .sp { position: absolute; left: -6px; right: -6px; height: 0; border-top: 2px dashed var(--alm); }
+.tank .sp { border-top-color: var(--ok); }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 14px; flex: 1; align-content: start; }
+.kv > span { color: var(--muted); }
+.kv > b { font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+.recipe { margin-top: 10px; }
+.ctl { display: grid; gap: 8px; font-size: 13px; }
+.ctl label { display: flex; flex-direction: column; gap: 2px; color: var(--muted); }
+.ctl label b { color: var(--ink); }
+.buttons { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; color: var(--muted); }
+button { font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 6px; cursor: pointer;
+         background: var(--btn); color: var(--ink); border: 1px solid var(--line); }
+button:hover:not(:disabled) { background: var(--btn-h); }
+button:disabled { opacity: .5; cursor: default; }
+.msg { min-height: 1.3em; margin-top: 8px; }
+
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { color: var(--muted); font-weight: 500; font-size: 12px; }
+.check td:first-child { white-space: nowrap; }

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_rep - root file of the CENTRE.
+
+     Compare it with AyXDB_plant.xml. Two lines differ:
+
+         tid="CENTRE"          instead of tid="PLANT"
+         PRC/P01 sta="0x8300"  instead of      sta="0x4300"
+                    HUB                            EDGE
+
+     and one thing is MISSING, which is the point of this file:
+
+         <doc id="PRC/P01" ... />   has no src=.
+
+     THE CENTRE KNOWS ONLY THE NAME OF THE DOCUMENT. There is no file for
+     it, no element list, no types, nothing. A HUB document declared
+     without a src is created EMPTY and the tree arrives from the field:
+     the first thing replication does after connecting is pull the whole
+     document once. Add a point at the plant and it appears here; you do
+     not come and edit a second file.
+
+     (A non-HUB document with no src is still a configuration error - the
+     engine will not quietly give you an empty document.)
+
+     Run:  run_centre.bat
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0"
+     log_lnk="%PRJ%/log/%TID%_XDB.log" sta="0x0300" tid="CENTRE">
+	<config>
+		<!-- This node's own equipment: the one connection that dials the
+		     plant, and a timer that reads the mirror out loud. -->
+		<doc id="SYS/S00" sta="0x0300" src="%DB%/db_sys_centre.xml"
+		     desc="plain - this node's connection and its reporter" />
+
+		<!-- THE MIRROR. HUB, running, no src.
+		     log_lnk is given here because the document has no file to carry
+		     it; %TID% keeps the two engines out of each other's log. -->
+		<doc id="PRC/P01" sta="0x8300" xdb_log="4" log_cfg="0x39C0"
+		     log_lnk="%PRJ%/log/%TID%_PRC.log"
+		     desc="HUB - the mirror of pumping station P01" />
+	</config>
+	<data>
+	</data>
+</xdb>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJPER_phone - the dashboard: every phone that talks to the engine.
+         http://127.0.0.1:8111/     on this PC: may change limits, buzz,
+                                    reset (the session is role 3)
+         https://<address>:8110/    anywhere else: the same page, read-only
+
+     Everything on it comes from PHN/S00 over MQTT; every button is a
+     PUBLISH to one of three request elements: LIMITS, BUZZ, RESET.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Phones Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>Phones <span class="doc">PHN/S00</span></h1>
+    <div class="chips">
+        <span id="c-live"  class="chip" title="MQTT inside a WebSocket to the engine">offline</span>
+        <span id="c-role"  class="chip" title="what this page may write">--</span>
+        <span id="c-count" class="chip" title="phones with a live link (COUNT)">0 phones</span>
+    </div>
+</header>
+
+<main>
+    <div class="top">
+        <section class="card how">
+            <div class="label">Connect a phone</div>
+            <ol>
+                <li>Phone and PC on the <b>same Wi-Fi</b>.</li>
+                <li>On the phone, open <span class="url mono" id="phone-url">https://&lt;this PC's address&gt;:8110/phone.html</span>
+                    <span class="muted" id="phone-url-note">- run.bat printed the address.</span></li>
+                <li>The phone warns about the certificate (it is self-signed, and public): <b>continue anyway</b>.</li>
+                <li>Press <b>Start</b>. It appears here within a second.</li>
+            </ol>
+            <p class="note">No phone at hand? <a href="phone.html?sim=1" target="_blank" rel="noopener">Open a simulated phone</a>
+                - each tab is another one.</p>
+        </section>
+
+        <section class="card limits">
+            <div class="label">Alarm limits <span class="muted">- for every phone, in the classes</span></div>
+            <table>
+                <thead><tr><th></th><th>warning</th><th>alarm</th><th></th></tr></thead>
+                <tbody>
+                    <tr><td>vibration</td><td><input type="number" id="l-VIB-0" step="0.1" min="0"></td><td><input type="number" id="l-VIB-1" step="0.1" min="0"></td><td class="muted">m/s² above</td></tr>
+                    <tr><td>tilt</td><td><input type="number" id="l-TILT-0" step="1" min="0"></td><td><input type="number" id="l-TILT-1" step="1" min="0"></td><td class="muted">° above</td></tr>
+                    <tr><td>battery</td><td><input type="number" id="l-BAT-0" step="1" min="0"></td><td><input type="number" id="l-BAT-1" step="1" min="0"></td><td class="muted">% below</td></tr>
+                </tbody>
+            </table>
+            <div class="row-btn"><button id="l-apply">Apply</button><span class="note" id="l-note"></span></div>
+            <p class="ro-note" id="ro-note" hidden>Read-only here: this page came in through the phones' door
+                (8110), where a session is role 0. Open http://127.0.0.1:8111/ on the PC to change them.</p>
+        </section>
+    </div>
+
+    <section id="phones"></section>
+
+    <section class="card">
+        <div class="label">What the engine decided <span class="muted">- MSG, newest first</span></div>
+        <ul id="msgs"></ul>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_mcp / PLT/S00 - the plant the assistant is allowed to see.
+
+     A tank, a pump and a two-point level controller, simulated once a
+     second. Same shape as PRJEDU_101 and PRJEDU_telnet; read 101 first if
+     <var> is new to you.
+
+     WHAT MAKES THIS DOCUMENT VISIBLE TO AN AI - two attributes on the root:
+
+         mcp_pub="1"       the document is on the MCP whitelist. A document
+                           without it does not exist as far as MCP is
+                           concerned: not listed, not readable, not writable.
+         mcp_desc="..."    one sentence the assistant reads in system_info to
+                           decide whether this is the document it wants.
+                           Write it for a reader who has never seen the plant.
+
+     WHAT THE ASSISTANT MAY DO HERE is not decided by MCP at all. It is
+     xdb_acl, per element - the same rule that answers a web user, a telnet
+     session or a replication link. One nibble per role, role N in bits
+     4N..4N+3, written high role first (0x76543210); 1 read, 2 write,
+     4 create, 8 delete.
+
+         root        0xFF111111   roles 7 and 6 everything, 5..0 read only.
+                                  Every element below that carries no ACL of
+                                  its own inherits this one.
+         SETPOINT    0xFF333111   Operator (3) and up may also WRITE it.
+         VENDOR_NOTE 0xF0000000   Admin only - not even readable below that.
+
+     The two MCP endpoints in AI/S00 run as role 2 (Monitor) and role 3
+     (Operator). So the read-only endpoint sees everything except the vendor
+     note, and the read+write endpoint may change the setpoint - and nothing
+     else, even though its tool list says "set_value".
+
+     WHY <var> AND NOT <dev>/<io>. find_points searches <io> elements only:
+     the built-in tools were shaped by field plants, where every point sits
+     under a polled device. A <dev> with no connection behind it is never
+     raised to running, and its points do not run their val_fnc chain -
+     no rounding, no alarm. So a simulated plant stays in <var>, and the
+     project tool plant_status (AI/S00) answers what find_points cannot.
+     Everything else - system_info, browse, tree, read_points, get_summary,
+     aggregate, the write tools - works on any element.
+     ===================================================================== -->
+<xdb id="PLT/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/PLT.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFF111111"
+     mcp_pub="1"
+     mcp_desc="Tank plant: one tank (LEVEL, %), an inlet pump (PUMP) driven by a two-point controller around SETPOINT, and a maintenance switch (MAINT). Alarms on LEVEL show in its sta. The project tool plant_status gives all of it in one call.">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_PLT.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<thr id="TH_MAIN" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- Once a second, main.tick moves the tank and runs the controller. -->
+		<var id="T_SIM" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="TH_MAIN" evt_per="1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.tick]" desc="simulation step"/>
+
+		<!-- THE MEASUREMENT. No xdb_acl of its own, so it inherits the
+		     root's: read only for every role below Engineer. A measured
+		     value is not something an assistant should be able to "set" -
+		     try it, and set_value answers refused.
+
+		     desc and val_unt are not decoration: MCP hands the desc to the
+		     assistant with every read, and it is how the assistant tells
+		     one point from another. -->
+		<var id="LEVEL" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x1142" sta_fnc="[EVT.sta,main.on_level]"
+		     val="50" val_typ="0x1308" val_fnc="[ATR.rou,ATR.lmt,ALM.onlvl]"
+		     val_min="0" val_max="100" val_rou="0.1" val_unt="%"
+		     val_alm_onlhi_alm="95" val_alm_onlhi_wrn="85"
+		     val_alm_onllo_wrn="20" val_alm_onllo_alm="10"
+		     desc="tank level in percent, measured; warning above 85, alarm above 95"/>
+
+		<!-- THE ONE THING AN OPERATOR MAY CHANGE.
+		     ATR.lmt clamps every write to val_min..val_max. Ask the assistant
+		     to "set the setpoint to 150" and the answer is OKY - and the
+		     value is 90. The limit belongs to the plant, not to whoever is
+		     writing, and it holds for an AI exactly as for a person.
+		     (The project tool set_setpoint in AI/S00 refuses out-of-range
+		     values instead, with a message - the other way to do it.) -->
+		<var id="SETPOINT" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="60" val_typ="0x1308" val_fnc="[ATR.rou,ATR.lmt]"
+		     val_min="20" val_max="90" val_rou="1" val_unt="%"
+		     xdb_acl="0xFF333111"
+		     desc="level setpoint in percent, 20..90; the controller keeps LEVEL around it"/>
+
+		<var id="PUMP" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="0" val_typ="0x1104"
+		     desc="inlet pump, 1 = running; driven by the controller unless MAINT is 1"/>
+
+		<var id="MAINT" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="0" val_typ="0x1104"
+		     desc="maintenance mode, 1 = the controller leaves the pump alone"/>
+
+		<var id="COUNT" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="0" val_typ="0x0104" desc="simulation steps so far"/>
+
+		<!-- ADMIN ONLY. Neither endpoint can read it. MCP does not answer
+		     "denied" for it - it answers "not found", and every list that
+		     would have contained it carries acl_hidden: 1 instead, so the
+		     assistant knows the answer is filtered without learning what
+		     was filtered out. -->
+		<var id="VENDOR_NOTE" sta="0x0303" sta_typ="0x142"
+		     val="service contract 4711, call before opening the pump housing" val_typ="0x0401"
+		     xdb_acl="0xF0000000" desc="vendor service note"/>
+
+		<!-- ================================================================
+		     THE PAGE - http://127.0.0.1:8109/  (only from this computer)
+		     CN_WEB serves www/; CN_LIVE is MQTT inside a WebSocket on the
+		     same port (/mqtt) and publishes this document: a new
+		     subscription gets the current values at once (retain), and
+		     every change after that.
+		     The page is for a person watching what the assistant does. It is a
+		     Guest (role 0): the document's xdb_acl gives it read, so it sees what
+		     the read-only endpoint sees - and not VENDOR_NOTE (0xF0000000).
+		     ================================================================ -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the page"
+		     con_host="127.0.0.1" con_port="8109" con_mod="SERVER" con_ses="8" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="the live values for the page"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_PLTW" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//var" pro_retain_atr="val,sta"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

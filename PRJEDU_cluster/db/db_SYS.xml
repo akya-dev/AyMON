@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     SYS/S00 - one node's own equipment. SHARED by both nodes: the same
+     file, read by two engines, each working out from tid which end it is.
+
+     THE LISTENER (CN_EXT). One port per node: S01 listens on 9201, S02 on
+     9202 - main.init sets con_port from tid before any connection starts.
+     Everything a node offers shares it and is told apart by path:
+         /           the page (PRO.http)
+         /mqtt       the page's live values (CN_LIVE)
+         /clt        the election (CN_S01 / CN_S02)
+         /rep        replication (CN_R01 / CN_R02)
+
+     THE ELECTION (PRO.clt). One row per node, the SAME rows on both.
+     CLT.cfg compares a row's pro_nid (the node that listens there) with
+     tid: the matching row becomes this node's SERVER end on #CN_EXT, the
+     other one dials the peer. Priority: S01 = 1 (preferred), S02 = 2.
+     The nodes talk three topics: /elc (campaign), /hot (I am master),
+     /sta (heartbeat, every pro_clt_hb seconds).
+
+     REPLICATION (PRO.rep). The same pattern, one row per node. What it
+     carries is APP/S00; the DIRECTION is not here - the master sends
+     because its APP is CL-MASTER, the spare receives because its APP is
+     CL-SPARE, and when the roles change the direction changes with them.
+
+     Both run on 127.0.0.1: an unlicensed engine allows cluster and
+     replication on LOCAL connections (FREE); across machines they need a
+     licence.
+
+     Six connections, two documents under the root: inside FREE.
+     ===================================================================== -->
+<xdb id="SYS/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/%TID%_SYS.log"
+     xdb_init="main.init(evt);" xdb_start="main.start(evt);"
+     sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFF111111">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_SYS.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+
+		<!-- what the four cluster rows share -->
+		<tcon id="cls_CLU" sta_typ="0x1142" sta_fnc="[PRO.sta]"
+		      con_tmo="5" con_rct="2" con_clr="1" con_keeptmo="30.0" con_idletmo="0"
+		      con_acl="127.0.0.1"
+		      pro_ver="3.1.1" pro_tmo="5" pro_try="1" pro_typ="0xC412" pro_fnc="[]" pro_subqos="0"/>
+	</config>
+
+	<data>
+		<thr id="TH_SYS" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- THE LISTENER. con_port is written by main.init: 9200 + the node's number. -->
+		<con id="CN_EXT" xdb_fnc="[CON.tcp,PRO.http]" desc="the node's one listener"
+		     con_host="127.0.0.1" con_port="" con_mod="SERVER" con_ses="12"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="the page's live values"
+		     con_host="#CN_EXT" con_port="/mqtt" con_mod="SERVER" con_ses="4"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_SYS" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//var" pro_retain_atr="val"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- ================================================================
+		     THE ELECTION - the same two rows on both nodes.
+		     xdb_fnc: CLT.cfg FIRST - it writes con_mod / con_host / con_port,
+		              which CON.ws reads.
+		     pro_clt_link / _path   this node's end: the listener and the path
+		     pro_clt_host / _port   where the node named by pro_nid listens
+		     pro_clt_pri            1 wins an election against 2
+		     pro_clt_hb / _expiry   a heartbeat every 2 s; 2 missed = the
+		                            master is gone (a closed connection is
+		                            noticed at once)
+		     pro_clt_init           at start, listen this long for a master
+		                            before campaigning
+		     pro_clt_cmd            'standdown' / 'takeover' - a hand-over.
+		                            The page writes CLT_CMD; main.on_clt_cmd
+		                            passes it here.
+		     con_role="8"           the peer's election messages are written
+		                            into this row (@pro); SYS/S00 is read-only
+		                            for the user roles (xdb_acl), so a peer
+		                            arriving as Guest (0) would be refused -
+		                            one ALERT a second. The cluster guide says
+		                            Guest is enough: that holds only where the
+		                            document has no xdb_acl.
+		     ================================================================ -->
+		<con id="CN_S01" xdb_cls="cls_CLU" xdb_fnc="[CLT.cfg,CON.ws,PRO.clt]" desc="election - node S01"
+		     sta="0x0303" pro_nid="S01" con_host="" con_port="" con_role="8"
+		     pro_clt_link="#CN_EXT" pro_clt_path="/clt" pro_clt_host="127.0.0.1" pro_clt_port="9201"
+		     pro_clt_id="APP" pro_clt_pri="1"
+		     pro_clt_hb="2" pro_clt_expiry="2" pro_clt_elec="2" pro_clt_init="5" pro_clt_preempt="0"
+		     pro_clt_cmd="" pro_clt_cmd_typ="0x1401" pro_clt_cmd_fnc="[CLT.cmd]"/>
+		<con id="CN_S02" xdb_cls="cls_CLU" xdb_fnc="[CLT.cfg,CON.ws,PRO.clt]" desc="election - node S02"
+		     sta="0x0303" pro_nid="S02" con_host="" con_port="" con_role="8"
+		     pro_clt_link="#CN_EXT" pro_clt_path="/clt" pro_clt_host="127.0.0.1" pro_clt_port="9202"
+		     pro_clt_id="APP" pro_clt_pri="2"
+		     pro_clt_hb="2" pro_clt_expiry="2" pro_clt_elec="2" pro_clt_init="5" pro_clt_preempt="0"
+		     pro_clt_cmd="" pro_clt_cmd_typ="0x1401" pro_clt_cmd_fnc="[CLT.cmd]"/>
+
+		<!-- ================================================================
+		     REPLICATION - the same two rows on both nodes.
+		     pro_rep_doc   what travels: the job, APP/S00
+		     pro_rep_dir   "both": the link carries whichever way the roles
+		                   say - master to spare, and a command a user gave
+		                   the spare forwarded to the master
+		     con_role="8"  the peer writes as the DOCUMENT role, above the
+		                   user roles xdb_acl governs
+		     ================================================================ -->
+		<con id="CN_R01" xdb_cls="cls_CLU" xdb_fnc="[REP.cfg,CON.ws,PRO.rep]" desc="replication - node S01"
+		     sta="0x0303" pro_nid="S01" con_host="" con_port="" con_role="8"
+		     pro_rep_link="#CN_EXT" pro_rep_path="/rep" pro_rep_host="127.0.0.1" pro_rep_port="9201"
+		     pro_rep_doc="APP/S00" pro_rep_atr="*" pro_rep_dir="both"/>
+		<con id="CN_R02" xdb_cls="cls_CLU" xdb_fnc="[REP.cfg,CON.ws,PRO.rep]" desc="replication - node S02"
+		     sta="0x0303" pro_nid="S02" con_host="" con_port="" con_role="8"
+		     pro_rep_link="#CN_EXT" pro_rep_path="/rep" pro_rep_host="127.0.0.1" pro_rep_port="9202"
+		     pro_rep_doc="APP/S00" pro_rep_atr="*" pro_rep_dir="both"/>
+
+		<!-- twice a second: the cluster's state and the job's values, for the page -->
+		<var id="T_TICK" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_SYS" evt_per="0.5" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.tick]"/>
+
+		<!-- ================================================================
+		     WHAT THE PAGE SEES - this node's view
+		     ================================================================ -->
+		<var id="NODE"   sta="0x0303" val=""  val_typ="0x0401" desc="this node's tid"/>
+		<var id="PORT"   sta="0x0303" val="0" val_typ="0x0104" desc="this node's listener port"/>
+		<var id="ROLE"   sta="0x0303" val=""  val_typ="0x0401" desc="STARTING, ELECTION, MASTER or SPARE"/>
+		<var id="MASTER" sta="0x0303" val=""  val_typ="0x0401" desc="the node known to be master ('' while not proven)"/>
+		<var id="TERM"   sta="0x0303" val="0" val_typ="0x0104" desc="the election round"/>
+		<var id="PEER"   sta="0x0303" val=""  val_typ="0x0401" desc="the other node"/>
+		<var id="PEER_UP" sta="0x0303" val="0" val_typ="0x1104" val_fnc="[ALM.onin]" val_alm_onin_wrn="[0]"
+		     desc="1 = the other node is heard; a warning when not"/>
+		<var id="APP_STA" sta="0x0303" val="" val_typ="0x0401" desc="APP/S00's sta on this node"/>
+		<var id="ROLES"  sta="0x0303" val="[]" val_typ="0x0401" desc="role changes this node saw, JSON"/>
+
+		<!-- the job's values, read from APP/S00 on this node - the master's
+		     own, or the spare's replicated copy -->
+		<var id="A_RUN"    sta="0x0303" val="0" val_typ="0x0104"/>
+		<var id="A_RATE"   sta="0x0303" val="0" val_typ="0x0104"/>
+		<var id="A_COUNT"  sta="0x0303" val="0" val_typ="0x0104"/>
+		<var id="A_BATCH"  sta="0x0303" val="0" val_typ="0x0104"/>
+		<var id="A_BY"     sta="0x0303" val=""  val_typ="0x0401" desc="the node that made the last unit"/>
+		<var id="A_AGE_MS" sta="0x0303" val="0" val_typ="0x0308" desc="how old the last unit is on this node"/>
+		<var id="A_LOG"    sta="0x0303" val="[]" val_typ="0x0401" desc="the finished batches, JSON"/>
+
+		<!-- WHAT THE PAGE MAY WRITE: a hand-over (standdown on the master,
+		     takeover on the spare). -->
+		<var id="CLT_CMD" sta="0x0303" val="" val_typ="0x1401" val_fnc="[main.on_clt_cmd]" xdb_acl="0xFF111113"
+		     desc="'standdown' or 'takeover'"/>
+	</data>
+</xdb>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJPER_tello -- the ground station page. Served by CN_WEB (PRO.http)
+     from this directory. Four files, nothing downloaded: this one,
+     app.js, mqtt-lite.js and style.css.
+
+     Everything on it comes from TEL/S00 over MQTT, and everything it does
+     is a PUBLISH to one of three request elements: CMD, MISSION, RC.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tello Ground Station</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>Tello <span class="doc">TEL/S00</span></h1>
+    <div class="chips">
+        <span id="c-mqtt"   class="chip" title="MQTT over ws://.../mqtt">MQTT</span>
+        <span id="c-link"   class="chip" title="state lines from the drone (LINK)">LINK</span>
+        <span id="c-sdk"    class="chip" title="the drone answered 'command' (SDK)">SDK</span>
+        <span id="c-flying" class="chip" title="h above 5 cm (FLYING)">ON GROUND</span>
+    </div>
+</header>
+
+<main>
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card map-card">
+        <div class="label">Seen from above <span class="muted">- the path is worked out from the speed, so it drifts on a real drone</span></div>
+        <svg id="map" viewBox="-200 -200 400 400" aria-label="top view">
+            <g id="grid"></g>
+            <polyline id="path" fill="none" points=""/>
+            <circle cx="0" cy="0" r="4" class="home"/>
+            <g id="drone">
+                <path d="M0,-14 L9,10 L0,5 L-9,10 Z"/>
+            </g>
+        </svg>
+        <div class="map-foot">
+            <span>grid <b id="grid-cm">50</b> cm</span>
+            <span>nose up = where it pointed at takeoff</span>
+            <button id="clear-path" class="small">clear path</button>
+        </div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card inst-card">
+        <div class="inst-row">
+            <div class="inst">
+                <div class="label">Attitude</div>
+                <svg id="horizon" viewBox="-50 -50 100 100" aria-label="attitude">
+                    <defs><clipPath id="hclip"><circle r="46"/></clipPath></defs>
+                    <g clip-path="url(#hclip)">
+                        <g id="h-rot"><g id="h-pitch">
+                            <rect x="-120" y="-120" width="240" height="120" class="sky"/>
+                            <rect x="-120" y="0" width="240" height="120" class="ground"/>
+                            <line x1="-120" y1="0" x2="120" y2="0" class="hz"/>
+                        </g></g>
+                    </g>
+                    <circle r="46" class="rim"/>
+                    <path d="M-26,0 H-8 L0,6 L8,0 H26" class="plane"/>
+                </svg>
+                <div class="small-read">pitch <b id="v-PITCH">--</b>&deg; &middot; roll <b id="v-ROLL">--</b>&deg;</div>
+            </div>
+            <div class="inst">
+                <div class="label">Heading</div>
+                <svg id="compass" viewBox="-50 -50 100 100" aria-label="heading">
+                    <circle r="46" class="rim"/>
+                    <g id="rose">
+                        <text y="-33" class="tick">N</text>
+                        <text x="36" y="4" class="tick">E</text>
+                        <text y="41" class="tick">S</text>
+                        <text x="-36" y="4" class="tick">W</text>
+                    </g>
+                    <path d="M0,-30 L6,6 L0,2 L-6,6 Z" class="needle"/>
+                </svg>
+                <div class="small-read">yaw <b id="v-YAW">--</b>&deg;</div>
+            </div>
+        </div>
+
+        <div class="bars">
+            <div class="bar-block">
+                <div class="label">Height <span id="s-H" class="state"></span></div>
+                <div class="hbar"><div id="hbar-fill"></div><div id="hbar-max" title="MAX_H"></div></div>
+                <div><span id="v-H" class="big">--</span> <span class="unit">cm</span>
+                     <span class="muted">&middot; limit <span id="v-MAX_H">--</span> cm &middot; floor <span id="v-TOF">--</span> cm</span></div>
+            </div>
+            <div class="bar-block">
+                <div class="label">Battery <span id="s-BAT" class="state"></span></div>
+                <div class="hbar"><div id="bat-fill"></div><div id="bat-land" title="BAT_LAND"></div></div>
+                <div><span id="v-BAT" class="big">--</span> <span class="unit">%</span>
+                     <span class="muted">&middot; lands at <span id="v-BAT_LAND">--</span> % &middot; no takeoff below <span id="v-BAT_TAKEOFF">--</span> %</span></div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div><div class="label">Temp</div><span id="v-TEMPH" class="mid">--</span> <span class="unit">C</span> <span id="s-TEMPH" class="state"></span></div>
+            <div><div class="label">Motors</div><span id="v-TIME" class="mid">--</span> <span class="unit">s</span></div>
+            <div><div class="label">Speed</div><span id="v-SPD" class="mid">--</span> <span class="unit">cm/s</span></div>
+            <div><div class="label">Baro</div><span id="v-BARO" class="mid">--</span></div>
+        </div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card cmd-card">
+        <div class="label">Fly <span class="muted">- each button publishes to <code>TEL/S00/CMD/val/set</code></span></div>
+        <div class="btn-row">
+            <button data-cmd="takeoff" class="go">Take off</button>
+            <button data-cmd="land" class="go">Land</button>
+            <button data-cmd="stop" title="hover where you are">Stop</button>
+            <button data-cmd="emergency" class="danger" title="motors off - it falls">EMERGENCY</button>
+        </div>
+        <div class="pad">
+            <button data-cmd="ccw 90">&#8634; 90</button>
+            <button data-cmd="forward 100">&uarr; fwd 100</button>
+            <button data-cmd="cw 90">&#8635; 90</button>
+            <button data-cmd="left 100">&larr; left 100</button>
+            <button data-cmd="back 100">&darr; back 100</button>
+            <button data-cmd="right 100">right 100 &rarr;</button>
+            <button data-cmd="up 50">up 50</button>
+            <button data-cmd="flip f">flip</button>
+            <button data-cmd="down 50">down 50</button>
+        </div>
+
+        <div class="label">Missions <span class="muted">- <code>TEL/S00/MISSION/val/set</code>, plans in <code>main.missions()</code></span></div>
+        <div class="btn-row">
+            <button data-mission="square">square</button>
+            <button data-mission="box">box</button>
+            <button data-mission="hop">hop</button>
+            <button data-mission="tower" title="climbs until MAX_H says no">tower</button>
+        </div>
+
+        <form id="free" class="free">
+            <input id="free-cmd" placeholder="any SDK command: go 50 50 0 30, speed 80, battery?" autocomplete="off">
+            <button type="submit">Send</button>
+        </form>
+
+        <div class="label">Sticks <span class="muted">- keyboard, while this page has focus: <code>TEL/S00/RC/val/set</code></span></div>
+        <div class="keys">
+            <span><kbd>W</kbd><kbd>S</kbd> forward / back</span>
+            <span><kbd>A</kbd><kbd>D</kbd> left / right</span>
+            <span><kbd>R</kbd><kbd>F</kbd> up / down</span>
+            <span><kbd>Q</kbd><kbd>E</kbd> turn</span>
+            <span id="rc-now" class="muted">rc 0 0 0 0</span>
+        </div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card gs-card">
+        <div class="label">Ground station</div>
+        <div class="kv"><span>waiting for</span><b id="v-BUSY" class="mono">-</b></div>
+        <div class="kv"><span>last answer</span><b id="v-REPLY" class="mono">-</b></div>
+        <div class="label q-label">Queue</div>
+        <ol id="queue" class="mono"></ol>
+        <div class="label">What it decided</div>
+        <ol id="msgs"></ol>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

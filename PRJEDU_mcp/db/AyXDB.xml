@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_mcp - AyMON example: an AI assistant talks to the plant (PRO.mcp)
+     No hardware, no database, nothing to install.
+
+     THE ROOT DOCUMENT. It names the engine and loads two child documents:
+
+         PLT/S00   a small simulated tank plant. PUBLISHED to MCP
+                   (mcp_pub="1" on its root) - the assistant can see it.
+         AI/S00    the MCP endpoints and the project's own MCP tools.
+                   NOT published - the assistant cannot see the place its
+                   own door is configured.
+
+     Two MCP endpoints, both on this machine only:
+
+         http://127.0.0.1:8095/mcp   CN_MCP    read only,  role 2 Monitor
+         http://127.0.0.1:8096/mcp   CN_MCPW   read+write, role 3 Operator
+
+     Run:   run.bat
+     Then:  try.bat                  (no AI needed - plain JSON-RPC calls)
+     Or:    point Claude Code / Claude Desktop at it - see README.md
+
+     Path macros: %PRJ% = this project directory, %DB% = this db directory.
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="S01">
+	<config>
+		<doc id="PLT/S00" sta="0x0300" src="%DB%/db_PLT.xml" desc="the plant - published to MCP" />
+		<doc id="AI/S00"  sta="0x0300" src="%DB%/db_AI.xml"  desc="the MCP endpoints - not published" />
+	</config>
+	<data>
+	</data>
+</xdb>

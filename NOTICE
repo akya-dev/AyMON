@@ -1,0 +1,155 @@
+AyMON -- third-party notices
+Copyright (c) 2026 Senol Ercetin, exclusively licensed to AKYA Canada Inc.
+
+This file covers ONLY what is shipped in bin/ of this repository. The terms
+for AyMON itself are in /LICENSE.
+
+The Example Projects themselves (the PRJ* directories) contain no third-party
+code. Everything below concerns the engine binaries in bin/.
+
+Full licence texts are in licenses/ -- see licenses/README.md for the map.
+
+=============================================================================
+SHIPPED AS ITS OWN FILE (Windows)
+=============================================================================
+
+OpenSSL 3.5.1
+  bin/win-x64/libssl-3-x64.dll, bin/win-x64/libcrypto-3-x64.dll
+  Copyright (c) 1998-2025 The OpenSSL Project Authors
+  Copyright (c) 1995-1998 Eric Young, Tim Hudson
+  Licensed under the Apache License, Version 2.0.
+  https://www.openssl.org/source/license.html
+  Used by AyPRO for TLS (CON.tls, CON.wss), SNMPv3 and OPC UA
+  cryptography, the codec functions and Ed25519 licence verification, and
+  by AyLIB_net for SSH. A full copy of the Apache-2.0 text is in
+  licenses/Apache-2.0.txt, and OpenSSL's own licence file as shipped
+  upstream is in licenses/OpenSSL-3.5.1.txt.
+  On Linux the engine uses the system's OpenSSL 3 (libssl.so.3,
+  libcrypto.so.3); it is not shipped here.
+
+=============================================================================
+COMPILED INTO AyDATA (bin/win-x64/AyDATA.dll, bin/linux-x64/libAyDATA.so)
+=============================================================================
+
+mimalloc 2.2.5 -- Microsoft Research
+  Copyright (c) 2018-2025 Microsoft Corporation, Daan Leijen
+  MIT License (licenses/mimalloc-MIT.txt).
+  https://github.com/microsoft/mimalloc
+  The default allocator behind AyDATA's memory layer, linked statically.
+
+=============================================================================
+COMPILED INTO AyPRO (bin/win-x64/AyPRO.dll, bin/linux-x64/libAyPRO.so)
+=============================================================================
+
+Eclipse Paho MQTT Embedded C -- packet layer
+  Copyright (c) 2014 IBM Corp. and others; Ian Craggs and contributors
+  Dual licensed under the Eclipse Public License 1.0 and the Eclipse
+  Distribution License 1.0 (a BSD-3-Clause licence).
+  AKYA USES IT UNDER THE ECLIPSE DISTRIBUTION LICENSE 1.0.
+  AyPRO's MQTT 5 packet serialiser is an AKYA rewrite that keeps Paho's
+  structure and function names and is treated as a derivative work.
+  EDL text: licenses/EDL-1.0.txt
+
+base64 -- Jouni Malinen
+  Copyright (c) 2005-2011 Jouni Malinen
+  BSD licence (licenses/base64-BSD-3-Clause.txt). Base64 encoding and
+  decoding on the connection layer.
+
+SHA-1 -- RFC 3174 reference implementation
+  Copyright (c) The Internet Society (2001). All Rights Reserved.
+  Free use with attribution, under the IETF/Internet Society terms of
+  RFC 3174 (licenses/RFC3174-SHA1.txt). Used for the WebSocket handshake.
+
+No other third-party source is compiled into AyPRO. The WebSocket framing,
+the HTTP helper and the Z64/base64 codec that earlier versions took from
+wsServer (GPL-3.0), Mongoose (GPL-2.0) and Apple (APSL-2.0) were replaced
+by AKYA implementations in AyMON 4.3.4.326; none of that code remains.
+
+=============================================================================
+COMPILED INTO THE PLUG-INS IN bin/
+=============================================================================
+
+AyPRO_sqlite (AyPRO_sqlite.dll, libAyPRO_sqlite.so) -- SQLite 3.45.3
+  SQLite is in the public domain. https://www.sqlite.org/
+  The upstream amalgamation, compiled unchanged with SQLITE_THREADSAFE=1.
+  licenses/SQLite-public-domain.txt
+
+AyPRO_hid (AyPRO_hid.dll, Windows only) -- HIDAPI
+  HIDAPI -- Multi-Platform library for communication with HID devices.
+  Copyright (c) 2009-2010 Alan Ott, Signal 11 Software. All Rights Reserved.
+  http://github.com/signal11/hidapi
+  HIDAPI is offered under the GNU GPL v3, a BSD-style licence, or the
+  original HIDAPI licence, at the user's discretion.
+  AKYA USES IT UNDER THE BSD-STYLE OPTION (licenses/HIDAPI-BSD-3-Clause.txt,
+  HIDAPI's own LICENSE-bsd.txt).
+
+AyPRO_odbc (AyPRO_odbc.dll, libAyPRO_odbc.so)
+  No third-party source. It links the system's ODBC driver manager only
+  (odbc32 on Windows, unixODBC on Linux).
+
+The plug-in code around these components is AKYA's own and is supplied under
+Part B of /LICENSE.
+
+=============================================================================
+COMPILED INTO THE ENGINE MODULES IN bin/
+=============================================================================
+
+AyLIB_vision (AyLIB_vision.dll, libAyLIB_vision.so)
+  -- stb_image 2.30, stb_image_write 1.16
+  Copyright (c) 2017 Sean Barrett. https://github.com/nothings/stb
+  Public domain or MIT, at the user's choice.
+  licenses/stb-MIT-or-public-domain.txt
+  The JPEG / PNG decoder and encoder, pinned upstream copies, compiled in
+  twice (the camera and the IMG.* functions, each its own static copy). The
+  module code around them, including the camera sources (Media Foundation /
+  V4L2, the HTTP and RTSP clients and their MD5), is AKYA's own.
+
+AyLIB_net (AyLIB_net.dll, libAyLIB_net.so) -- libssh2 1.11.1, miniz 3.0.2
+  libssh2: Copyright (C) 2004-2007 Sara Golemon, (C) 2005,2006 Mikhail
+  Gusarov, (C) 2006-2007 The Written Word, Inc., (C) 2007 Eli Fant,
+  (C) 2009-2023 Daniel Stenberg, (C) 2008, 2009 Simon Josefsson, (C) 2000
+  Markus Friedl, (C) 2015 Microsoft Corp. https://libssh2.org
+  BSD 3-clause licence. licenses/libssh2-BSD-3-Clause.txt
+  The SSH transport only (CON.ssh / PRO.sftp), with OpenSSL's libcrypto; one
+  change to the upstream sources (an EC public key asked of OpenSSL in its
+  encoded form). Some files carry their own notices: bcrypt_pbkdf.c (Ted
+  Unangst; ISC-style), blowfish.c (Niels Provos; BSD), chacha.c (D. J.
+  Bernstein; public domain), poly1305.c (Andrew Moon; public domain),
+  cipher-chachapoly.c (Damien Miller; ISC-style).
+  miniz: Copyright 2013-2014 RAD Game Tools and Valve Software, Copyright
+  2010-2014 Rich Geldreich and Tenacious Software LLC.
+  https://github.com/richgel999/miniz  MIT licence. licenses/miniz-MIT.txt
+  Its deflate compressor only, behind FILE.zip.
+  The module code around them (PRO.smtp, PRO.ftp, PRO.sftp, CON.ssh,
+  FILE.*) is AKYA's own.
+
+AyLIB_Python (AyLIB_Python.dll, libAyLIB_Python.so) -- pybind11 2.10.2
+  Copyright (c) 2016 Wenzel Jakob. BSD 3-Clause licence.
+  https://github.com/pybind/pybind11
+  licenses/pybind11-BSD-3-Clause.txt
+  Header-only, compiled in. Python itself is NOT shipped: the module loads
+  the 64-bit Python 3.11 installed on the machine, which comes with its own
+  licence (PSF License Agreement, https://docs.python.org/3/license.html).
+
+=============================================================================
+SYSTEM COMPONENTS (not redistributed here)
+=============================================================================
+
+Windows: the binaries require the Microsoft Visual C++ 2015-2022
+redistributable (VCRUNTIME140.dll, VCRUNTIME140_1.dll, MSVCP140.dll) and use
+Windows system libraries (kernel32, user32, advapi32, ws2_32, iphlpapi,
+ole32, oleaut32, shell32, winmm, crypt32, wintrust, bcrypt, wldap32,
+odbc32, setupapi, and the Media Foundation libraries mfplat, mf and
+mfreadwrite).
+
+Linux: glibc 2.34 or newer, OpenSSL 3 (libssl.so.3, libcrypto.so.3) and,
+when used, unixODBC and Python 3.11, all from the distribution.
+
+None of these is shipped in this repository; they come from the operating
+system and its packages.
+
+No component shipped in bin/ is under a copyleft licence. Every third-party
+component listed above is permissively licensed (Apache-2.0, BSD, MIT, public
+domain), so this notice plus the texts in licenses/ is the whole obligation.
+
+Enquiries: aymon@akya.ca

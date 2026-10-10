@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     LINE/S00 - the machine: a line that makes parts in lots.
+
+     It makes product A (one part every 2.0 s at full speed) or product B
+     (2.5 s), a lot of LOT parts at a time, then stops for a CHANGEOVER to
+     the other product. On the way it loses time the way real machines do:
+
+       breakdowns      now and then (FAULT_EVERY_S), 15..45 s. The machine
+                       KNOWS what broke and says so: reason 10, 11 or 12.
+       jams            often (JAM_EVERY_S), 1..4 s. The machine only knows
+                       it stopped: reason 0.
+       no material     now and then (MATERIAL_EVERY_S), 10..30 s. Reason 0
+                       as well - the machine cannot tell a missing pallet
+                       from a jam. Someone has to say why.
+       running slow    a third of the time at SLOW_PCT % of full speed.
+       changeover      after every lot, CHANGE_S seconds, reason 30.
+       bad parts       SCRAP_PCT % of all parts; the first STARTUP parts
+                       after a changeover are bad one time in three.
+       held            while the MES says so (register 6): reason 90 -
+                       the planned break.
+
+     WHAT IT TELLS THE OUTSIDE WORLD: seven Modbus holding registers on
+     127.0.0.1:1505, unit 1 - nothing else.
+       reg 0  state        0 stopped, 1 running, 2 held
+       reg 1  reason       why it is not running, if it knows (0 = it
+                           does not)
+       reg 2  total        parts made, a 16-bit counter: after 65535
+                           comes 0
+       reg 3  scrap        bad parts, 16-bit counter
+       reg 4  scrap_su     of those, bad in the startup after a changeover
+       reg 5  product      1 = A, 2 = B
+       reg 6  hold         WRITTEN BY THE MES: 1 = hold for a planned stop
+     The counters start near 65535 on purpose: they wrap within the first
+     minutes, and the MES has to cope. A real machine's counters wrap too,
+     or are reset by someone at the machine.
+
+     THE WORLD BUTTONS. The page may make things happen: FAULT_NOW,
+     JAM_NOW, MATERIAL_NOW, CHANGE_NOW (requests, main.step does them and
+     resets them) and the settings below. No xdb_acl here: this is the
+     machine on the bench.
+     ===================================================================== -->
+<xdb id="LINE/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/LINE.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_LINE.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<thr id="TH_SIM" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- ================================================================
+		     THE SEVEN REGISTERS: a Modbus TCP slave, as in PRJEDU_plc
+		     ================================================================ -->
+		<con id="CN_SLV" xdb_fnc="[CON.tcp,PRO.modbus]" desc="the machine's Modbus TCP slave"
+		     con_host="127.0.0.1" con_port="1505" con_mod="SERVER" pro_role="SLAVE" pro_mod="TCP"
+		     con_acl="127.0.0.1"
+		     con_way="FULL" con_ses="4" thr_wrk="1" con_clr="1" con_tmo="1.0" con_comdly="0"
+		     con_rct="5" con_idletmo="0" con_keeptmo="0"
+		     pro_tmo="1" pro_try="1" pro_typ="0xD411" pro="" pro_fnc="[]"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]" evt_thr="CN_SLV"/>
+
+		<dev id="MB" pro_slave_con="CN_SLV" pro_slave_adr="1"
+		     desc="unit 1" sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+			<bi id="MB_BLK" desc="holding registers 0..6"
+			    sta="0x0303" sta_typ="0x1142"
+			    pro_typ="0xD412" pro="" pro_adr="0" pro_len="7">
+				<io id="R_STATE"    pro="0"     pro_typ="0x1102" pro_adr="0" sta="0x0303" sta_typ="0x1142" desc="0 stopped, 1 running, 2 held"/>
+				<io id="R_REASON"   pro="0"     pro_typ="0x1102" pro_adr="1" sta="0x0303" sta_typ="0x1142" desc="why not running (0 = not known)"/>
+				<io id="R_TOTAL"    pro="65400" pro_typ="0x1102" pro_adr="2" sta="0x0303" sta_typ="0x1142" desc="parts made, wraps at 65536"/>
+				<io id="R_SCRAP"    pro="65500" pro_typ="0x1102" pro_adr="3" sta="0x0303" sta_typ="0x1142" desc="bad parts, wraps at 65536"/>
+				<io id="R_SCRAP_SU" pro="0"     pro_typ="0x1102" pro_adr="4" sta="0x0303" sta_typ="0x1142" desc="bad in the startup after a changeover"/>
+				<io id="R_PRODUCT"  pro="1"     pro_typ="0x1102" pro_adr="5" sta="0x0303" sta_typ="0x1142" desc="1 = A, 2 = B"/>
+				<io id="R_HOLD"     pro="0"     pro_typ="0x1102" pro_adr="6" sta="0x0303" sta_typ="0x1142" desc="the MES writes 1 here for a planned stop"/>
+			</bi>
+		</dev>
+
+		<!-- The machine, ten steps a second. -->
+		<var id="T_SIM" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_SIM" evt_per="0.1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.step]" desc="machine step, 0.1 s"/>
+
+		<!-- ================================================================
+		     SETTINGS - the page may change them
+		     ================================================================ -->
+		<var id="CYCLE_A_MS"       sta="0x0303" val="2000" val_typ="0x0104" val_unt="ms" desc="product A: one part this often at full speed"/>
+		<var id="CYCLE_B_MS"       sta="0x0303" val="2500" val_typ="0x0104" val_unt="ms" desc="product B"/>
+		<var id="LOT"              sta="0x0303" val="100"  val_typ="0x1104" val_fnc="[ATR.lmt]" val_min="10" val_max="1000" desc="parts per lot"/>
+		<var id="CHANGE_S"         sta="0x0303" val="40"   val_typ="0x0104" val_unt="s" desc="changeover between lots"/>
+		<var id="STARTUP"          sta="0x0303" val="5"    val_typ="0x0104" desc="parts after a changeover that are often bad"/>
+		<var id="SCRAP_PCT"        sta="0x0303" val="2"    val_typ="0x1308" val_fnc="[ATR.lmt]" val_min="0" val_max="50" val_unt="%" desc="bad parts, in normal running"/>
+		<var id="SLOW_PCT"         sta="0x0303" val="85"   val_typ="0x1104" val_fnc="[ATR.lmt]" val_min="50" val_max="100" val_unt="%" desc="speed while running slow"/>
+		<var id="FAULT_EVERY_S"    sta="0x0303" val="150"  val_typ="0x1104" val_fnc="[ATR.lmt]" val_min="0" val_max="3600" val_unt="s" desc="a breakdown this often, on average (0 = never)"/>
+		<var id="JAM_EVERY_S"      sta="0x0303" val="25"   val_typ="0x1104" val_fnc="[ATR.lmt]" val_min="0" val_max="3600" val_unt="s" desc="a jam this often (0 = never)"/>
+		<var id="MATERIAL_EVERY_S" sta="0x0303" val="240"  val_typ="0x1104" val_fnc="[ATR.lmt]" val_min="0" val_max="3600" val_unt="s" desc="material runs out this often (0 = never)"/>
+
+		<!-- requests: 1 = do it now (main.step does it and resets it) -->
+		<var id="FAULT_NOW"    sta="0x0303" val="0" val_typ="0x0104" desc="break the machine"/>
+		<var id="JAM_NOW"      sta="0x0303" val="0" val_typ="0x0104" desc="jam it"/>
+		<var id="MATERIAL_NOW" sta="0x0303" val="0" val_typ="0x0104" desc="run out of material"/>
+		<var id="CHANGE_NOW"   sta="0x0303" val="0" val_typ="0x0104" desc="end the lot, change over now"/>
+
+		<!-- ================================================================
+		     THE MACHINE'S STATE (its own; nobody reads it but the script
+		     and the log)
+		     ================================================================ -->
+		<var id="MODE"         sta="0x0303" val="RUN" val_typ="0x0401" desc="RUN, STOP or HOLD"/>
+		<var id="REASON"       sta="0x0303" val="0"   val_typ="0x0104" desc="the reason the machine reports"/>
+		<var id="WHY"          sta="0x0303" val=""    val_typ="0x0401" desc="what really stopped it - the machine's secret"/>
+		<var id="STOP_MS"      sta="0x0303" val="0"   val_typ="0x0208" desc="when the stop began"/>
+		<var id="STOP_END_MS"  sta="0x0303" val="0"   val_typ="0x0208" desc="when it will end (0 = when released)"/>
+		<var id="PRODUCT"      sta="0x0303" val="1"   val_typ="0x0104" desc="1 = A, 2 = B"/>
+		<var id="LOT_LEFT"     sta="0x0303" val="100" val_typ="0x0104" desc="parts left in this lot"/>
+		<var id="STARTUP_LEFT" sta="0x0303" val="0"   val_typ="0x0104" desc="startup parts left after a changeover"/>
+		<var id="PROGRESS"     sta="0x0303" val="0"   val_typ="0x0308" desc="how far the part being made is, 0..1"/>
+		<var id="SLOW_END_MS"  sta="0x0303" val="0"   val_typ="0x0208" desc="running slow until then"/>
+		<var id="NEXT_SLOW_MS" sta="0x0303" val="0"   val_typ="0x0208" desc="the next slow period starts then"/>
+		<var id="LAST_MS"      sta="0x0303" val="0"   val_typ="0x0208" desc="the last step"/>
+
+		<!-- the truth, counted without wrapping - for checking the MES -->
+		<var id="MADE"     sta="0x0303" val="0" val_typ="0x0208" desc="parts made since start"/>
+		<var id="MADE_BAD" sta="0x0303" val="0" val_typ="0x0208" desc="bad parts since start"/>
+	</data>
+</xdb>

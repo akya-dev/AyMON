@@ -1,0 +1,95 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PLC/S00 - the plant. This engine in the SLAVE role: it does not ask
+     anybody anything, it LISTENS and answers Modbus requests.
+
+     A slave is the same four levels as a master, read the other way round:
+
+       <con>  the listening socket. con_mod="SERVER" (we accept) and
+              pro_role="SLAVE" (we answer, we do not ask). Those are two
+              separate questions and both have to be answered.
+       <dev>  which unit id we answer for. It names its connection with
+              pro_slave_con - NOT pro_con, which is how a POLLED device
+              names the connection it is polled over.
+       <bi>   the register block we serve: where it starts (pro_adr) and
+              how long it is (pro_len).
+       <io>   one register inside it. Its 'pro' attribute IS the register:
+              write it, and the next master that asks gets the new value.
+
+     Nothing here polls, so there is no evt_fnc="[PRO.pol]" and no timer on
+     the <bi>. The only timer in the file drives the simulated process.
+     ===================================================================== -->
+<xdb id="PLC/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/PLC.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_PLC.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<!-- A thread for the simulation timer. An element with a timer needs
+		     one: evt_thr says which thread owns it, and a <var> that names
+		     none is created but never fires. (A <bi> is the exception - it
+		     inherits the thread of its device's connection.) -->
+		<thr id="TH_SIM" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- THE LISTENING SOCKET.
+		     con_mod="SERVER"  we accept connections
+		     pro_role="SLAVE"  we answer requests
+		     con_ses="4"       up to four masters at once
+		     thr_wrk="1"       accepted sessions need a worker to run on -->
+		<con id="CN_PLC" xdb_fnc="[CON.tcp,PRO.modbus]" desc="Modbus TCP slave"
+		     con_host="127.0.0.1" con_port="1502" con_mod="SERVER" pro_role="SLAVE" pro_mod="TCP"
+		     con_way="FULL" con_ses="4" thr_wrk="1" con_clr="1" con_tmo="1.0" con_comdly="0"
+		     con_rct="5" con_idletmo="0" con_keeptmo="0"
+		     pro_tmo="1" pro_try="1" pro_typ="0xD411" pro="" pro_fnc="[]"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]" evt_thr="CN_PLC"/>
+
+		<!-- THE UNIT WE ANSWER FOR.
+		     pro_slave_con  which listening <con> carries us
+		     pro_slave_adr  the Modbus unit id a master has to address -->
+		<dev id="PLC1" pro_slave_con="CN_PLC" pro_slave_adr="1"
+		     desc="unit 1" sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+
+			<!-- THE REGISTER BLOCK.
+			     pro_typ="0xD412"  a BUFFER of 16-bit units. A Modbus holding
+			                   register is 16 bits, so that is the unit
+			                   everything else in the block counts in.
+			     pro_len="4"   FOUR REGISTERS, not four bytes: pro_len counts
+			                   in the block's own element type. With
+			                   pro_typ="0xD411" (a byte buffer) the same four
+			                   registers would be pro_len="8".
+			     pro_adr="0"   the first register we answer for.
+			     A request that does not fit inside this block is answered
+			     with exception 2, illegal data address, as a real device
+			     would. -->
+			<bi id="PLC_BLK" desc="holding registers 0..3"
+			    sta="0x0303" sta_typ="0x1142"
+			    pro_typ="0xD412" pro="" pro_adr="0" pro_len="4">
+
+				<!-- THE REGISTERS. 'pro' is the value on the wire; pro_adr is
+				     the register number INSIDE the block. -->
+				<io id="SIM_LEVEL" pro="0" pro_typ="0x1102" pro_adr="0"
+				    sta="0x0303" sta_typ="0x1142" desc="tank level, counts"/>
+
+				<io id="SIM_TEMP" pro="0" pro_typ="0x1102" pro_adr="1"
+				    sta="0x0303" sta_typ="0x1142" desc="temperature, counts"/>
+
+				<!-- A status WORD: one register carrying several bits. The
+				     monitoring side takes it apart one bit at a time - see
+				     db_MON.xml. -->
+				<io id="SIM_FLAGS" pro="0" pro_typ="0x1102" pro_adr="2"
+				    sta="0x0303" sta_typ="0x1142" desc="bit0 pump, bit1 valve, bit2 local"/>
+
+				<io id="SIM_HOURS" pro="0" pro_typ="0x1102" pro_adr="3"
+				    sta="0x0303" sta_typ="0x1142" desc="pump running hours"/>
+			</bi>
+		</dev>
+
+		<!-- The simulated process: moves the registers once a second. -->
+		<var id="SIMTIC" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="TH_SIM" evt_per="1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.tick]" desc="moves the registers"/>
+	</data>
+</xdb>

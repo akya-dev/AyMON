@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_cluster - AyMON example: two engines, one job, and a failover.
+     Root file of NODE S01. The other node's root (AyXDB_S02.xml) is this
+     file with one difference: tid. Everything else - the connections, the
+     application, the page - is shared and works out from tid which end
+     it is on.
+       tid="S01"    WHO AM I. The cluster rows in db_SYS.xml compare it
+                    with their pro_nid: the matching row is this node's
+                    listening end, the other row dials the peer.
+       SYS/S00      this node's own equipment - listener, page, cluster and
+                    replication links. Plain (0x0300): never replicated.
+       APP/S00      THE JOB. 0x3200 = cluster member, in TRANSIT, parked:
+                    it waits for the election. On the MASTER it runs; on
+                    the SPARE it is a mirror the master keeps up to date.
+     Run:  run_S01.bat  (and run_S02.bat in another window)
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0"
+     log_lnk="%PRJ%/log/%TID%_XDB.log" sta="0x0300" tid="S01">
+	<config>
+		<doc id="SYS/S00" sta="0x0300" src="%DB%/db_SYS.xml" desc="plain - this node's listener, page, cluster and replication links"/>
+		<doc id="APP/S00" sta="0x3200" src="%DB%/db_APP.xml" desc="cluster member - the job; the election decides where it runs"/>
+	</config>
+	<data>
+	</data>
+</xdb>

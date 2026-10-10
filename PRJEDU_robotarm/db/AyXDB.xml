@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_robotarm - AyMON example: a collaborative robot arm in a cell.
+
+     A six-axis arm picks parts from an infeed and puts them down; the
+     cell around it feeds the parts, tells the robot when one is ready,
+     counts what it does and keeps the rules an operator must not break.
+
+       ROB/S00   the ROBOT, simulated: a six-axis arm and its controller,
+                 built after a Universal Robots UR5e. It speaks the two
+                 interfaces a cell usually uses on a real one: the
+                 dashboard server (text, TCP 29999) and the Modbus TCP
+                 server (registers at UR's addresses).
+       CEL/S00   the CELL CONTROLLER: a dashboard client, a Modbus
+                 client, the part handshake, the feeder, the rules - and
+                 the page: http://127.0.0.1:8098/
+
+     With a real robot or UR's free simulator (URSim): switch ROB/S00 off
+     below (sta="0x0000") and point the cell at it - the README says how.
+
+     Run:  run.bat,  then open  http://127.0.0.1:8098/
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="S01">
+	<config>
+		<doc id="ROB/S00" sta="0x0300" src="%DB%/db_ROB.xml" desc="the robot - a six-axis arm and its controller, simulated" />
+		<doc id="CEL/S00" sta="0x0300" src="%DB%/db_CEL.xml" desc="the cell controller, and its page" />
+	</config>
+	<data>
+	</data>
+</xdb>

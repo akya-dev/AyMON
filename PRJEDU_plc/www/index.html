@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_plc -- the HMI. Served by the PLC (CTL/S00) on 8093.
+
+     It opens TWO live connections, one to each document:
+       ws://<host>:8093/mqtt   the PLC      CTL/S00 - read only
+       ws://<host>:8094/mqtt   the machine  PLT/S00 - the picture of the
+                                            line, and its buttons
+     A browser may open a WebSocket to any port; the two documents each
+     publish their own changes, so the page listens to both.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Filling Line HMI</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>Filling line <span class="doc">CTL/S00 + PLT/S00</span></h1>
+    <div class="chips">
+        <span id="c-plc" class="chip" title="ws://...:8093/mqtt">PLC</span>
+        <span id="c-mach" class="chip" title="ws://...:8094/mqtt">machine</span>
+        <span id="c-comm" class="chip" title="the PLC's watchdog on the remote I/O (COMM_OK)">fieldbus</span>
+        <span id="c-step" class="chip">IDLE</span>
+    </div>
+</header>
+
+<main>
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card line-card">
+        <div class="label">The line <span class="muted">- PLT/S00, the machine itself</span></div>
+        <svg id="line" viewBox="-40 0 940 250" aria-label="the filling line">
+            <!-- tank and pipe -->
+            <rect x="480" y="6" width="80" height="60" rx="4" class="tank"/>
+            <rect id="tank-lvl" x="482" y="8" width="76" height="56" class="tank-lvl"/>
+            <text x="520" y="80" class="lbl" text-anchor="middle">supply tank <tspan id="t-tank">--</tspan> %</text>
+            <line x1="520" y1="66" x2="520" y2="100" class="pipe"/>
+            <!-- valve and nozzle -->
+            <rect id="valve" x="508" y="96" width="24" height="12" rx="2" class="valve"/>
+            <line x1="520" y1="108" x2="520" y2="122" class="pipe"/>
+            <line id="stream" x1="520" y1="122" x2="520" y2="188" class="stream"/>
+            <!-- photo-eyes -->
+            <line id="beam-fill" x1="520" y1="150" x2="520" y2="215" class="beam"/>
+            <text x="520" y="245" class="lbl" text-anchor="middle">PE_FILL</text>
+            <line id="beam-exit" x1="770" y1="150" x2="770" y2="215" class="beam"/>
+            <text x="770" y="245" class="lbl" text-anchor="middle">PE_EXIT</text>
+            <!-- conveyor -->
+            <rect x="0" y="215" width="880" height="12" rx="6" class="belt" id="belt"/>
+            <g id="bottles"></g>
+            <!-- lamps -->
+            <circle id="lamp-run" cx="40" cy="30" r="12" class="lamp"/>
+            <text x="60" y="35" class="lbl">RUN</text>
+            <circle id="lamp-flt" cx="40" cy="64" r="12" class="lamp"/>
+            <text x="60" y="69" class="lbl">FAULT</text>
+            <text id="rio-fs" x="120" y="35" class="fs" style="display:none">remote I/O: no life sign from the PLC - all outputs OFF</text>
+        </svg>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card">
+        <div class="label">The machine's panel <span class="muted">- PLT/S00; the PLC only sees what these do to its inputs</span></div>
+        <div class="panel">
+            <button class="pb start" data-pb="START_PB">START</button>
+            <button class="pb stop" data-pb="STOP_PB">STOP</button>
+            <button class="pb reset" data-pb="RESET_PB">RESET</button>
+            <button id="estop" class="estop" title="latches - press again to pull it out">EMERGENCY<br>STOP</button>
+        </div>
+        <div class="bench">
+            <div class="label">On the bench <span class="muted">- things a real machine would do to you</span></div>
+            <button id="refill" class="small">refill the supply tank</button>
+            <button id="cable" class="small">pull the fieldbus cable</button>
+            <label class="small">conveyor
+                <select id="speed">
+                    <option value="10">10 cm/s</option>
+                    <option value="20">20 cm/s</option>
+                    <option value="40">40 cm/s</option>
+                </select>
+            </label>
+        </div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card">
+        <div class="label">The program <span class="muted">- the step sequence, CTL/S00</span></div>
+        <ol id="sfc" class="sfc">
+            <li data-s="0"><b>0 IDLE</b><span>START</span></li>
+            <li data-s="1"><b>1 CONVEY</b><span>bottle at PE_FILL</span></li>
+            <li data-s="2"><b>2 POSITION</b><span>0.3 s</span></li>
+            <li data-s="3"><b>3 FILL</b><span>LS_FULL &middot; 10 s &rarr; FAULT</span></li>
+            <li data-s="4"><b>4 DRIP</b><span>0.5 s</span></li>
+            <li data-s="5"><b>5 RELEASE</b><span>bottle gone &rarr; 1 (or 0 after STOP)</span></li>
+            <li data-s="8" class="side"><b>8 FAULT</b><span>RESET &rarr; 0</span></li>
+            <li data-s="9" class="side"><b>9 E-STOP</b><span>pulled out + RESET &rarr; 0</span></li>
+        </ol>
+        <div class="kv"><span>in step for</span><b><span id="v-STEP_T">--</span> s</b></div>
+        <div class="kv"><span>stop requested</span><b id="v-STOP_REQ">no</b></div>
+        <div class="kv fault"><span>fault</span><b id="v-FAULT">-</b></div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card">
+        <div class="label">I/O monitor <span class="muted">- the PLC's image of the machine, over Modbus</span></div>
+        <div class="io">
+            <div>
+                <div class="label">inputs <span class="muted">reg 0</span></div>
+                <ul id="inputs" class="bits"></ul>
+            </div>
+            <div>
+                <div class="label">outputs <span class="muted">reg 3</span></div>
+                <ul id="outputs" class="bits"></ul>
+                <div class="label an">analog</div>
+                <div class="kv"><span>bottle level</span><b><span id="v-I_BLVL">--</span> %</b></div>
+                <div class="kv"><span>tank <span id="s-I_TANK" class="state"></span></span><b><span id="v-I_TANK">--</span> %</b></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card">
+        <div class="label">Production</div>
+        <div class="counts">
+            <div><span class="label">filled</span><b id="v-FILLED">--</b><small>PLC</small></div>
+            <div><span class="label">good</span><b id="v-GOOD">--</b><small>machine</small></div>
+            <div><span class="label">reject</span><b id="v-REJECT">--</b><small>machine</small></div>
+            <div><span class="label">overflow</span><b id="v-OVERFLOW">--</b><small>machine</small></div>
+            <div><span class="label">spilled</span><b id="v-SPILL">--</b><small>bottle-%</small></div>
+            <div><span class="label">cycle</span><b id="v-CYCLE">--</b><small>s / bottle</small></div>
+        </div>
+        <div class="label msgs-label">What the PLC said</div>
+        <ol id="msgs"></ol>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

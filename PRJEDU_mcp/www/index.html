@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_mcp - the plant, for the person beside the assistant. Served
+     by PLT/S00 on 127.0.0.1:8109; the values come over MQTT inside a
+     WebSocket on the same port (/mqtt). The page reads only - the
+     assistant does the writing, over MCP (8095 / 8096).
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MCP Plant Watch</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>The plant the assistant talks to <span class="doc">PLT/S00 &middot; MCP on 8095 (read) and 8096 (write)</span></h1>
+    <div class="chips"><span id="c-live" class="chip">--</span></div>
+</header>
+
+<main>
+    <section class="card wide">
+        <div class="label">The plant, now</div>
+        <div class="tiles">
+            <div class="tile" id="t-LEVEL"><div class="t">level</div><div class="v"><span id="v-LEVEL">--</span><span class="u"> %</span></div><div class="s" id="s-LEVEL">--</div></div>
+            <div class="tile"><div class="t">set point</div><div class="v"><span id="v-SETPOINT">--</span><span class="u"> %</span></div><div class="s muted">the one value the write endpoint may change</div></div>
+            <div class="tile"><div class="t">inlet pump</div><div class="v" id="v-PUMP">--</div></div>
+            <div class="tile"><div class="t">maintenance mode</div><div class="v" id="v-MAINT">--</div></div>
+            <div class="tile"><div class="t">simulation steps</div><div class="v" id="v-COUNT">--</div></div>
+        </div>
+        <canvas id="trend" style="margin-top:14px"></canvas>
+    </section>
+
+    <section class="card">
+        <div class="label">What changed <span class="muted">every change this page saw, newest first</span></div>
+        <div class="table-wrap"><table><tbody id="log"><tr><td class="muted">nothing yet - run try.bat, or ask the assistant to change the set point</td></tr></tbody></table></div>
+    </section>
+
+    <section class="card">
+        <div class="label">What this page may see <span class="muted">a page that did not log in: role 0</span></div>
+        <div class="table-wrap"><table><tbody id="seen"></tbody></table></div>
+        <div class="note">The same <code>xdb_acl</code> that answers the assistant answers this page. <code>VENDOR_NOTE</code>
+            is for the administrator only (<code>0xF0000000</code>): it never arrives here, as it never arrives at
+            the read-only endpoint.</div>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="kit.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

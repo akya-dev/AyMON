@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_pycall - vibration analysis in Python, called from the XML and
+     from JScript. Served by VIB/S00 on 127.0.0.1:8112; the values come
+     over MQTT inside a WebSocket on the same port (/mqtt). The page may
+     write one thing: SERVICE, "replace the bearing".
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pump Vibration Watch</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+    <style>
+        #wave, #spec { height: 190px; }
+        #rms { height: 210px; }
+        .calls { display: grid; gap: 10px; }
+        .code { font-family: ui-monospace, Consolas, monospace; font-size: 13px; background: var(--bg);
+                border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; overflow-x: auto; white-space: pre; }
+        .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .big { font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>A pump bearing, analysed in Python <span class="doc">VIB/S00 &middot; Python 3.11 &middot; called from the XML and from JScript</span></h1>
+    <div class="chips"><span id="c-state" class="chip">--</span><span id="c-live" class="chip">--</span></div>
+</header>
+
+<main>
+    <section class="card wide">
+        <div class="label">The pump, now <span class="muted">1500 rpm; every figure below was computed by Python from the last block</span></div>
+        <div class="tiles">
+            <div class="tile" id="t-RMS"><div class="t">vibration, RMS</div><div class="v"><span id="v-RMS">--</span><span class="u"> mm/s</span></div><div class="s" id="s-RMS">--</div></div>
+            <div class="tile" id="t-BPFO"><div class="t">bearing band 80-100 Hz</div><div class="v"><span id="v-BPFO">--</span><span class="u"> mm/s</span></div><div class="s" id="s-BPFO">--</div></div>
+            <div class="tile"><div class="t">peak</div><div class="v"><span id="v-PEAK">--</span><span class="u"> mm/s</span></div></div>
+            <div class="tile"><div class="t">crest factor</div><div class="v" id="v-CREST">--</div></div>
+            <div class="tile"><div class="t">strongest line</div><div class="v"><span id="v-FREQ">--</span><span class="u"> Hz</span></div></div>
+            <div class="tile"><div class="t">alarm limit (4.5) in</div><div class="v" id="v-ETA">--</div><div class="s muted" id="s-ETA">forecast by Python</div></div>
+        </div>
+        <div class="row" style="margin-top:12px">
+            <span class="note" style="margin:0">The bearing's outer race is going: its line at 90 Hz grows by itself.
+                The page may write one value - this button.</span>
+            <button id="service">Replace the bearing</button>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="label">The block the sensor sent <span class="muted">512 samples, 0.2 s, every 2 s (JScript)</span></div>
+        <canvas id="wave"></canvas>
+    </section>
+
+    <section class="card">
+        <div class="label">What Python made of it <span class="muted">amplitude spectrum 0-400 Hz</span></div>
+        <canvas id="spec"></canvas>
+    </section>
+
+    <section class="card wide">
+        <div class="label">RMS, the last five minutes <span class="muted">warning 2.8, alarm 4.5 mm/s &middot; dashed: Python's forecast</span></div>
+        <canvas id="rms"></canvas>
+    </section>
+
+    <section class="card">
+        <div class="label">Call 1 &middot; from the XML <span class="muted">an event call</span></div>
+        <div class="calls">
+            <div class="code">&lt;var id="WAVE" val_typ="0x1401"
+     val_fnc="[vib.analyse]"/&gt;</div>
+            <div class="small">JScript writes a block into <code>WAVE</code> and is done. The write queues
+                <code>analyse(evt)</code> on the Python thread; Python finds the block in <code>evt.valn</code>.</div>
+            <table><tbody>
+                <tr><td>waited in the queue</td><td class="n"><span class="big" id="py-wait">--</span> ms</td></tr>
+                <tr><td>ran in Python</td><td class="n"><span class="big" id="py-took">--</span> ms</td></tr>
+                <tr><td>last 30 calls, ran</td><td class="n" id="py-range">--</td></tr>
+                <tr><td>calls seen by this page</td><td class="n" id="py-n">0</td></tr>
+                <tr><td>blocks dropped as too old <span class="muted">(waited over 4 s)</span></td><td class="n" id="py-skip">0</td></tr>
+            </tbody></table>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="label">Call 2 &middot; from JScript <span class="muted">an argument call</span></div>
+        <div class="calls">
+            <div class="code">var q = vib.forecast(4.5, Time.GetTimeMs());</div>
+            <div class="small">The call returns <code>1</code> - "queued" - not the answer. Python writes the
+                answer into <code>FORECAST</code> when it gets to it; the page, like any client, reads it there.</div>
+            <table><tbody>
+                <tr><td>JScript got back</td><td class="n"><span class="big" id="js-q">--</span> in <span id="js-ms">--</span> ms</td></tr>
+                <tr><td>waited in the queue</td><td class="n"><span class="big" id="fc-wait">--</span> ms</td></tr>
+                <tr><td>ran in Python</td><td class="n"><span class="big" id="fc-took">--</span> ms</td></tr>
+                <tr><td>Python's answer</td><td class="n" id="fc-text">--</td></tr>
+            </tbody></table>
+        </div>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="kit.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

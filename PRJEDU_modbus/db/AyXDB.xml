@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_modbus - AyMON example 2: Modbus TCP, both ends, no hardware.
+
+     One engine, two documents, real Modbus frames on a loopback socket
+     between them:
+
+       PLC/S00   the plant. AyMON in the SLAVE role: it listens on
+                 127.0.0.1:1502, answers for unit 1 and serves four holding
+                 registers that a timer keeps moving.
+       MON/S00   the monitoring side. AyMON in the MASTER role: it polls
+                 those registers once a second and turns them into
+                 engineering values with limits and alarms.
+
+     Read PLC/S00 first if you are putting AyMON where a device used to be,
+     MON/S00 first if you are reading a device that already exists. The two
+     files are the same four levels seen from opposite ends.
+
+     A document is the unit of ownership in AyMON: separate id, separate
+     log, separate lifecycle. Two of them in one process is how you develop;
+     put PLC/S00 on another machine, change con_host in db_MON.xml, and
+     nothing else in this example changes.
+
+     Plain Modbus is not a licensed feature, so all of this runs on an
+     unlicensed installation.
+
+     Run:  run.bat
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="S01">
+	<config>
+		<doc id="PLC/S00" sta="0x0300" src="%DB%/db_PLC.xml" desc="the plant - Modbus SLAVE" />
+		<doc id="MON/S00" sta="0x0300" src="%DB%/db_MON.xml" desc="the monitoring side - Modbus MASTER" />
+	</config>
+	<data>
+	</data>
+</xdb>

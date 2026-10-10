@@ -1,0 +1,46 @@
+ver=1
+# AyMON EDU -- the PUBLISHED licence for education (C561 re-issue; the issuing
+# procedure is AyPROv43/doc/TR/_Lisans_Uretimi.md section 4.6)
+#
+# This is NOT a customer licence. It is shipped with the example projects
+# (PRJEDU_*, PRJDEV_*) and is public. It cannot be bound to a machine -- we do
+# not know whose machine it will be -- so it is bound with prj= to directory
+# names instead:
+#     PRJEDU_*   education
+#     PRJDEV_*   development
+# Personal use needs no licence: since C561 FREE is the personal edition, and the
+# PRJPER_* examples run on FREE.
+# prj= here is guidance, not security: a directory can be renamed. What it prevents
+# is this file being dropped into a real plant's db\lic\ and looking like a licence
+# there -- the engine reports state PRJ and says why in the log.
+#
+# The commercial features (cluster/rep/rpc/mcp) are deliberately NOT in this file and
+# do not need to be: under the C429 rule they already work on LOCAL connections.
+#
+# The numbers equal FREE (doc 5 / con 8 / dev 8 / cli 4, C561) except the logged-in
+# users: a classroom shares one engine. max_ses counts DEVICES since C561 (the key
+# keeps its name so issued licences stay valid).
+#
+# Signing (on the signing machine; the passphrase goes in the environment ONLY):
+#     set "AKYA_SIGN_PASS=..."
+#     aymon-lic gen --in edu_c561.txt --out AyMON.lic ^
+#                   --key D:\keys\akya_aymon_kid11.enc.pem --pass-env AKYA_SIGN_PASS ^
+#                   --registry D:\licreg
+#     aymon-lic verify --in AyMON.lic
+# The signed file ships in the example repository as demo\bin\lic\AyMON.lic.
+# Keep the SAME lic_id it was first issued under: a lic_id belongs to one holder for
+# life; a change of numbers is a re-issue, not a new licence.
+lic_id=AKYA-2026-000002
+customer=AyMON education use
+edition=EDU
+kid=11
+features=modbus,mqtt,http,snmp,opc,rfid,bridge,telnet
+max_doc=5
+max_con=8
+max_ses=8
+max_cli=32
+note=Published with the AyMON example projects. Not for production use.
+prj=PRJEDU
+prj=PRJDEV
+issued=2026-10-05
+sig=G3/06kvMmKUwwrqZIwxsKZYzaZssg8/Yqd3kxZN41mpfjmZ43Uw912l/+IYuUPUyxn+0QLwltRXmzAp1hnzeBw==

@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     CEL/S00 - the cell controller: what a PLC or a line controller does
+     around a collaborative robot.
+
+     It talks to the robot the two ways a UR controller is usually talked
+     to, and never reads the robot's document:
+
+       THE DASHBOARD (CN_DASH, TCP 29999, text). One command at a time,
+       one reply each. Operator commands (power on, brake release, load,
+       play, pause, stop, unlock protective stop) go through a queue; once
+       a second the cell asks robotmode, safetystatus and programState.
+       The greeting a new connection gets first is recognised and set
+       aside - it is not the answer to anything.
+
+       MODBUS TCP (CN_MB, registers at UR's addresses). Joints, joint
+       speeds and the tool position are polled every 100 ms and scaled by
+       configuration: val_cnv_dlt turns mrad into degrees and 0.1 mm into
+       mm - no script.
+
+     THE HANDSHAKE. The robot program and the cell agree through general
+     purpose registers, the way a PLC and a UR program do:
+       128  cell  -> robot   a part is ready at the pick position
+       131  robot -> cell    I have taken it
+       then the cell clears 128, and the robot clears 131.
+     A half-done handshake is never ambiguous: each side only acts on a
+     change of the other's register.
+
+     THE CELL. A feeder brings a part every FEED_S seconds (up to four
+     wait on the infeed); the robot takes them one by one and puts them
+     down; the cell counts parts, the time per part and parts a minute.
+
+     THE RULES live here, not in the page: 'play' only when the robot is
+     RUNNING and its safety NORMAL; 'power off' not while a program plays;
+     commands the dashboard does not have are refused before they are sent.
+     The page may write only CMD, FEED and SPEED (xdb_acl).
+
+     The robot's own safety - protective stop, safeguard stop - is the
+     robot's. The cell sees it (SAFETY_CODE carries it as an alarm) and
+     does not try to clear it by itself.
+     ===================================================================== -->
+<xdb id="CEL/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/CEL.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFF111111">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_CEL.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<thr id="TH_CEL" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- ================================================================
+		     THE DASHBOARD - a text client to TCP 29999
+		     con_rct="3": if the robot goes away, dial again every 3 s.
+		     ================================================================ -->
+		<con id="CN_DASH" xdb_fnc="[CON.tcp,PRO.raw]" desc="dashboard client (TCP 29999)"
+		     con_host="127.0.0.1" con_port="29999" con_mod="CLIENT"
+		     con_way="FULL" con_ses="0" con_tmo="5" con_clr="0" con_rcvlen="1024" con_rct="3"
+		     con_keeptmo="0" con_idletmo="0"
+		     pro_role="MASTER" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD411" pro_fnc="[]"
+		     pro_onparse="main.on_reply(exc);"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- ================================================================
+		     MODBUS TCP - the robot's registers
+		     ================================================================ -->
+		<con id="CN_MB" xdb_fnc="[CON.tcp,PRO.modbus]" desc="Modbus TCP client to the robot"
+		     con_host="" con_port="" con_mod="CLIENT" pro_role="MASTER" pro_mod="TCP"
+		     con_way="FULL" con_ses="4" con_clr="1" con_tmo="1.0" con_comdly="0" con_rct="2"
+		     pro_tmo="0.5" pro_try="1" pro="1" pro_typ="0xD411" pro_fnc="[]"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]" evt_thr="CN_MB"/>
+
+		<dev id="ROBOT" pro_adr="1" pro_con="CN_MB" con_host="127.0.0.1" con_port="1504"
+		     desc="the robot controller's Modbus server" sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+
+			<!-- The handshake registers, read every 100 ms. What the cell
+			     WRITES is in the next block. -->
+			<bi id="B_GP" xdb_fnc="[XDB.evt]" desc="general purpose registers 128..135"
+			    sta="0x0302" sta_typ="0x1142" sta_fnc="[EVT.sta,PRO.sta]"
+			    evt="0" evt_typ="0x1204" evt_fnc="[PRO.pol]" evt_cfg="0x0002" evt_per="0.1" evt_thr=""
+			    pro_typ="0xD412" pro="" pro_fnc="[PRO.inp]"
+			    pro_adr="128" pro_ado="128" pro_len="8" pro_fni="3">
+				<io id="PART_READY" pro="0" pro_typ="0x1102" pro_adr="0" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142"
+				    val="0" val_typ="0x0104" desc="128: a part is ready, as the robot has it"/>
+				<io id="PLACED" pro="0" pro_typ="0x1102" pro_adr="1" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142"
+				    val="0" val_typ="0x0104" desc="129: parts the robot has put down"/>
+				<io id="GRIPPER" pro="0" pro_typ="0x1102" pro_adr="2" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142"
+				    val="0" val_typ="0x0104" desc="130: gripper closed"/>
+				<io id="TAKEN" pro="0" pro_typ="0x1102" pro_adr="3" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142"
+				    val="0" val_typ="0x0104" desc="131: the robot has taken the part"/>
+				<io id="SPEED_REG" pro="100" pro_typ="0x1102" pro_adr="4" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142"
+				    val="100" val_typ="0x0104" val_unt="%" desc="132: speed, as the robot has it"/>
+				<io id="PSTEP" pro="0" pro_typ="0x1102" pro_adr="5" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142"
+				    val="0" val_typ="0x0104" desc="133: the step the robot program is at"/>
+			</bi>
+
+			<!-- What the cell WRITES. Never polled: main.tick writes an <io>'s
+			     'pro' and PRO.out sends it with function 6 - to the block's
+			     pro_ado PLUS the <io>'s (128 + 0, 128 + 4). Two more things: PRO.out sends nothing for a value that
+			     came IN from a poll (so the write is not made from the poll's
+			     own pro_fnc chain, but from the timer), and an <io> in the
+			     polled block would have its 'pro' overwritten by the next
+			     answer while the write is still on its way. -->
+			<bi id="B_OUT" desc="registers the cell writes: 128, 132"
+			    sta="0x0302" sta_typ="0x1142" sta_fnc="[PRO.sta]"
+			    pro_typ="0xD412" pro="" pro_adr="128" pro_ado="128" pro_len="8">
+				<io id="W_READY" pro="0" pro_typ="0x1102" pro_adr="0" pro_ado="0" pro_fnc="[PRO.out]" pro_fno="6"
+				    sta="0x0302" sta_typ="0x1142" desc="write 128: a part is ready"/>
+				<io id="W_SPEED" pro="100" pro_typ="0x1102" pro_adr="4" pro_ado="4" pro_fnc="[PRO.out]" pro_fno="6"
+				    sta="0x0302" sta_typ="0x1142" desc="write 132: speed %"/>
+			</bi>
+
+			<!-- Joints: mrad on the wire, degrees here. 1 mrad = 0.0572958 deg. -->
+			<bi id="B_Q" xdb_fnc="[XDB.evt]" desc="joint positions 270..275"
+			    sta="0x0302" sta_typ="0x1142" sta_fnc="[EVT.sta,PRO.sta]"
+			    evt="0" evt_typ="0x1204" evt_fnc="[PRO.pol]" evt_cfg="0x0002" evt_per="0.1" evt_thr=""
+			    pro_typ="0xD412" pro="" pro_fnc="[PRO.inp]"
+			    pro_adr="270" pro_ado="270" pro_len="6" pro_fni="3">
+				<io id="J0" pro="0" pro_typ="0x1202" pro_adr="0" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou]" val_cnv_dlt="0.0572958" val_rou="0.1" val_unt="deg" desc="base"/>
+				<io id="J1" pro="0" pro_typ="0x1202" pro_adr="1" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou]" val_cnv_dlt="0.0572958" val_rou="0.1" val_unt="deg" desc="shoulder"/>
+				<io id="J2" pro="0" pro_typ="0x1202" pro_adr="2" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou]" val_cnv_dlt="0.0572958" val_rou="0.1" val_unt="deg" desc="elbow"/>
+				<io id="J3" pro="0" pro_typ="0x1202" pro_adr="3" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou]" val_cnv_dlt="0.0572958" val_rou="0.1" val_unt="deg" desc="wrist 1"/>
+				<io id="J4" pro="0" pro_typ="0x1202" pro_adr="4" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou]" val_cnv_dlt="0.0572958" val_rou="0.1" val_unt="deg" desc="wrist 2"/>
+				<io id="J5" pro="0" pro_typ="0x1202" pro_adr="5" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou]" val_cnv_dlt="0.0572958" val_rou="0.1" val_unt="deg" desc="wrist 3"/>
+			</bi>
+
+			<!-- Joint speeds: mrad/s on the wire, deg/s here. -->
+			<bi id="B_QD" xdb_fnc="[XDB.evt]" desc="joint speeds 280..285"
+			    sta="0x0302" sta_typ="0x1142" sta_fnc="[EVT.sta,PRO.sta]"
+			    evt="0" evt_typ="0x1204" evt_fnc="[PRO.pol]" evt_cfg="0x0002" evt_per="0.1" evt_thr=""
+			    pro_typ="0xD412" pro="" pro_fnc="[PRO.inp]"
+			    pro_adr="280" pro_ado="280" pro_len="6" pro_fni="3">
+				<io id="JV0" pro="0" pro_typ="0x1202" pro_adr="0" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou]" val_cnv_dlt="0.0572958" val_rou="0.1" val_unt="deg/s"/>
+				<io id="JV1" pro="0" pro_typ="0x1202" pro_adr="1" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou]" val_cnv_dlt="0.0572958" val_rou="0.1" val_unt="deg/s"/>
+				<io id="JV2" pro="0" pro_typ="0x1202" pro_adr="2" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou]" val_cnv_dlt="0.0572958" val_rou="0.1" val_unt="deg/s"/>
+				<io id="JV3" pro="0" pro_typ="0x1202" pro_adr="3" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou]" val_cnv_dlt="0.0572958" val_rou="0.1" val_unt="deg/s"/>
+				<io id="JV4" pro="0" pro_typ="0x1202" pro_adr="4" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou]" val_cnv_dlt="0.0572958" val_rou="0.1" val_unt="deg/s"/>
+				<io id="JV5" pro="0" pro_typ="0x1202" pro_adr="5" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou]" val_cnv_dlt="0.0572958" val_rou="0.1" val_unt="deg/s"/>
+			</bi>
+
+			<!-- The tool: 0.1 mm and mrad on the wire, mm and rad here.
+			     TCP_Z carries a low limit: the tool below 50 mm is a warning
+			     (the table is at 0; the lowest point of the program is 70). -->
+			<bi id="B_TCP" xdb_fnc="[XDB.evt]" desc="tool position 400..405"
+			    sta="0x0302" sta_typ="0x1142" sta_fnc="[EVT.sta,PRO.sta]"
+			    evt="0" evt_typ="0x1204" evt_fnc="[PRO.pol]" evt_cfg="0x0002" evt_per="0.1" evt_thr=""
+			    pro_typ="0xD412" pro="" pro_fnc="[PRO.inp]"
+			    pro_adr="400" pro_ado="400" pro_len="6" pro_fni="3">
+				<io id="TCP_X"  pro="0" pro_typ="0x1202" pro_adr="0" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou]" val_cnv_dlt="0.1" val_rou="0.1" val_unt="mm"/>
+				<io id="TCP_Y"  pro="0" pro_typ="0x1202" pro_adr="1" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou]" val_cnv_dlt="0.1" val_rou="0.1" val_unt="mm"/>
+				<io id="TCP_Z"  pro="0" pro_typ="0x1202" pro_adr="2" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou,ALM.onlvl]" val_cnv_dlt="0.1" val_rou="0.1" val_unt="mm"
+				    val_alm_onllo_wrn="50" desc="the tool's height above the table"/>
+				<io id="TCP_RX" pro="0" pro_typ="0x1202" pro_adr="3" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou]" val_cnv_dlt="0.001" val_rou="0.001" val_unt="rad"/>
+				<io id="TCP_RY" pro="0" pro_typ="0x1202" pro_adr="4" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou]" val_cnv_dlt="0.001" val_rou="0.001" val_unt="rad"/>
+				<io id="TCP_RZ" pro="0" pro_typ="0x1202" pro_adr="5" pro_fnc="[VAL.put]" sta="0x0302" sta_typ="0x1142" val="0" val_typ="0x1308" val_fnc="[VAL.cnv,ATR.rou]" val_cnv_dlt="0.001" val_rou="0.001" val_unt="rad"/>
+			</bi>
+		</dev>
+
+		<!-- the cell's clock: the dashboard queue, the status questions, the feeder -->
+		<var id="T_TICK" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_CEL" evt_per="0.1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.tick]" desc="the cell's tick, 100 ms"/>
+
+		<!-- ================================================================
+		     WHAT THE DASHBOARD SAYS
+		     ================================================================ -->
+		<var id="LINK"      sta="0x0303" val="0" val_typ="0x1104" val_fnc="[ALM.onin]" val_alm_onin_alm="[0]" desc="1 = the dashboard is connected and has greeted"/>
+		<var id="ROBOTMODE" sta="0x0303" val="" val_typ="0x0401" desc="robotmode: POWER_OFF, POWER_ON, IDLE, RUNNING"/>
+		<var id="SAFETY"    sta="0x0303" val="" val_typ="0x0401" desc="safetystatus"/>
+		<var id="SAFETY_CODE" sta="0x0303" val="0" val_typ="0x1104" val_fnc="[ALM.onin]"
+		     val_alm_onin_wrn="[2]" val_alm_onin_alm="[1]" val_alm_onin_emr="[3]"
+		     desc="0 NORMAL, 1 PROTECTIVE_STOP, 2 SAFEGUARD_STOP, 3 anything else"/>
+		<var id="PSTATE"    sta="0x0303" val="" val_typ="0x0401" desc="programState: STOPPED, PLAYING, PAUSED"/>
+		<var id="PROGRAM"   sta="0x0303" val="" val_typ="0x0401" desc="the loaded program"/>
+		<var id="MSG"       sta="0x0303" val="" val_typ="0x0401" desc="the cell's last word to the operator"/>
+		<var id="DASH_LOG"  sta="0x0303" val="[]" val_typ="0x0401" desc="the last operator commands and the robot's replies, JSON"/>
+		<var id="POLLS"     sta="0x0303" val="0" val_typ="0x0104" desc="status questions asked"/>
+		<var id="TIMEOUTS"  sta="0x0303" val="0" val_typ="0x0104" desc="replies that never came"/>
+
+		<!-- the queue: '|' between commands; BUSY is the one waiting for a reply -->
+		<var id="QUEUE"   sta="0x0303" val=""  val_typ="0x4401" desc="local"/>
+		<var id="BUSY"    sta="0x0303" val=""  val_typ="0x4401" desc="local"/>
+		<var id="BUSY_MS" sta="0x0303" val="0" val_typ="0x4108" desc="local"/>
+		<var id="POLL_MS" sta="0x0303" val="0" val_typ="0x4108" desc="local"/>
+		<var id="REPLY_TMO" sta="0x0303" val="2" val_typ="0x0308" val_unt="s" desc="how long a reply may take"/>
+
+		<!-- ================================================================
+		     THE CELL
+		     ================================================================ -->
+		<var id="FEED_S"   sta="0x0303" val="6" val_typ="0x0308" val_unt="s" desc="a part every FEED_S seconds"/>
+		<var id="INFEED"   sta="0x0303" val="0" val_typ="0x0104" desc="parts waiting (the one at the pick position included)"/>
+		<var id="INFEED_MAX" sta="0x0303" val="4" val_typ="0x0104" desc="the infeed holds this many"/>
+		<var id="FEED_MS"  sta="0x0303" val="0" val_typ="0x4108" desc="when the last part came, local"/>
+		<var id="TAKEN_SEEN" sta="0x0303" val="0" val_typ="0x4104" desc="register 131 as last seen, local"/>
+		<var id="PR_MS"    sta="0x0303" val="0" val_typ="0x4108" desc="when 128 was last written, local"/>
+		<var id="CYCLE_S"  sta="0x0303" val="0" val_typ="0x0308" val_unt="s" desc="time between the last two parts put down"/>
+		<var id="RATE"     sta="0x0303" val="0" val_typ="0x0308" val_unt="1/min" desc="parts a minute, over the last five"/>
+		<var id="PLACED_AT" sta="0x0303" val="[]" val_typ="0x4401" desc="when the last parts were put down, local"/>
+		<var id="PLACED_SEEN" sta="0x0303" val="-1" val_typ="0x4104" desc="register 129 as last seen, local"/>
+
+		<!-- ================================================================
+		     WHAT THE PAGE MAY WRITE - nothing else (xdb_acl)
+		     ================================================================ -->
+		<var id="CMD"   sta="0x0303" val="" val_typ="0x1401" val_fnc="[main.on_cmd]" xdb_acl="0xFF111113"
+		     desc="a dashboard command from the operator"/>
+		<var id="FEED"  sta="0x0303" val="0" val_typ="0x1104" val_fnc="[main.on_feed]" xdb_acl="0xFF111113"
+		     desc="1 = the feeder runs"/>
+		<var id="SPEED" sta="0x0303" val="100" val_typ="0x1104" val_fnc="[main.on_speed]" xdb_acl="0xFF111113"
+		     val_unt="%" desc="the robot's speed, 10..100 %"/>
+
+		<!-- ================================================================
+		     THE PAGE - http://127.0.0.1:8098/
+		     ================================================================ -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the web listener"
+		     con_host="127.0.0.1" con_port="8098" con_mod="SERVER" con_ses="8"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="the cell, live"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_CEL" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//*[@val]" pro_retain_atr="val,sta"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

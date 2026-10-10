@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PLT/S00 - a tank, its level alarm, and the mail that goes out.
+
+       THE TANK      LEVEL wobbles around 50 %. The page's "Overfill"
+                     button sends it up to 97 % and back: through the
+                     warning (80) and the alarm (90) and out again.
+       THE ALARM     ALM.onlvl moves LEVEL's sta; main.on_alarm (its
+                     sta_fnc) sees the level reach ALARM and leave it, and
+                     asks for a mail each time.
+       THE MAIL      a CONNECTION (CN_MAIL, PRO.smtp) and a POINT (MAIL):
+                     the message is the JSON text written to the point,
+                     the server's answer comes back INTO THE SAME POINT
+                     as protocol input and runs the rest of its pro_fnc,
+                     main.mail_done. That is the rule every protocol's
+                     'pro' follows: a value written to a Modbus register
+                     goes out the same way and the device's answer comes
+                     back the same way.
+       THE THREAD    sending waits for the server (connect, a few
+                     round trips): it is done on TH_MAIL, never on the
+                     thread that runs the tank. NOTE is the hand-over -
+                     whoever wants a mail writes it, and its val_fnc runs
+                     queued on TH_MAIL (0x3401).
+
+     The page may write three values: OVERFILL, TEST and REPORT (xdb_acl gives role
+     0 read + write on them, read only everywhere else).
+
+     LICENCE. Mail is the licence feature 'net'. Without it - FREE and the
+     education licence of these examples - 20 mails a day are free and
+     the next one is answered "not sent" (code 0); the count starts again
+     with the engine. One press of Overfill costs two mails, Test one.
+     ===================================================================== -->
+<xdb id="PLT/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/PLT.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFF111111">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_PLT.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<thr id="TH_MAIL" xdb_fnc="[THR.cre]" thr_per="50" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- ================================================================
+		     THE TANK
+		     ================================================================ -->
+		<var id="T_SIM" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_per="1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.tick]" cnt="0" cnt_typ="0x4104" desc="process step, once a second"/>
+
+		<var id="LEVEL" sta="0x0303" sta_typ="0x1142" sta_fnc="[main.on_alarm]"
+		     val="50" val_typ="0x1308" val_fnc="[ATR.rou,ALM.onlvl]" val_rou="0.1" val_unt="%"
+		     val_alm_onlhi_wrn="80" val_alm_onlhi_alm="90"
+		     desc="tank level"/>
+
+		<!-- where the overfill is: 0 normal, 1 rising, 2 full, 3 draining -->
+		<var id="PHASE" sta="0x0303" val="0" val_typ="0x0104" desc="0 normal, 1 rising, 2 full, 3 draining"/>
+
+		<!-- ================================================================
+		     WHAT THE PAGE MAY WRITE
+		     ================================================================ -->
+		<!-- 1 = start an overfill now (the tank puts it back to 0) -->
+		<var id="OVERFILL" xdb_acl="0xFF111113" sta="0x0303" val="0" val_typ="0x1308"
+		     val_fnc="[ATR.rou,ATR.lmt]" val_rou="1" val_min="0" val_max="1"
+		     desc="request: 1 = overfill the tank once"/>
+
+		<!-- any new value = send a test mail (the page writes the time, so
+		     every press is a change). Queued to TH_MAIL like NOTE. -->
+		<var id="TEST" xdb_acl="0xFF111113" sta="0x0303" val="0" val_typ="0x3308"
+		     val_fnc="[main.on_test]" evt_thr="TH_MAIL" desc="request: send a test mail"/>
+
+		<!-- ================================================================
+		     THE MAIL
+		     ================================================================ -->
+		<!-- Who gets the mails, and the hand-over to TH_MAIL. -->
+		<var id="MAIL_TO" sta="0x0303" val="operator@example.org" val_typ="0x0401"
+		     desc="recipients, separated by ';'"/>
+		<var id="NOTE" sta="0x0303" val="" val_typ="0x3401" val_fnc="[main.on_note]" evt_thr="TH_MAIL"
+		     desc="hand-over: {subject, body} as JSON, sent from TH_MAIL"/>
+
+		<!-- THE MAIL SERVER. The local one in MBX/S00, plain text on
+		     loopback - pro_smtp_tls="none" says so out loud; without it
+		     the engine insists on STARTTLS and refuses a server that does
+		     not offer it. For a real mail server see the README:
+		       con_host / con_port   smtp.example.org / 587
+		       pro_smtp_tls          (leave it out: STARTTLS)
+		       pro_usr / pro_pwd     the account (often an app password)
+		       con_ssl_cacert        the server's CA chain as a PEM file
+		     con_ses="1"   one device session: the <dev> below. PRO.smtp
+		                   sends on the session of the <dev> its point
+		                   stands under, and refuses con_ses="0".
+		     con_idletmo   nothing dialled at start: the first mail
+		                   connects, later ones use the open session, and
+		                   after 30 quiet seconds the engine says QUIT.
+		     con_rct       after a failed connect, writes in the next 10 s
+		                   are answered "no connection" without another
+		                   attempt - an alarm burst does not hammer a dead
+		                   server.
+		     pro_try="0"   a message whose outcome is not known is not sent
+		                   again (it might arrive twice). -->
+		<con id="CN_MAIL" xdb_fnc="[CON.tcp,PRO.smtp]" desc="the mail server"
+		     con_host="127.0.0.1" con_port="2525" con_mod="CLIENT" con_way="HALF" con_ses="1"
+		     con_tmo="5" con_clr="0" con_rcvlen="1024" con_keeptmo="0" con_idletmo="30" con_rct="10"
+		     pro_role="MASTER" pro_tmo="10" pro_try="0" pro_faildly="1"
+		     pro_smtp_tls="none" pro_smtp_from="Tank farm &lt;plant@example.org&gt;"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<dev id="DV_MAIL" pro_con="CN_MAIL" pro_adr="1" sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]" ses_idx="0">
+			<!-- THE POINT. Write the message here; the reply comes back here.
+			     pro_fnc: PRO.out sends what is written and ends that chain;
+			     the reply passes PRO.out and runs main.mail_done. -->
+			<io id="MAIL" pro="" pro_typ="0x1401" pro_fnc="[PRO.out,main.mail_done]" pro_fno="send"
+			    sta="0x0303" sta_typ="0x1142" desc="write a message, read the server's answer"/>
+		</dev>
+
+		<!-- What came of it. -->
+		<var id="MAILS"  sta="0x0303" val="0" val_typ="0x0104" desc="mails asked for"/>
+		<var id="SENT"   sta="0x0303" val="0" val_typ="0x0104" desc="answered 250: taken by the server"/>
+		<var id="FAILED" sta="0x0303" val="0" val_typ="0x0104" desc="not taken: the server said no, or it never came to an answer"/>
+		<var id="PENDING" sta="0x0303" val="{}" val_typ="0x0401"
+		     desc="subjects of the mails written and not answered yet, by id"/>
+		<var id="OUTBOX" sta="0x0303" val="[]" val_typ="0x0401"
+		     desc="the last eight replies, newest first: [{at, id, subject, code, ok, text}]"/>
+
+		<!-- ================================================================
+		     THE FILES - a shift report, zipped and uploaded by FTP
+		     ================================================================ -->
+		<!-- any new value = make a shift report now (the page writes the time).
+		     The work is done by the tank's own timer, main.tick: making a
+		     directory and an archive (FILE.mkdir, FILE.zip) is for an
+		     Engineer, and a script started from the page runs with the
+		     page's role (0); the engine's timer runs as the engine. -->
+		<var id="REPORT" xdb_acl="0xFF111113" sta="0x0303" val="0" val_typ="0x0308"
+		     desc="request: make and upload a shift report"/>
+		<var id="FTPJOB" sta="0x0303" val="" val_typ="0x3401" val_fnc="[main.on_ftpjob]" evt_thr="TH_MAIL"
+		     desc="hand-over: an FTP job as JSON, written to FTP from TH_MAIL"/>
+
+		<!-- THE FILE SERVER. The local one in FTP/S00, plain text on loopback
+		     (pro_ftp_tls="none"; without it the engine insists on AUTH TLS).
+		     No pro_usr: the login is anonymous. Local files may only come
+		     from below pro_ftp_local (default %PRJ%). -->
+		<con id="CN_FILES" xdb_fnc="[CON.tcp,PRO.ftp]" desc="the file server"
+		     con_host="127.0.0.1" con_port="2121" con_mod="CLIENT" con_way="HALF" con_ses="1"
+		     con_tmo="5" con_clr="0" con_rcvlen="1024" con_keeptmo="0" con_idletmo="30" con_rct="10"
+		     pro_role="MASTER" pro_tmo="10" pro_try="0" pro_faildly="1"
+		     pro_ftp_tls="none"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<dev id="DV_FILES" pro_con="CN_FILES" pro_adr="1" sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]" ses_idx="0">
+			<!-- A job is the JSON written to a point, its reply comes back into
+			     it - the mail rule. Two points: the upload, and the listing
+			     that follows it (a reply handler writes the NEXT job to
+			     another point; see main.ftp_done). -->
+			<io id="FTP" pro="" pro_typ="0x1401" pro_fnc="[PRO.out,main.ftp_done]"
+			    sta="0x0303" sta_typ="0x1142" desc="write a job, read the server's answer"/>
+			<io id="FTP_LS" pro="" pro_typ="0x1401" pro_fnc="[PRO.out,main.ls_done]"
+			    sta="0x0303" sta_typ="0x1142" desc="the listing after an upload"/>
+		</dev>
+
+		<var id="REPORTS" sta="0x0303" val="0" val_typ="0x0104" desc="shift reports uploaded"/>
+		<var id="FTP_OUT" sta="0x0303" val="[]" val_typ="0x0401"
+		     desc="the last eight FTP replies, newest first: [{at, id, cmd, code, ok, text, bytes}]"/>
+		<!-- What the file server holds: written by FTP/S00 (role 3), and by
+		     the listing's reply here. -->
+		<var id="FTP_FILES" xdb_acl="0xFF113111" sta="0x0303" val="[]" val_typ="0x0401"
+		     desc="the file server's directory: [{name, size, ..}]"/>
+
+		<!-- What the mail server received: written by MBX/S00, whose
+		     sessions run as Operator (con_role="3" there). 0xFF113111:
+		     role 3 may read and write it, the page (role 0) reads. -->
+		<var id="INBOX" xdb_acl="0xFF113111" sta="0x0303" val="[]" val_typ="0x0401"
+		     desc="the local mail server's last ten messages (MBX/S00)"/>
+
+		<!-- ================================================================
+		     THE PAGE - http://127.0.0.1:8114/  (only from this computer)
+		     ================================================================ -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the page"
+		     con_host="127.0.0.1" con_port="8114" con_mod="SERVER" con_ses="8" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="live values for the page"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_NET" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//var | //io" pro_retain_atr="val,pro,sta"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

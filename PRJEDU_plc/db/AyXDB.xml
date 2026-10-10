@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_plc - AyMON example: a PLC program for a bottle filling
+     machine, for an automation course.
+
+     One engine, two documents, joined by a fieldbus the way a machine and
+     its controller are:
+
+       PLT/S00   the MACHINE. A conveyor, bottles, a filling nozzle, two
+                 photo-eyes, a level switch, a supply tank, and the
+                 operator's buttons (START, STOP, RESET, EMERGENCY STOP).
+                 Its signals are a REMOTE I/O: four Modbus TCP holding
+                 registers on 127.0.0.1:1503.
+       CTL/S00   the PLC. It reads the inputs over Modbus every 100 ms,
+                 runs its program every 100 ms - a sequence of steps,
+                 timers, edges, interlocks, faults - and writes the outputs
+                 back as one register.
+
+     The page shows both: http://127.0.0.1:8093/ is the PLC's, and it
+     also opens the machine's own port, 8094, for the picture of the line
+     and the buttons.
+
+     Six connections: exactly the FREE edition's limit.
+
+     Run:  run.bat,  then open  http://127.0.0.1:8093/
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="S01">
+	<config>
+		<doc id="PLT/S00" sta="0x0300" src="%DB%/db_PLT.xml" desc="the machine - a filling line and its remote I/O" />
+		<doc id="CTL/S00" sta="0x0300" src="%DB%/db_CTL.xml" desc="the PLC - its program, and the HMI page" />
+	</config>
+	<data>
+	</data>
+</xdb>
