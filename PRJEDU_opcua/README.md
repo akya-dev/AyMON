@@ -201,7 +201,7 @@ RUNNING 30 s after Start.
 
 ```
 UA/S00:UA: no certificate yet - making one
-UA/S00:OPC.cert: uretildi. cert='C:\AyMON\demo\PRJEDU_opcua\db\pkiymon_cert.pem' key='...ymon_key.pem' uri='urn:AyMON:PRJEDU_opcua' ...
+UA/S00:OPC.cert: uretildi. cert='C:\AyMON\AyMON\PRJEDU_opcua\db\pkiymon_cert.pem' key='...ymon_key.pem' uri='urn:AyMON:PRJEDU_opcua' ...
 UA/S00:IMM:PRO.opc(1).connect: oturum etkin
 UA/S00:IMMP_SUB:PRO.opc(1).sub: abonelik 78 kuruldu — periyot 100 ms, keepalive 20
 UA/S00:IMMS:PRO.opc(1).session: reddedildi 0x801A0000
