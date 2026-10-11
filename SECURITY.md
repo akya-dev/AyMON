@@ -8,7 +8,7 @@ Report it privately instead:
 
 - **[Report a vulnerability](https://github.com/akya-dev/AyMON/security/advisories/new)**
   (GitHub's private reporting — only the maintainer sees it), or
-- e-mail **aymon@akya.ca** with "AyMON security" in the subject.
+- e-mail **security@aymon.ca**.
 
 Say which engine build (`AyXDB -?`) and how to reproduce it. You will get an
 answer within a week.

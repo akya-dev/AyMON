@@ -48,4 +48,4 @@ A security problem does **not** go to Issues or Discussions — see
 ## Commercial use
 
 A licence for a real plant, support with a deadline, or a protocol AyMON does
-not speak yet: **aymon@akya.ca**.
+not speak yet: **licensing@aymon.ca**. Anything else: **support@aymon.ca**.
