@@ -6,7 +6,7 @@ projects for learning, teaching and hobby use. Every example starts with one
 command and needs **no licence, no hardware and no database** unless its own
 README says otherwise.
 
-The same pages as a searchable site: **https://akya-dev.github.io/AyMON/**
+The same pages as a searchable site: **https://docs.aymon.ca/**
 
 ```
 demo\
@@ -152,8 +152,8 @@ keeps its number because it is the one to read first.
 
 | | |
 |---|---|
-| **Search** | the [site](https://akya-dev.github.io/AyMON/) — every guide and every README here, searchable |
-| **Ask your AI assistant** | give it [llms-full.txt](https://akya-dev.github.io/AyMON/llms-full.txt) — all of these pages in one file — and ask in your own language |
+| **Search** | the [site](https://docs.aymon.ca/) — every guide and every README here, searchable |
+| **Ask your AI assistant** | give it [llms-full.txt](https://docs.aymon.ca/llms-full.txt) — all of these pages in one file — and ask in your own language |
 | **Ask a person** | [Discussions → Q&A](https://github.com/akya-dev/AyMON/discussions/categories/q-a), English or Turkish; read about once a week |
 | **Something is broken** | [Issues](https://github.com/akya-dev/AyMON/issues/new/choose) |
 | **A security problem** | privately — see [SECURITY.md](SECURITY.md) |

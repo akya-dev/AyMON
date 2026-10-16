@@ -3,8 +3,8 @@ body:
     attributes:
       value: |
         English or Turkish — both are fine. Questions are read about once a week.
-        Quicker: search the [site](https://akya-dev.github.io/AyMON/), or give
-        [llms-full.txt](https://akya-dev.github.io/AyMON/llms-full.txt) to your AI assistant.
+        Quicker: search the [site](https://docs.aymon.ca/), or give
+        [llms-full.txt](https://docs.aymon.ca/llms-full.txt) to your AI assistant.
   - type: textarea
     id: question
     attributes:

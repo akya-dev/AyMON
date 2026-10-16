@@ -4,7 +4,7 @@ contact_links:
     url: https://github.com/akya-dev/AyMON/discussions/categories/q-a
     about: Ask in Discussions (English or Turkish). Issues are for things that are broken.
   - name: Documentation and the one-file version for AI assistants
-    url: https://akya-dev.github.io/AyMON/help/
+    url: https://docs.aymon.ca/help/
     about: Search the guides, or give llms-full.txt to your assistant.
   - name: Commercial licence or support
     url: mailto:licensing@aymon.ca

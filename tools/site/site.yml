@@ -1,10 +1,10 @@
 # Site settings. build.py adds docs_dir, site_dir and nav (from the folders)
 # and writes the full config into _build/mkdocs.yml. To move the site to a
-# domain of its own (e.g. aymon.akya.ca) change site_url here, or set
-# SITE_URL in the workflow.
+# domain of its own change site_url here, or set SITE_URL in the workflow
+# (it does: the Pages base URL, docs.aymon.ca since 2026-10-16).
 site_name: AyMON — learn by running it
 site_description: Runnable example projects and short guides for the AyMON industrial monitoring and automation engine.
-site_url: https://akya-dev.github.io/AyMON/
+site_url: https://docs.aymon.ca/
 repo_url: https://github.com/akya-dev/AyMON
 repo_name: akya-dev/AyMON
 edit_uri: ""
