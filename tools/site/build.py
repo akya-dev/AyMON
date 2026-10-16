@@ -31,6 +31,37 @@ SRC = os.path.join(OUT, "src")
 REPO_URL = "https://github.com/akya-dev/AyMON"
 BRANCH = "main"
 
+
+def _tracked():
+    """Every file git tracks, and every directory above one. The site is built
+    from a sparse checkout (Markdown only), so the disk does not show what the
+    repository holds - git's index does."""
+    try:
+        out = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT, capture_output=True, check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    files, dirs = set(), set()
+    for f in out.decode("utf-8").split(chr(0)):
+        if f:
+            files.add(f)
+            d = os.path.dirname(f)
+            while d and d not in dirs:
+                dirs.add(d)
+                d = os.path.dirname(d)
+    return files, dirs
+
+
+TRACKED = _tracked()
+
+
+def repo_kind(rel):
+    """'blob' for a tracked file, 'tree' for a directory holding one, None for neither."""
+    if TRACKED is None:                       # not a git checkout: what the disk shows
+        p = os.path.join(ROOT, rel)
+        return "tree" if os.path.isdir(p) else "blob" if os.path.exists(p) else None
+    files, dirs = TRACKED
+    return "blob" if rel in files else "tree" if rel in dirs else None
+
 LINK_RE = re.compile(r"(!?\[[^\]]*\]\()([^)\s]+)(\))")
 FENCE_RE = re.compile(r"^\s*(```|~~~)")
 
@@ -86,8 +117,8 @@ def rewrite_links(text, repo_path, site_of):
         if rel in site_of:
             new = os.path.relpath(site_of[rel], site_base or ".").replace("\\", "/")
             return m.group(1) + new + anchor + m.group(3)
-        if os.path.exists(os.path.join(ROOT, rel)):
-            kind = "tree" if os.path.isdir(os.path.join(ROOT, rel)) else "blob"
+        kind = repo_kind(rel)
+        if kind:
             return m.group(1) + f"{REPO_URL}/{kind}/{BRANCH}/{rel}{anchor}" + m.group(3)
         return m.group(0)
 
