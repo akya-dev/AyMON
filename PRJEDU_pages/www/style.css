@@ -14,3 +14,6 @@ tr.a2, tr.a3, p.a2, p.a3 { background: #ffe0dc; }
 .ok { color: #1a7f37; } .err { color: #c0392b; }
 .hint { color: #666; font-size: 13px; }
 form label { margin-right: 1em; }
+header form.who, header a.who { margin-left: auto; color: #cfe0ff; }
+header form.who button { margin-left: .5em; }
+form label { display: inline-block; }

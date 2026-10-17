@@ -2,6 +2,9 @@
 // The top of every page. The including page sets 'title' (and 'refresh',
 // seconds; 0 = none) BEFORE its include line: an include is spliced into
 // the page when it is translated, so it sees the page's variables.
+// ses.user is the logged-in user ("" for a Guest): the engine sets it from
+// the login cookie of THIS request, before the page runs. Logging out is a
+// form too: POST /auth/logoff with 'next' clears the cookie and comes back.
 -%>
 <html lang="en">
 <head>
@@ -17,5 +20,14 @@
 <header>
   <b>Tank farm</b>
   <nav><a href="/">Overview</a> <a href="/access.ayp">Access</a> <a href="/api.ayp">API</a></nav>
+<% if (ses.user != "") { -%>
+  <form class="who" method="post" action="/auth/logoff">
+    <%= ses.user %> (role <%= ses.user_role %>)
+    <input type="hidden" name="next" value="/">
+    <button>Log out</button>
+  </form>
+<% } else { -%>
+  <a class="who" href="/login.ayp">Log in</a>
+<% } -%>
 </header>
 <main>

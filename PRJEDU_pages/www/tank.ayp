@@ -8,6 +8,13 @@
 //     in the browser allows
 //   3 after a POST, REDIRECT (POST/redirect/GET): a reload then repeats
 //     the GET, not the write
+// and, with logins (CN_WEB con_auth):
+//   4 the form is for operators: a Guest gets a "log in" link instead -
+//     but the page hiding the form is a courtesy; the set points' xdb_acl
+//     is what refuses a Guest's write (main.set_points says why)
+//   5 the form carries the login's CSRF token (req.csrf). A form on another
+//     site that posts here with the visitor's cookie has no way to know it,
+//     and the engine answers 403 before this page runs.
 var id = req.getForm("id");
 var t = main.tank(evt, id);
 if (t == null) {
@@ -37,7 +44,9 @@ var refresh = 0;
 <% if (err != "") { -%>
 <p class="err">Not saved: <%= err %>.</p>
 <% } -%>
+<% if (ses.user_role >= 3) { -%>
 <form method="post" action="tank.ayp">
+  <input type="hidden" name="_csrf" value="<%= req.csrf %>">
   <input type="hidden" name="id" value="<%= t.id %>">
   <label>Start the pump at <input name="lo" value="<%= t.lo %>" size="5"> %</label>
   <label>stop it at <input name="hi" value="<%= t.hi %>" size="5"> %</label>
@@ -45,4 +54,8 @@ var refresh = 0;
 </form>
 <p class="hint">Try a stop level of 99, or text instead of a number: the page says why
 not, and nothing is written. The limits are in main.set_points() (db\db_FARM.js).</p>
+<% } else { -%>
+<p>Pump starts at <%= t.lo %> %, stops at <%= t.hi %> %.
+<a href="/login.ayp?next=/tank.ayp?id=<%= t.id %>">Log in as an operator</a> to change that.</p>
+<% } -%>
 <%@ include file="part/foot.ayp" %>

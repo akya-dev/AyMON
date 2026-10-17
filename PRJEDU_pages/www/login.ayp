@@ -1,0 +1,39 @@
+<%
+// PRJEDU_pages: the login page. It does not check a password itself:
+// the form posts to /auth/login, which the ENGINE answers (CN_WEB carries
+// con_auth="A_FARM"). Because the form sends 'next' and 'fail', the engine
+// answers like a page would - 303 to 'next' with the login cookie set, or
+// back here with ?err=<why> - so no JavaScript is needed.
+//
+//   next   where to go after the login: a path on this server (the engine
+//          refuses anything else - no redirect to another site)
+//   fail   where to go when it did not work: this page, with 'next' kept
+var title = "Log in";
+var refresh = 0;
+var next = "" + req.getForm("next");
+if (next.length == 0 || next.charAt(0) != "/" || next.charAt(1) == "/") next = "/";
+var err = "" + req.getForm("err");
+var why = "";
+if (err == "ERR_SUB_INVPASS") why = "Wrong name or password.";
+else if (err == "ERR_SUB_LOCKED") why = "Too many wrong passwords: this name is locked for a minute.";
+else if (err != "") why = "The login did not work (" + err + ").";
+-%>
+<%@ include file="part/head.ayp" %>
+<h1>Log in</h1>
+<% if (ses.user != "") { -%>
+<p>You are logged in as <b><%= ses.user %></b> (role <%= ses.user_role %>).</p>
+<% } -%>
+<% if (why != "") { -%>
+<p class="err"><%= why %></p>
+<% } -%>
+<form method="post" action="/auth/login">
+  <input type="hidden" name="next" value="<%= next %>">
+  <input type="hidden" name="fail" value="/login.ayp?next=<%= next %>">
+  <label>Name <input name="usr" autocomplete="username" autofocus></label>
+  <label>Password <input name="pwd" type="password" autocomplete="current-password"></label>
+  <button>Log in</button>
+</form>
+<p class="hint">Try <b>opr</b> / <b>opr123</b> (an operator: may change set points) or
+<b>eng</b> / <b>eng123</b> (an engineer: also sees the maintenance code). The users are in
+db\db_FARM.xml, in &lt;auth id="A_FARM"&gt;.</p>
+<%@ include file="part/foot.ayp" %>

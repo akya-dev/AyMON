@@ -61,8 +61,11 @@ function set_points(evt, id, hi, lo)
     if (isNaN(h) || isNaN(l))    return "both set points must be numbers";
     if (h > 95.0 || h < 20.0)    return "stop the pump between 20 and 95 %";
     if (l < 5.0 || l > h - 10.0) return "start it at 5 % or more, and at least 10 % below the stop level";
-    evt.SetValue("id('" + id + "_SP_HI')/@val", h);
-    evt.SetValue("id('" + id + "_SP_LO')/@val", l);
+    // The write is made with the rights of whoever asked: evt is the page's,
+    // and the set points' xdb_acl lets only Operator and up write them.
+    // SetValue answers false when xdb_acl refuses - whatever the page showed.
+    if (!evt.SetValue("id('" + id + "_SP_HI')/@val", h) || !evt.SetValue("id('" + id + "_SP_LO')/@val", l))
+        return "your role (" + evt.user_role + ") may not change set points - log in as an operator";
     evt.Log(4, "set points of " + id + " changed to " + l + " .. " + h + " % (from a page, role " + evt.user_role + ")");
     return "";
 }

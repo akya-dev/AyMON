@@ -63,8 +63,10 @@ does not know gets `auth_map_def`, which is 0 — Guest — so a typo in a group
 name locks someone out rather than letting them in.
 
 One `<auth>` element serves every channel that can log in — the telnet shell,
-MQTT, and the web login of a real installation all name it the same way. What
-it decides is not "yes or no" but **which role** the session runs as.
+MQTT and the web pages all name it the same way. What it decides is not "yes
+or no" but **which role** the session runs as. `PRJEDU_pages` shows the web
+side: a login form the engine answers, a cookie per login, set points that
+only an operator may change, and a CSRF token on the form.
 
 Worth knowing before you use it on a plant:
 
@@ -179,6 +181,7 @@ repository.
 | `PRJEDU_net` | the mail and file sinks take every message and every upload from anyone who can reach their ports, with no real login and no TLS, and the connections to them say `pro_smtp_tls="none"` / `pro_ftp_tls="none"` out loud. All on loopback only |
 | `PRJEDU_rep` | the peer connects with `con_role="8"`, no TLS; both engines are on one machine |
 | `PRJEDU_telnet` | passwords in clear in the XML, so you can read them |
+| `PRJEDU_pages` | the same: two passwords in clear in the XML; the login crosses plain `http://`, so its cookie has no `Secure` flag. Loopback only - on a network use `CON.tls` (the cookie then gets `Secure` by itself) |
 | `PRJEDU_opcua` | the setter's password is in clear on the `<dev>`, and two of the three connections run in the clear — to show the difference. The machine listens on loopback only |
 | `PRJEDU_hardening` | as delivered: almost everything on the list below is missing, on purpose - that is the lab. `run_solution` is the fixed plant |
 
