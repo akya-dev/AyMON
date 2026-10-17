@@ -318,7 +318,9 @@ sent.
 
 `PRJEDU_pages` is built this way, and `PRJEDU_oee` adds a printable shift
 report (`www\report.ayp`) to an existing project. A page runs with the
-visitor's rights — see `06_Access_and_Safety.md`.
+visitor's rights, and a visitor can log in with a plain form the engine
+answers (`ses.user` and `ses.user_role` tell the page who it is) — see
+`06_Access_and_Safety.md`.
 
 ## Calling Python
 

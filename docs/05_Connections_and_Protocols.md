@@ -81,7 +81,8 @@ The listener itself does more than send files. A file under its
 each request (`03_Scripting.md`): the same listener that sends `index.html`
 can answer `report.ayp` with HTML written from the plant or a database, with
 no extra connection and no API in between. `PRJEDU_pages` is a whole site of
-them; `PRJEDU_oee` has one beside its live page.
+them; `PRJEDU_oee` has one beside its live page. `con_auth` on the listener
+gives the pages a login (`06_Access_and_Safety.md`).
 
 ---
 

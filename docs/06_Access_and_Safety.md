@@ -14,7 +14,8 @@ and each answers a different question:
 | 3 | `xdb_acl` | **what that role may read and write** | any element |
 
 `PRJEDU_telnet` is the example that shows all three at once, on a shell you can
-log in to while the plant runs.
+log in to while the plant runs. `PRJEDU_pages` shows the same three on web
+pages: a login form, and set points only an operator may change.
 
 ---
 
@@ -127,12 +128,27 @@ in as four different users to see the same plant through four different
 windows.
 
 **A server page (`.ayp`) is not a back door.** It runs with the role of the
-session that asked for it — Guest (0) until that session logs in — so
+request that asked for it — Guest (0) until the visitor logs in — so
 everything it reads or writes meets the same `xdb_acl`. A public page shows
-only what Guest may read; `PRJEDU_pages`' `access.ayp` reads an element
-closed to role 0 and gets nothing. Give Guest read rights to exactly what an
+only what Guest may read. In `PRJEDU_pages` the set points carry
+`0x33333111` (everyone reads, Operator and up write) and the maintenance code
+`0xFF000000` (Engineer and Admin only): `access.ayp` shows the same three
+values as Guest, as `opr` and as `eng`. Give Guest read rights to exactly what an
 anonymous page should show, and check every value a form sends on the server
-(`tank.ayp` there shows how).
+(`tank.ayp` there shows how) — a page that hides its form from a Guest is a
+courtesy, the `xdb_acl` is the guard.
+
+**Logging in on the web** takes the same `<auth>` as the shell: `con_auth` on
+the HTTP listener, and the engine answers `POST /auth/login` and
+`/auth/logoff` itself. A plain HTML form is enough — with a `next` field the
+answer is a redirect back to a page, not JSON (engine 4.3.4.594). The login
+travels in an `HttpOnly` cookie and is checked on **every request**, never
+kept on the connection. A form that changes something must carry the login's
+CSRF token (`<input type="hidden" name="_csrf" value="<%= req.csrf %>">`);
+without it the engine answers 403 before the page runs, so a form on another
+site cannot use a visitor's login. `pro_http_auth="1"` on the listener turns
+every page except those in `pro_http_pub` into 401 for a visitor who has not
+logged in. `PRJEDU_pages`' README walks through all of it.
 
 ---
 
@@ -196,7 +212,8 @@ pointed at a network.
 1. `con_host` stops being `127.0.0.1` **last**, not first.
 2. `con_acl` on every listener, as narrow as the site allows.
 3. `con_auth` on every channel a human can reach; real users, no shared
-   accounts, `auth_try` / `auth_lock` set.
+   accounts, `auth_try` / `auth_lock` set. On a web listener also decide
+   which pages are public (`pro_http_auth="1"` + `pro_http_pub`).
 4. `xdb_acl` on the elements that matter — starting with the `<auth>` element
    itself and anything that commands equipment. Read access is as much a
    decision as write access.
