@@ -81,22 +81,24 @@
 		     pro_clt_cmd            'standdown' / 'takeover' - a hand-over.
 		                            The page writes CLT_CMD; main.on_clt_cmd
 		                            passes it here.
-		     con_role="8"           the peer's election messages are written
-		                            into this row (@pro); SYS/S00 is read-only
-		                            for the user roles (xdb_acl), so a peer
-		                            arriving as Guest (0) would be refused -
-		                            one ALERT a second. The cluster guide says
-		                            Guest is enough: that holds only where the
-		                            document has no xdb_acl.
+		     pro=""                 the peer's election messages arrive as
+		                            Guest (0) and open an event on this row's
+		                            @pro; without pro="" each one counts as
+		                            CREATING @pro, and SYS/S00 (xdb_acl) gives
+		                            Guest no such right - one ALERT a second.
+		                            pro="" silences it and gives the peer no
+		                            right; con_role="8" would too, but hands
+		                            the election peer the DOCUMENT role (the
+		                            cluster guide keeps Guest on these ends).
 		     ================================================================ -->
 		<con id="CN_S01" xdb_cls="cls_CLU" xdb_fnc="[CLT.cfg,CON.ws,PRO.clt]" desc="election - node S01"
-		     sta="0x0303" pro_nid="S01" con_host="" con_port="" con_role="8"
+		     sta="0x0303" pro_nid="S01" con_host="" con_port="" pro=""
 		     pro_clt_link="#CN_EXT" pro_clt_path="/clt" pro_clt_host="127.0.0.1" pro_clt_port="9201"
 		     pro_clt_id="APP" pro_clt_pri="1"
 		     pro_clt_hb="2" pro_clt_expiry="2" pro_clt_elec="2" pro_clt_init="5" pro_clt_preempt="0"
 		     pro_clt_cmd="" pro_clt_cmd_typ="0x1401" pro_clt_cmd_fnc="[CLT.cmd]"/>
 		<con id="CN_S02" xdb_cls="cls_CLU" xdb_fnc="[CLT.cfg,CON.ws,PRO.clt]" desc="election - node S02"
-		     sta="0x0303" pro_nid="S02" con_host="" con_port="" con_role="8"
+		     sta="0x0303" pro_nid="S02" con_host="" con_port="" pro=""
 		     pro_clt_link="#CN_EXT" pro_clt_path="/clt" pro_clt_host="127.0.0.1" pro_clt_port="9202"
 		     pro_clt_id="APP" pro_clt_pri="2"
 		     pro_clt_hb="2" pro_clt_expiry="2" pro_clt_elec="2" pro_clt_init="5" pro_clt_preempt="0"

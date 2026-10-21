@@ -144,7 +144,7 @@ about closing the connection to it.
 | `pro_clt_hb="1" pro_clt_expiry="1"` | a crash closes the connection and is noticed at once anyway; what do shorter heartbeats buy, and what can they cost on a busy machine? |
 | stop both, start only S02 | it waits `pro_clt_init` for a master before it campaigns. Which unit does the job start from? |
 | add a `<var>` to `SYS/S00` and write it from the page on each node | it is different on the two nodes: `SYS/S00` is never replicated — the place for what belongs to *one* machine |
-| take away `con_role="8"` from the election rows | one `ALERT` a second: the peer's messages arrive as Guest (0), and `SYS/S00` is read-only for that role (`xdb_acl`) |
+| take away `pro=""` from the election rows | one `ALERT` a second (`CN_S01.pro: xdb_acl yaratma reddetti (rol 0)`): the peer's messages arrive as Guest (0), each one would create `pro`, and `SYS/S00` gives that role no such right (`xdb_acl`). `con_role="8"` silences it too — but gives the peer the DOCUMENT role |
 | two machines | `pro_clt_host` / `pro_rep_host` of the other node's rows = its address, `con_host` of `CN_EXT` = this machine's address, `con_acl` in `cls_CLU` = the other machine's, and the two addresses in `www/app.js` — and a licence (below) |
 
 ## Licence
