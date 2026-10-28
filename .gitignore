@@ -1,15 +1,15 @@
 # Logs and databases are produced by running the examples
-*/log/*.log
-*/log/*.txt
-*/log/*.db
-*/log/*.db-journal
-*/log/*.db-wal
-*/log_archive/
+**/log/*.log
+**/log/*.txt
+**/log/*.db
+**/log/*.db-journal
+**/log/*.db-wal
+**/log_archive/
 
 # Written by the engine beside the licence it used (last-seen time, host tolerance)
 AyMON.lst
 bin/lic/AyMON.lst
-*/db/lic/AyMON.lst
+**/db/lic/AyMON.lst
 
 # Written by Python when a script is imported
 __pycache__/
@@ -27,14 +27,14 @@ desktop.ini
 # PRJEDU_opcua: made on the first run - certificates and private keys are
 # per installation and never belong in a repository; so is the Python
 # environment setup.bat / setup.sh builds, and OPC.gen's draft
-*/db/pki/*.pem
-*/sim/pki/
-*/sim/.venv/
-*/sim/.venv-linux/
-*/log/*.xml
+**/db/pki/*.pem
+**/sim/pki/
+**/sim/.venv/
+**/sim/.venv-linux/
+**/log/*.xml
 
 # PRJEDU_net: the shift reports it makes and uploads
-*/out/
+**/out/
 
 # The documentation site, built by tools/site/build.py
 tools/site/_build/

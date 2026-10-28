@@ -15,6 +15,7 @@ theme:
   language: en
   features:
     - navigation.sections
+    - navigation.indexes
     - navigation.top
     - navigation.footer
     - search.suggest

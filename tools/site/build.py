@@ -1,8 +1,10 @@
 """Build the documentation site of this repository.
 
-The site is made from the Markdown that is already here -- README.md, docs/
-and every example's README.md -- so writing an example's README IS writing
-the site; nothing is kept twice. This script copies those files into
+The site is made from the Markdown that is already here -- README.md, docs/,
+examples/README.md, each group's README.md and every example's README.md --
+so writing an example's README IS writing the site; nothing is kept twice.
+The groups come in the order examples/README.md lists them; an example's page
+keeps its flat address (PRJEDU_modbus/) whatever group folder holds it. This script copies those files into
 tools/site/_build/src, turns links to files that are not pages into links to
 GitHub, writes the navigation, and writes two files for AI assistants:
 llms.txt (an index) and llms-full.txt (every page in one file, to hand to an
@@ -86,19 +88,36 @@ def title_of(text, fallback):
     return fallback
 
 
+def groups():
+    """The example groups in the order examples/README.md lists them: [(folder, title)]."""
+    text = read(os.path.join(ROOT, "examples", "README.md"))
+    out = []
+    for title, folder in re.findall(r"^\| \[([^\]]+)\]\(([a-z0-9-]+)/\) \|", text, re.M):
+        if os.path.isfile(os.path.join(ROOT, "examples", folder, "README.md")):
+            out.append((folder, title))
+    return out
+
+
 def pages():
-    """(repo path, site path, nav section) of every page, in navigation order."""
+    """(repo path, site path, nav section) of every page, in navigation order.
+    A section is None (Home), a name, or (name, group title) for an example group,
+    whose README is the group's own page. An example keeps the flat site path it
+    had before the groups (docs.aymon.ca/PRJEDU_modbus/), whatever its folder."""
     out = [("README.md", "index.md", None)]
     out.append(("docs/README.md", "docs/index.md", "Guides"))
     for name in sorted(os.listdir(os.path.join(ROOT, "docs"))):
         if name.endswith(".md") and name != "README.md":
             out.append(("docs/" + name, "docs/" + name, "Guides"))
-    for prefix, section in (("PRJEDU_", "Examples"), ("PRJDEV_", "Development"),
-                            ("PRJPER_", "Hobby projects")):
-        for name in sorted(os.listdir(ROOT)):
-            readme = os.path.join(ROOT, name, "README.md")
-            if name.startswith(prefix) and os.path.isfile(readme):
-                out.append((name + "/README.md", name + "/index.md", section))
+    out.append(("examples/README.md", "examples/index.md", "Examples"))
+    for folder, title in groups():
+        base = "examples/" + folder
+        out.append((base + "/README.md", base + "/index.md", ("Examples", title)))
+        # in the order the group's README lists them, then any it does not list
+        listed = re.findall(r"\]\((PRJ[A-Z]+_[A-Za-z0-9_]+)/\)", read(os.path.join(ROOT, base, "README.md")))
+        names = [n for n in os.listdir(os.path.join(ROOT, base)) if n.startswith("PRJ")]
+        for name in sorted(names, key=lambda n: (listed.index(n) if n in listed else len(listed), n)):
+            if os.path.isfile(os.path.join(ROOT, base, name, "README.md")):
+                out.append((f"{base}/{name}/README.md", name + "/index.md", ("Examples", title)))
     return out
 
 
@@ -142,7 +161,8 @@ def rewrite_links(text, repo_path, site_of):
 
 def example_banner(repo_path):
     folder = os.path.dirname(repo_path)
-    if not folder.startswith("PRJ"):
+    name = os.path.basename(folder)
+    if not name.startswith("PRJ"):
         return ""
     return (f"!!! info \"\"\n    Every file of this example — the XML, the scripts, the page — is in\n"
             f"    [**{folder}** on GitHub]({REPO_URL}/tree/{BRANCH}/{folder}).\n"
@@ -166,18 +186,26 @@ def stage():
         write(os.path.join(SRC, site), body)
         full.append((title, site, text))
         label = title
-        if site == "docs/index.md":
+        if site in ("docs/index.md", "examples/index.md"):
             label = "Overview"
-        elif repo.startswith("PRJ"):  # the folder name; the full title is on the page
-            label = os.path.dirname(repo)
+        elif os.path.basename(os.path.dirname(repo)).startswith("PRJ"):  # the folder name; the full title is on the page
+            label = os.path.basename(os.path.dirname(repo))
         entry = {label: site}
         if section is None:
             nav.append({"Home": site})
-        else:
+            continue
+        top = section[0] if isinstance(section, tuple) else section
+        if top not in sections:
+            sections[top] = []
+            nav.append({top: sections[top]})
+        if isinstance(section, tuple):   # an example group: its README is the section's own page
             if section not in sections:
-                sections[section] = []
-                nav.append({section: sections[section]})
-            sections[section].append(entry)
+                sections[section] = [site]
+                sections[top].append({section[1]: sections[section]})
+            else:
+                sections[section].append(entry)
+        else:
+            sections[top].append(entry)
 
     # pages that exist only on the site
     for name in sorted(os.listdir(os.path.join(HERE, "pages"))):

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_101 / EDU/S00 - the whole example lives here.
+
+     Read it top to bottom; it is meant to be read, not just run.
+
+       <config>  what the document needs before it can work (scripts here)
+       <data>    the elements themselves
+
+     Five things are demonstrated, in this order:
+       1  <thr>   a thread with its own clock
+       2  <var>   a value driven by a TIMER (evt_per) and a script
+       3  <var>   a CALCULATED value (val_fnc) that follows another one
+       4  <var>   an ALARM: the same value, watched by limits
+       5         how all of it reaches the log
+
+     Every attribute used here is explained in a comment above it. The guides
+     are in ..\..\..\docs: 02_Timers_and_Events for evt_*, 03_Scripting for the
+     script side, 01_The_Element_Tree for <con>/<dev>/<bi>/<io>.
+     ===================================================================== -->
+<xdb id="EDU/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/EDU.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100">
+	<config>
+		<!-- A script file is loaded once and its functions are then callable
+		     as 'main.<name>' from any *_fnc attribute in this document.
+		     id = the scope name.  language="JScript" is the built-in one. -->
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_EDU.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<!-- 1 - A THREAD.
+		     Timers do not float in the air: every element with an evt_* timer
+		     belongs to a thread, and the thread's own period (thr_per, in
+		     MILLISECONDS) is the finest grain it can fire at. 100 ms here is
+		     plenty for an example; the engine accepts 10..10000.
+		     thr_wrk = how many worker threads run the callbacks. 0 means the
+		     thread runs them itself, which is what a small project wants. -->
+		<thr id="TH_MAIN" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- 2 - A VALUE DRIVEN BY A TIMER.
+		     'evt' is the timer's own attribute; the engine writes it and the
+		     chain in evt_fnc runs. Here that chain is one script function.
+		       evt_thr  which thread's clock drives it
+		       evt_per  period in SECONDS (1 = once a second)
+		       evt_cfg  0x0042 = periodic + queued (the usual choice)
+		       val      the value the script writes; val_typ 0x0308 = double
+		     Everything in AyMON is an attribute of an element, and an
+		     attribute with a _typ is a typed, published value. -->
+		<var id="SENSOR" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="TH_MAIN" evt_per="1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.read_sensor]"
+		     val="0" val_typ="0x0308" desc="a simulated temperature, degrees C"/>
+
+		<!-- 3 - A CALCULATED VALUE.
+		     val_fnc is the chain that runs WHEN THE VALUE IS WRITTEN. Here it
+		     is a script that converts to Fahrenheit and stores it on itself.
+		     Note what is NOT here: no timer. This element has no clock of its
+		     own; it moves because something wrote to it. That is the whole
+		     event model - a write runs a chain, the chain may write again. -->
+		<var id="SENSOR_F" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     val="0" val_typ="0x0308" desc="the same reading in Fahrenheit"/>
+
+		<!-- 4 - AN ALARM.
+		     This is the chain a real plant uses, in the order a real plant
+		     uses it:
+		       ATR.rou    round the value (val_rou = the step)
+		       ATR.lmt    clamp it to val_min .. val_max
+		       ALM.onlvl  compare it with the four limits and move the ALARM
+		                  BITS INSIDE 'sta'
+		     The limits are ordinary attributes of the element:
+		       val_alm_onlhi_alm   high alarm      val_alm_onlhi_wrn  high warning
+		       val_alm_onllo_wrn   low warning     val_alm_onllo_alm  low alarm
+		     Nothing else is needed: an alarm in AyMON is not a separate
+		     object, it is state on the value that raised it. main.on_alarm
+		     below only exists to print the transition, because this example
+		     has no user interface.
+		     val_typ 0x1308 = double, engine-local (the 0x1000 bit); val_unt
+		     is the unit the interface shows. -->
+		<var id="ALARM" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x1142" sta_fnc="[EVT.sta,main.on_alarm]"
+		     val="0" val_typ="0x1308" val_fnc="[ATR.rou,ATR.lmt,ALM.onlvl]"
+		     val_min="-50" val_max="150" val_rou="0.1" val_unt="C"
+		     val_alm_onlhi_alm="30" val_alm_onlhi_wrn="26"
+		     val_alm_onllo_wrn="14" val_alm_onllo_alm="10"
+		     desc="the reading, with limits on it"/>
+
+		<!-- 5 - A COUNTER, to show a second type.
+		     0x0104 = unsigned 32 bit. The script bumps it on every reading. -->
+		<var id="COUNT" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142"
+		     val="0" val_typ="0x0104" desc="how many readings so far"/>
+	</data>
+</xdb>

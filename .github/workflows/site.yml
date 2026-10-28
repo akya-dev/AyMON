@@ -1,5 +1,6 @@
-# Builds the documentation site from README.md, docs/ and every example's
-# README.md, and publishes it on GitHub Pages. Nothing to do by hand: a push
+# Builds the documentation site from README.md, docs/ and the README.md of
+# examples/, of every group and of every example, and publishes it on GitHub
+# Pages. Nothing to do by hand: a push
 # that changes one of those files updates the site a minute later.
 #
 # While the repository is private the job is skipped (Pages on a private
@@ -12,7 +13,7 @@ on:
     paths:
       - "README.md"
       - "docs/**"
-      - "PRJ*/README.md"
+      - "examples/**/README.md"
       - "tools/site/**"
       - ".github/workflows/site.yml"
   workflow_dispatch:
@@ -38,7 +39,9 @@ jobs:
             README.md
             docs
             tools/site
-            PRJ*/README.md
+            examples/README.md
+            examples/*/README.md
+            examples/*/*/README.md
           sparse-checkout-cone-mode: false
       - uses: actions/setup-python@v5
         with:
