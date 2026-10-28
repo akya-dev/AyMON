@@ -63,6 +63,8 @@ def repo_kind(rel):
     return "blob" if rel in files else "tree" if rel in dirs else None
 
 LINK_RE = re.compile(r"(!?\[[^\]]*\]\()([^)\s]+)(\))")
+# the same in raw HTML (README.md's picture gallery): <img src=".."> and <a href="..">
+HTML_RE = re.compile(r"(<(?:img|a)\b[^>]*?\b(?:src|href)=\")([^\"]+)(\")")
 FENCE_RE = re.compile(r"^\s*(```|~~~)")
 
 
@@ -101,7 +103,8 @@ def pages():
 
 
 def rewrite_links(text, repo_path, site_of):
-    """Links to pages stay relative; links to any other file go to GitHub."""
+    """Links to pages stay relative; links to any other file go to GitHub -
+    a picture to its raw file, so that it shows on the site too."""
     base = os.path.dirname(repo_path)
     site_base = os.path.dirname(site_of[repo_path])
 
@@ -109,6 +112,8 @@ def rewrite_links(text, repo_path, site_of):
         target = m.group(2)
         if re.match(r"^[a-z]+:", target) or target.startswith("#"):
             return m.group(0)
+        html = m.group(1).startswith("<")
+        picture = m.group(1).startswith(("!", "<img"))
         path, _, anchor = target.partition("#")
         anchor = "#" + anchor if anchor else ""
         rel = os.path.normpath(os.path.join(base, path)).replace("\\", "/")
@@ -116,9 +121,14 @@ def rewrite_links(text, repo_path, site_of):
             rel = rel + "/README.md"
         if rel in site_of:
             new = os.path.relpath(site_of[rel], site_base or ".").replace("\\", "/")
+            if html:  # MkDocs turns x.md into a URL in Markdown links only
+                new = new[:-len("index.md")] if new.endswith("index.md") else new[:-3] + "/"
+                new = new or "./"
             return m.group(1) + new + anchor + m.group(3)
         kind = repo_kind(rel)
         if kind:
+            if picture and kind == "blob":
+                kind = "raw"
             return m.group(1) + f"{REPO_URL}/{kind}/{BRANCH}/{rel}{anchor}" + m.group(3)
         return m.group(0)
 
@@ -126,7 +136,7 @@ def rewrite_links(text, repo_path, site_of):
     for line in text.splitlines(keepends=True):
         if FENCE_RE.match(line):
             fenced = not fenced
-        lines.append(line if fenced else LINK_RE.sub(fix, line))
+        lines.append(line if fenced else HTML_RE.sub(fix, LINK_RE.sub(fix, line)))
     return "".join(lines)
 
 
