@@ -2,8 +2,9 @@
 
 A job — a counter that makes units, five a second, and closes a **batch**
 every 100 — runs on one of two engines. The other one keeps a copy and
-waits. Stop the one that is working, and within about two seconds the other
-one carries on **from the same unit**. Start the stopped one again and it
+waits. Stop the one that is working, and within a second or two the other
+one carries on **from the unit its copy had** — the same one, or one step back
+if the last step had not reached it yet. Start the stopped one again and it
 comes back as the spare.
 
 Open two command windows in this directory:
@@ -89,42 +90,38 @@ peers and whether they are alive — and copies the job's values from its own
 
 ## What it measured
 
-On a Windows 11 laptop and on Linux (WSL, Ubuntu 22.04), engine 4.3.4.467, a
-script killing the master and driving both nodes over MQTT:
+On a Windows 11 laptop and on Linux (WSL, Ubuntu 22.04), engine 4.3.4.622, a
+script killing the master and driving both nodes over the page's MQTT link,
+two runs on each:
 
 | | Windows | Linux |
 |---|---|---|
-| first election after both start | S01 master after ~8 s (`pro_clt_init` 5 s of listening first) | same |
-| the master is killed (`Stop-Process -Force` / `kill -9`): the spare notices | 0.4 s | 0.2 s — the connection closes; no waiting for heartbeats |
-| … and is master | **2.0 s** after the kill | **2.2 s** |
-| where it carries on | unit **85** — the last unit the dead master made | unit **60**, the same |
-| units lost | **0** | **0** |
-| gap between the last unit on the old master and the first on the new | 2 s (1 s normally) | 3 s |
-| the killed node is started again | SPARE, with the job copied, 4 s after start | SPARE 2.4 s after start, the job copied 1 s later |
-| `RATE` = 8 written on the **spare** | applied by the master at its next step (< 1 s), back on the spare by replication | same |
-| **Take over** on the spare | master 3 s later; no units made for about 4 s | 2 s; 3.5 s |
-| CTRL-C (SIGINT on Linux) | — | both exit 0 |
+| first election after both start | S01 master 9–11 s after start (`pro_clt_init` 5 s of listening first) | 8–10 s |
+| the master is killed (`Stop-Process -Force` / `kill -9`) … and the spare is master | **1.0 s** after the kill — the connection closes; no waiting for heartbeats | **0.9–3.0 s** |
+| where it carries on | the unit the spare's copy had: 125 in one run, 120 in the other | 125 |
+| units made again | **0** in one run, **5** (one step) in the other — see below | **0** |
+| the killed node is started again | SPARE, with the job copied, 1 s after start | 2–3 s |
+| `RATE` = 8 written on the **spare** | applied by the master 0.1 s later, back on the spare by replication | 0.4 s |
+| **Take over** on the spare | master 2.5–3 s later; no units made for 3.5–4 s | 3.5 s; 4.5 s |
+| CTRL-C (Ctrl-Break / SIGINT) | both exit 0 | both exit 0 |
+| the batch list on the two nodes at the end | the same ten-or-fewer items, same ids, **same order** | the same |
 
-**Three things about the batch list, all seen in the runs:**
+**Units made again.** Replication is asynchronous: the master makes a step,
+then sends it. If it is killed between the two, the spare's copy is one step
+behind, and the new master carries on from there — those units are made
+again, nothing is skipped. It happened in one run of four.
 
-- **The two copies are not in the same order.** The master adds each new
-  batch at the top of the list; the spare's copy comes out in a different
-  order (the batches it got in one piece at start, then the new ones at the
-  end). After a failover the new master carries that order on. The page
-  sorts by batch number, so it does not show — but a script that takes "the
-  first item" or "the last item" as the newest or the oldest gets a
-  different answer on the two nodes.
-- **So the list is cut by batch number, not by position.** `main.keep_nine`
-  deletes the lowest batch number before a new batch is added. The first
-  version deleted `item[last()]`: on a node that had just taken over, that
-  was the newest batch, and two batches were gone.
-- **…and before the new item, not after.** `ELM.new` can cut the list
-  itself (`new_elm_new_max="B10"`), but it cuts *before* it adds, so it keeps
-  eleven; and it picks the new item's id from the pool `B01`…`B10` while all
-  ten are still taken. Measured: the eleventh batch was added **without an
-  id** (one `ERROR` line, "id havuzu dolu"), and an element without an id is
-  not replicated — the master had eleven batches, the spare ten. With
-  `keep_nine` the pool always has a free id.
+**The batch list.** The master adds each new batch at the top; the spare's
+copy is in the **same order** (the engine sends an insert as an insert at the
+same place, and the copy a node gets in one piece at start is put in the
+source's order too — engine 4.3.4.469 and later; before that the spare's copy
+came out in another order). `ELM.new` keeps the list itself:
+`new_elm_new_max="B10"` = ten items, and it makes room *before* it adds, so
+the new item always gets an id from the pool `B01`…`B10` (4.3.4.468 and
+later; before that it kept eleven and the eleventh got no id, and an element
+without an id is not replicated). `main.keep_nine` — deleting the lowest batch
+number before writing `@new` — dates from those older engines; it does no
+harm now and shows that `evt.DelElement` is replicated.
 
 And: an element a script adds with `evt.AddElement` is *not* replicated at
 all — the spare never sees it. `ELM.new` (writing the list's `@new`) and
@@ -143,6 +140,7 @@ about closing the connection to it.
 | `pro_clt_preempt="1"` on both rows, then kill S01 and start it again | does S01, the preferred node, take the job back? Is a second switch what you want? |
 | `pro_clt_hb="1" pro_clt_expiry="1"` | a crash closes the connection and is noticed at once anyway; what do shorter heartbeats buy, and what can they cost on a busy machine? |
 | stop both, start only S02 | it waits `pro_clt_init` for a master before it campaigns. Which unit does the job start from? |
+| `pro_clt_quorum="2"` on both election rows, then kill the master | the spare does **not** take over: a majority rule wants the node itself and one more, and alone it hears only itself — it stays in ELECTION (`heard=1 quorum=2` in its log; a master that loses its peer logs "MASTER GIVEN UP -- no majority"). **Take over** on the page still works: "MASTER by 'takeover' without a majority". A majority keeps a split network from having two masters, and is worth it with **three** nodes; with two, one crash stops the job |
 | add a `<var>` to `SYS/S00` and write it from the page on each node | it is different on the two nodes: `SYS/S00` is never replicated — the place for what belongs to *one* machine |
 | take away `pro=""` from the election rows | one `ALERT` a second (`CN_S01.pro: xdb_acl yaratma reddetti (rol 0)`): the peer's messages arrive as Guest (0), each one would create `pro`, and `SYS/S00` gives that role no such right (`xdb_acl`). `con_role="8"` silences it too — but gives the peer the DOCUMENT role |
 | two machines | `pro_clt_host` / `pro_rep_host` of the other node's rows = its address, `con_host` of `CN_EXT` = this machine's address, `con_acl` in `cls_CLU` = the other machine's, and the two addresses in `www/app.js` — and a licence (below) |

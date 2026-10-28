@@ -31,13 +31,13 @@ function fill_item(evt)
 }
 
 // Keep nine finished batches, so the new one is the tenth.
-//  * WHY HERE: ELM.new would cut the list itself, but only AFTER it has
-//    picked an id - with ten items all ten ids of the pool are taken, the
-//    eleventh item gets none, and an item without an id never reaches the
-//    spare.
-//  * WHY BY BATCH NUMBER, NOT POSITION: the spare's copy of the list is not
-//    in the master's order (see README). After a failover 'the last item'
-//    on the new master is not the oldest batch.
+// Engine 4.3.4.468 and later do this themselves: ELM.new makes room BEFORE
+// it adds (new_elm_new_max="B10" keeps ten, the new item always gets an id),
+// and since 4.3.4.469 the spare's copy is in the master's order. This
+// function dates from older engines, where the eleventh item got no id (and
+// an item without an id never reaches the spare) and 'the last item' on a
+// node that had just taken over was not the oldest batch - hence by batch
+// number, not by position. It does no harm now and shows that
 // evt.DelElement is replicated: the spare deletes the same item.
 function keep_nine(evt)
 {

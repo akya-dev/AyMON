@@ -53,10 +53,11 @@
 		     main.step writes the batch (as JSON) into @new; ELM.new makes the
 		     <item>: new_elm_new is its tag, _pos 0 = at the top, _idatr +
 		     _max give it an id from a pool B01..B10, _eval fills its
-		     attributes from what was written. The list is kept at ten by
-		     main.step, which deletes the oldest BEFORE it writes @new:
-		     ELM.new's own cut comes after the id is chosen, so the eleventh
-		     item would find the pool full and get no id (see db_APP.js).
+		     attributes from what was written. ELM.new keeps the list at ten
+		     itself (engine 4.3.4.468 and later: it makes room before it adds,
+		     so the new item always gets an id); main.step also deletes the
+		     oldest batch before it writes @new - needed on older engines,
+		     harmless now (see db_APP.js).
 		     WHY NOT evt.AddElement? Because an element has to be ANNOUNCED
 		     to reach a mirror. ELM.new creates and deletes through the
 		     engine's one path that publishes (the spare gets an 'ins', and a
