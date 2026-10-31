@@ -106,19 +106,49 @@ cd examples/start/PRJEDU_101
 ./run.sh
 ```
 
-It does what `run.bat` does: finds the engine in `../../../bin/linux-x64`, hands it
+It does what `run.bat` does: finds the engine for the machine — `../../../bin/linux-x64`,
+or `../../../bin/linux-arm64` on 64-bit ARM such as a Raspberry Pi — hands it
 the licence in `../../../bin/lic` with `-lic:`, and starts it in the project
 directory. Stop it with Ctrl-C (or ESC); Ctrl-X opens the maintenance prompt.
 The same education licence works on both platforms.
 
 | | |
 |---|---|
-| **Machine** | x86-64 with glibc 2.34 or newer and OpenSSL 3: Ubuntu 22.04+, Debian 12+, Fedora 35+, RHEL / Rocky 9, and WSL on Windows. The engine takes `libssl.so.3` from the system (`sudo apt install libssl3` if `run.sh` says it is missing); everything else ships in `bin/linux-x64`. ARM (Raspberry Pi) is not in this repository yet. |
+| **Machine** | x86-64 with glibc 2.34 or newer and OpenSSL 3: Ubuntu 22.04+, Debian 12+, Fedora 35+, RHEL / Rocky 9, and WSL on Windows. The engine takes `libssl.so.3` from the system (`sudo apt install libssl3` if `run.sh` says it is missing); everything else ships in `bin/linux-x64`. |
+| **Raspberry Pi / ARM** | 64-bit ARM (aarch64) with the same glibc and OpenSSL: Raspberry Pi 4 or 5 with **64-bit** Raspberry Pi OS (Bookworm or Trixie), or another arm64 board. `run.sh` picks `bin/linux-arm64` by itself. A 32-bit system has no engine here. This engine has been checked in an arm64 Debian 12 container; it has not yet been run on a real Raspberry Pi. |
 | **Helpers** | `examples/web/PRJEDU_telnet/shell.sh` and `examples/ai-vision/PRJEDU_mcp/try.sh` run small Python 3 scripts (standard library only) — the counterparts of `shell.ps1` / `try.ps1`. |
-| **Python in the engine** | only `PRJEDU_gauge` and `PRJEDU_pycall`: `libAyLIB_Python.so` in `bin/linux-x64` runs their scripts in **Python 3.11** (Debian 12's default; deadsnakes on Ubuntu) — the gauge with numpy installed for that version, pycall with the standard library only. Every other example runs without it — the module is loaded only when a document has a Python script. |
+| **Python in the engine** | only `PRJEDU_gauge` and `PRJEDU_pycall`: `libAyLIB_Python.so` in `bin/linux-x64` (or `bin/linux-arm64`) runs their scripts in **Python 3.11** (Debian 12's and Raspberry Pi OS Bookworm's default; deadsnakes on Ubuntu) — the gauge with numpy installed for that version, pycall with the standard library only. The engine needs Python's **shared library**, a package of its own that `python3` does not bring: `sudo apt install libpython3.11` (and `python3-numpy` for the gauge). Every other example runs without it — the module is loaded only when a document has a Python script. |
 | **ODBC** | `PRJEDU_odbc` runs on its embedded SQLite out of the box. For PostgreSQL or SQL Server install unixODBC and the driver (`sudo apt install unixodbc odbc-postgresql`); on Linux the drivers are named in `/etc/odbcinst.ini` — `{PostgreSQL Unicode}`, not Windows' `{PostgreSQL Unicode(x64)}`. |
 | **Paths** | the projects write `%PRJ%` / `%DB%` paths with `/`, which both platforms read; a file database written as `Database=log\x.db` works too — on Linux the engine reads the `\` as a separator. |
-| **Copied from Windows?** | a zip loses the executable bits: `chmod +x examples/*/*/*.sh bin/linux-x64/AyXDB`. A `git clone` keeps them. |
+| **Copied from Windows?** | a zip loses the executable bits: `chmod +x examples/*/*/*.sh bin/linux-*/AyXDB`. A `git clone` keeps them. |
+
+## On a Mac
+
+There is no macOS build of the engine. A Mac runs the Linux engine of this
+repository in a small Linux virtual machine made with [Lima](https://lima-vm.io)
+(free): on Apple silicon (M1 and later) that is `bin/linux-arm64` at native
+speed, on an Intel Mac `bin/linux-x64`.
+
+```bash
+brew install lima
+git clone https://github.com/akya-dev/AyMON.git
+cd AyMON
+tools/mac/aymon-vm.sh examples/start/PRJEDU_101
+```
+
+The first run creates a VM named `aymon` (Debian 12, whose Python 3.11 is the
+version the engine's Python module needs), mounts this repository into it, and
+installs `libssl3`, `libpython3.11` and `python3-numpy` — a few minutes and a ~300 MB download,
+once. After that the script starts the example's `run.sh` inside the VM; stop it
+with Ctrl-C.
+
+| | |
+|---|---|
+| **Another script** | name it after the folder: `tools/mac/aymon-vm.sh examples/cluster/PRJEDU_cluster run_S02.sh` (the second engine, in a second terminal), `tools/mac/aymon-vm.sh examples/web/PRJEDU_telnet shell.sh`. |
+| **Web pages** | Lima forwards the ports the engine listens on: the addresses in the READMEs (`http://127.0.0.1:<port>/`) open in the Mac's browser. |
+| **The VM** | `tools/mac/aymon-vm.sh --shell` opens a shell in it, `--stop` stops it (the next run starts it again), `--delete` removes it. |
+| **Devices** | examples that talk over the network work as on Linux. USB and serial devices and a USB camera are on the Mac, not in the VM: `PRJEDU_vision` runs on its recorded frames. |
+| **Status** | the script has not yet been tried on a real Mac. If something goes wrong, please [open an issue](https://github.com/akya-dev/AyMON/issues/new/choose) with what it printed. |
 
 ## The examples
 

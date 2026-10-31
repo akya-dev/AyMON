@@ -8,7 +8,7 @@ it, and a log you can read.
 run.bat
 ```
 
-On Linux the same example starts with `./run.sh` (the engine in `../../../bin/linux-x64`; see
+On Linux the same example starts with `./run.sh` (the engine in `../../../bin/linux-x64`, or `linux-arm64` on a Raspberry Pi; see
 "On Linux" in the top README).
 
 Stop with CTRL-C. Then open `log\EDU-*.log`.

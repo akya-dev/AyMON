@@ -25,7 +25,7 @@ No phone at hand? **http://127.0.0.1:8111/phone.html?sim=1** is a simulated
 phone with *shake*, *tilt* and *drop* buttons. Each tab is another phone.
 
 On Linux the same example starts with `./run.sh` (the engine in
-`../../../bin/linux-x64`; see "On Linux" in the top README).
+`../../../bin/linux-x64`, or `linux-arm64` on a Raspberry Pi; see "On Linux" in the top README).
 
 | Door | Who | What a session may do |
 |---|---|---|

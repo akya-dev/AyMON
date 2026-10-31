@@ -4,7 +4,7 @@
 run.bat
 ```
 
-On Linux the same example starts with `./run.sh` (the engine in `../../../bin/linux-x64`; see
+On Linux the same example starts with `./run.sh` (the engine in `../../../bin/linux-x64`, or `linux-arm64` on a Raspberry Pi; see
 "On Linux" in the top README).
 
 Then open **http://127.0.0.1:8107/** — the history's page: the reading

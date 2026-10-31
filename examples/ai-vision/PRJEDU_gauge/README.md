@@ -12,7 +12,7 @@ run.bat
 
 Then open **http://127.0.0.1:8091/**.
 
-On Linux the same example starts with `./run.sh` (the engine in `../../../bin/linux-x64`; see
+On Linux the same example starts with `./run.sh` (the engine in `../../../bin/linux-x64`, or `linux-arm64` on a Raspberry Pi; see
 "On Linux" in the top README).
 
 **Needs a 64-bit Python 3.11 with numpy** (`PRJEDU_pycall` needs the same
@@ -23,11 +23,19 @@ all users" with "Add to PATH":
 py -3.11 -m pip install numpy
 ```
 
-On Linux, Python 3.11 itself (Debian 12: the default `python3`; Ubuntu 22.04 /
-24.04: the deadsnakes PPA) and pip for it:
+On Linux the engine needs Python 3.11's shared library (`libpython3.11`, a
+package of its own) and numpy for that Python. On Debian 12 and Raspberry Pi OS
+Bookworm, where 3.11 is the default `python3`, both come from apt (the system
+Python takes no `pip install` there):
 
 ```bash
-sudo apt install python3.11 python3.11-venv
+sudo apt install libpython3.11 python3-numpy
+```
+
+On Ubuntu 22.04 / 24.04, Python 3.11 from the deadsnakes PPA and pip for it:
+
+```bash
+sudo apt install python3.11 libpython3.11 python3.11-venv
 python3.11 -m ensurepip --user
 python3.11 -m pip install --user numpy
 ```
@@ -384,8 +392,8 @@ The page says "waiting for the first frame". Look in `log\GAU-*.log` and
 | `AyLIB: 'AyLIB_vision' not loaded: ...AyLIB_vision.dll (Win32 error 126)`, then `engine will not start` | the image module is missing: copy `AyLIB_vision.dll` (`libAyLIB_vision.so` on Linux) with the rest of `bin`. It needs an engine of the same build, 4.3.4.564 or later |
 | `AyPLG: 'AyPRO_img' is now the engine module 'AyLIB_vision' (C563) -- loaded under its new name; rename it in xdb_lib` | a project written for an older engine: it still works; write `xdb_lib="AyLIB_vision"` and the line goes |
 | `AyLIB: 'AyLIB_Python' not loaded ... error 126` (Windows) | no 64-bit Python 3.11 found on the `PATH`. Install one "for all users" with "Add to PATH" ticked |
-| `AyLIB: 'AyLIB_Python' not loaded ... libpython3.11.so.1.0` (Linux) | no Python 3.11 on the machine: `sudo apt install python3.11` |
-| `GAU: numpy could not be imported - ... No module named 'numpy'` | not installed for **this** Python: `py -3.11 -m pip install numpy`, or `python3.11 -m pip install --user numpy` on Linux (not `pip`, which may be another version) |
+| `AyLIB: 'AyLIB_Python' not loaded ... libpython3.11.so.1.0` (Linux) | Python 3.11's shared library is missing — `python3.11` alone does not bring it: `sudo apt install libpython3.11` |
+| `GAU: numpy could not be imported - ... No module named 'numpy'` | not installed for **this** Python: `py -3.11 -m pip install numpy`; on Debian 12 / Raspberry Pi OS `sudo apt install python3-numpy`; on Ubuntu with deadsnakes `python3.11 -m pip install --user numpy` (not `pip`, which may be another version) |
 | `init failed [ERR_COMMON_INVTYPE]` | `AyLIB_Python` and `AyPRO` are from different builds. Copy them together |
 
 The `numpy could not be imported` line carries numpy's own explanation, and the
