@@ -23,17 +23,21 @@ Then open **http://127.0.0.1:8112/**.
 On Linux the same example starts with `./run.sh` (the engine in `../../../bin/linux-x64`, or `linux-arm64` on a Raspberry Pi; see
 "On Linux" in the top README).
 
-**Needs a 64-bit Python 3.11** — nothing else: the analysis is the Python
-standard library (`json`, `math`), no numpy. On Windows a python.org 3.11
-installed "for all users" with "Add to PATH"; on Linux `python3.11` (Debian
-12's default `python3`; the deadsnakes PPA on Ubuntu 22.04 / 24.04):
+**Needs a 64-bit Python** — nothing else: the analysis is the Python
+standard library (`json`, `math`), no numpy. On Windows a python.org **3.11**
+installed "for all users" with "Add to PATH". On Linux **3.11 or 3.13**: the
+engine directory holds a Python module for each (`libAyLIB_Python311.so`,
+`libAyLIB_Python313.so`) and the engine takes the one whose Python library
+the machine has:
 
 ```bash
-sudo apt install python3.11 libpython3.11
+sudo apt install libpython3.11     # Debian 12, Raspberry Pi OS Bookworm
+sudo apt install libpython3.13     # Debian 13, Raspberry Pi OS Trixie
 ```
 
-(`libpython3.11` is the shared library the engine loads; `python3.11` does not
-bring it.)
+(`libpython3.X` is the shared library the engine loads; `python3` does not
+bring it.) On Ubuntu 22.04 / 24.04, Python 3.11 from the deadsnakes PPA:
+`sudo apt install python3.11 libpython3.11`.
 
 **Needs the engine of 4.3.4.513 or later** (the one in `../../../bin`). Before 513
 the alarm `ALM.onlvl` computes on a value Python writes from inside an event
@@ -190,7 +194,7 @@ The page shows `--` everywhere. Look in `log\VIB-*.log`:
 | Line | Meaning |
 |---|---|
 | `AyLIB: 'AyLIB_Python' not loaded ... error 126` (Windows) | no 64-bit Python 3.11 found on the `PATH`. Install one "for all users" with "Add to PATH" ticked |
-| `AyLIB: 'AyLIB_Python' not loaded ... libpython3.11.so.1.0` (Linux) | Python 3.11's shared library is missing — `python3.11` alone does not bring it: `sudo apt install libpython3.11` |
+| `AyLIB: 'AyLIB_Python' not loaded: libAyLIB_Python313.so (libpython3.13.so.1.0: cannot open ...); libAyLIB_Python311.so (libpython3.11.so.1.0: ...)` (Linux) | no Python library the engine has a module for — `python3` alone does not bring it: `sudo apt install libpython3.11` (Bookworm) or `libpython3.13` (Trixie) |
 | no `JS wrappers generated for 2 python function(s)` | the functions are not marked `@xdb_fnc`, or `db_VIB.py` did not compile (the line before says why) |
 | `PY.CallArg function not found` | the name in `vib.forecast(...)` is not a function in `db_VIB.py` |
 | `init failed [ERR_COMMON_INVTYPE]` | `AyLIB_Python` and `AyPRO` are from different builds. Copy them together |

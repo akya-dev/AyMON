@@ -21,7 +21,7 @@ Scripts are elements, declared in the document's `<config>` section:
 | `id` | **The module name.** Its functions are reached as `main.foo()` — not the file name |
 | `xdb_fnc="[SCR.prs]"` | Binds the loader. **Without it the script is never loaded and no error is given** |
 | `src` | The file. Path macros work: `%DB%`, `%PRJ%`, `%BIN%`, `%ROOT%`. Leave it out and the element's own text is the source |
-| `language` | `JScript` is the default. `Python` runs through the engine's Python module (`AyLIB_Python`, in `bin\win-x64`) and needs an installed 64-bit Python 3.11 — see `PRJEDU_gauge` (numpy and camera frames), and `PRJEDU_pycall` for calling it (below) |
+| `language` | `JScript` is the default. `Python` runs through the engine's Python module (`AyLIB_Python`, in `bin\win-x64`) and needs an installed 64-bit Python 3.11 (on Linux 3.11 or 3.13: `bin/linux-*` has a module for each) — see `PRJEDU_gauge` (numpy and camera frames), and `PRJEDU_pycall` for calling it (below) |
 
 The file must be **UTF-8**. A small helper does not need a file at all:
 
