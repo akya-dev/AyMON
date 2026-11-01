@@ -100,6 +100,34 @@ nothing.
 
 ## Pointing it at a real device
 
+### What to get
+
+Modbus is the cheapest way to real field data. Any of these will do:
+
+| What | Examples | Rough cost (2026) | Interface |
+|---|---|---|---|
+| a **PLC** with a Modbus TCP server | Siemens S7-1200 (`MB_SERVER`), Schneider M221, a WAGO controller, CODESYS on a Raspberry Pi | $150 and more | Ethernet, port 502 |
+| a **remote I/O module** | Moxa ioLogik E1200, Advantech ADAM-6000, a WAGO fieldbus coupler | $150–400 | Ethernet, port 502 |
+| an **energy meter** | Eastron SDM120 / SDM630, and most panel meters | $30–150 | RS-485, Modbus **RTU** |
+| a **temperature / humidity sensor** | RS-485 sensors sold as "Modbus RTU SHT20 / SHT30" | under $20 | RS-485, Modbus RTU |
+| for RTU: a **USB–RS-485 adapter** or a **gateway** | an FTDI-based adapter with automatic direction; or a Modbus TCP–RTU gateway (Moxa MGate, USR-TCP232) | $10–40 / $50–300 | USB / Ethernet |
+
+**Modbus RTU** (RS-485) needs only the connection to change:
+`<con xdb_fnc="[CON.ser,PRO.modbus]" pro_mod="RTU" con_port="COM5"
+con_spd="9600" con_par="N" con_bits="8" con_sbit="1" ..>` — on Linux
+`con_port="ttyUSB0"` (or a Raspberry Pi RS-485 HAT's `ttyAMA0`). The
+device's address goes in `<dev pro_adr>`. Wire A to A and B to B, a 120 Ω
+terminator at both ends of a long line, and set the device's speed and
+parity to the same values. A gateway instead turns RTU into TCP, and then
+nothing but `con_host` changes. The serial port is used in the field on
+Windows; on Linux it has not been run against a real device yet.
+
+The register map is the device's: its manual lists the registers, their
+function code (3 holding, 4 input) and their scaling. An energy meter
+usually gives its values as 32-bit floats over two registers.
+
+### Changing the example
+
 Change `con_host` and `con_port` on `<dev id="TANK">` in `db\db_MON.xml`,
 and `pro_adr` to its unit id. Then set `sta="0x0000"` on `<doc id="PLC/S00">`
 in `db\AyXDB.xml` so the simulated plant stays out of the way. Nothing else

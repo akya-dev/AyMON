@@ -173,6 +173,14 @@ new `rc`.
 > state fields of your drone's firmware may differ. Fly it the first time
 > with the drone on a table, props off.
 
+**What to get:** a **Tello** (Ryze / DJI) or a **Tello EDU** — both speak
+the Tello SDK used here — new or second hand, about $100–200 (2026), with
+spare batteries (a battery lasts about 13 minutes) and propeller guards. A
+PC or a Raspberry Pi with Wi-Fi: the drone is its own access point, so the
+machine joins the drone's network. The Tello EDU can also join an existing
+network (`ap <ssid> <password>`), which keeps the PC on the internet; this
+example has not been run that way.
+
 1. **Where**: indoors, in a room with space, nobody near it. A Tello's
    downward sensor needs light and a textured floor to hold its position.
 2. **Join its Wi-Fi** (`TELLO-xxxxxx`). The PC then has no internet

@@ -115,6 +115,15 @@ stand-in that behaves like dump1090 on the wire (see *What it measured*).
 1. An RTL-SDR stick and an antenna for 1090 MHz — the small one that comes
    with most sticks is enough to start; a quarter-wave wire (69 mm) high
    up and outdoors hears much farther.
+
+   | What | Examples | Rough cost (2026) |
+   |---|---|---|
+   | the receiver | an RTL-SDR stick (RTL-SDR Blog V3 / V4), or one made for 1090 MHz with a filter and amplifier inside (FlightAware Pro Stick Plus) | $30–50 |
+   | the antenna | the one in the box, a 1090 MHz antenna, or a 69 mm wire on a coax cable | $0–50 |
+   | the machine for the decoder | a Raspberry Pi (dump1090 / readsb run well on one) or the PC | |
+
+   The stick and the decoder may be on another machine than AyMON — only
+   port 30003 travels.
 2. dump1090 (dump1090-fa, dump1090-mutability) or readsb, with its SBS
    output on port 30003 — for readsb, `--net --net-sbs-port 30003`.
 3. In `db/db_TRK.xml`: `CN_SBS` → `con_host` = the machine running the

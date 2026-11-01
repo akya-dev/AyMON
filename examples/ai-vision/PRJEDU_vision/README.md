@@ -386,6 +386,19 @@ commands (alarm outputs, PTZ, presets, a snapshot). The engine takes both.
 > camera on a desk. If yours answers differently, the log line says what it
 > answered.
 
+### What to get
+
+| What | Examples | Rough cost (2026) | Note |
+|---|---|---|---|
+| an **IP camera** | Hikvision, Dahua and their OEM brands; any ONVIF camera | $50–150 | RTSP, events and commands as below. A PoE camera needs a PoE switch or injector |
+| a **USB webcam** instead | Logitech C270 / C920 class | $25–80 | `con_host="usb:0"` (Windows); on Linux `usb:/dev/v4l/by-id/...` — the Linux USB path has not been run on a device yet |
+| a **scene** | bottles on a strip of conveyor, or on a turntable | | the inspection looks for a red cap and a fill line; the sensors (motion, light, camera moved) work on any picture |
+| **light** | a constant LED light, no daylight from behind | | most of machine vision is light |
+
+The engine counts real cameras against the licence: without the `vision`
+feature, two cameras (a `link:` costs none). On a Raspberry Pi, see the
+Linux note under *The picture*: no RTSP decoding there yet.
+
 ### The picture
 
 `CN_CAM` takes the camera's stream instead of the recording. In

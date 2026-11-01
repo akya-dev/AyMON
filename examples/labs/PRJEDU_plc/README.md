@@ -138,6 +138,66 @@ port.
 | remove `&& pe_fill` from the valve line in `main.scan` | the machine runs exactly as before: this sequence never reaches FILL without a bottle. So why is the interlock there? (Think of the next person who edits the sequence.) |
 | add a step | a capper after the filler, or count bottles into cases of six and pause the line for the case change |
 
+## Real hardware
+
+> **Status.** Not tried with real I/O. The PLC program is the same; what
+> changes is where its inputs come from.
+
+The machine reaches the PLC as a **remote I/O**: a box on the network with
+digital inputs and outputs, polled over Modbus TCP. That is a real class of
+device, and the cheapest way to put real buttons and lamps in front of this
+program.
+
+### What to get
+
+| What | Examples | Rough cost (2026) | Note |
+|---|---|---|---|
+| a **Modbus TCP remote I/O module**, 8+ DI, 4+ DO, 24 V | Moxa ioLogik E1212, Advantech ADAM-6050, a WAGO 750 fieldbus coupler with DI / DO modules; on a budget, a Modbus "ETH relay" board with digital inputs | $60–400 | the machine's signals |
+| an **analogue input** (optional) | a 4–20 mA / 0–10 V input module | $100–300 | for the two levels (registers 1, 2); without one, keep them simulated |
+| a **24 V DC supply**, buttons, lamps | START (normally open), STOP and EMERGENCY STOP (**normally closed**), RESET, two pilot lamps | $50–100 | a training panel; any electrical supplier |
+| sensors | a 24 V PNP photoelectric sensor for each photo-eye, a level switch | $20–60 each | |
+| the conveyor and the valve | a small 24 V conveyor or a motor through a relay; a 24 V solenoid valve | | the outputs switch them through relays — never straight from the module if it cannot carry the current |
+
+An emergency stop that matters is **wired**, through a safety relay that
+cuts the motor's power — not read by a program. The `ESTOP_OK` input here
+only tells the PLC it happened.
+
+### How it connects
+
+```
+ buttons, photo-eyes, level switch --24 V--> DI of the remote I/O
+ relays: conveyor, valve, lamps    <--24 V-- DO of the remote I/O
+ remote I/O --Ethernet-- switch -- PC / Raspberry Pi (AyMON, CTL/S00)
+```
+
+### Pointing the PLC at it
+
+The example's remote I/O packs everything into four holding registers (the
+table in *The machine*): the inputs as bits of one word, the outputs as
+one word `Q_WORD` the program writes whole (function 6). A real module has
+its own map, in its manual. In `db/db_CTL.xml`:
+
+1. `<dev id="RIO">`: `con_host` = the module's address, `con_port="502"`,
+   `pro_adr` = its unit id.
+2. **A module whose I/O can be read and written as register words** (a WAGO
+   coupler's process image is): point `RIO_BLK`'s `pro_adr` / `pro_fni` at
+   the input word and `Q_WORD`'s `pro_adr` / `pro_ado` at the output word,
+   and wire the terminals in the order of the bit table. The program does
+   not change.
+3. **A module with discrete inputs and coils only**: the inputs become a
+   block with `pro_fni="2"` and one `<io>` per input; the outputs become one
+   `<io>` per coil (`pro_fno="5"`), and `main` writes those instead of
+   `Q_WORD` — a change in the program, not only in the XML.
+4. The two levels (registers 1 and 2): an analogue input's register, with
+   `val_cnv_dlt` set for its range; without one, delete the two `<io>`s
+   and the program's level checks.
+5. Switch the simulated machine off: `<doc id="PLT/S00" sta="0x0000" ..>`
+   in `db/AyXDB.xml`.
+
+The **life bit** (output 15) is the simulated module's own fault state. A
+real module has a *watchdog* of its own (outputs off when the master stops
+talking): turn it on in the module's settings — it does the same job.
+
 ## Licence
 
 Six connections (three in each document) and three documents: **exactly the

@@ -371,6 +371,21 @@ scalar is stored as a number only in a typed attribute, so the script writes
 
 ## A real gauge
 
+### What to get
+
+| What | Examples | Rough cost (2026) | Note |
+|---|---|---|---|
+| a **camera** | a USB webcam (Logitech C270 / C920 class), or an IP camera that gives snapshots | $25–80 | fixed focus is enough at 20–50 cm; a camera that refocuses by itself moves the dial in the picture |
+| a **dial gauge** | any pressure gauge or thermometer with a light face and a dark needle; in a classroom, a gauge on a hand pump or an air line | $10–30 | a printed picture of a dial with a cardboard needle teaches the same |
+| a **mount** and **light** | a clamp arm; a small LED lamp from the side | $10–30 | the camera must not move against the dial, and the glass must not mirror the lamp into the lens |
+| the machine | a PC, or a Raspberry Pi with Python and OpenCV | | |
+
+The camera looks straight at the dial, the dial fills about half the
+picture, and nothing moves between them. Every shift of the camera is a
+shift of the reading until the calibration below is done again.
+
+### The code
+
 Replace `draw_frame()` with a real picture: a grey `numpy` array, the dial
 roughly in the middle of the 240 × 240 region the reader looks at. With
 OpenCV installed (`py -3.13 -m pip install opencv-python`), for example:

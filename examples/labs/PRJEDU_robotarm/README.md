@@ -138,24 +138,168 @@ Once a second the cell asks `robotmode`, `safetystatus` and
 - the joints with their speeds, the tool position, and the dashboard
   conversation: every operator command and the robot's reply
 
-## A real robot, or URSim
+## Real hardware
 
-Not tested against a real robot or URSim for this example; the protocol
-details are UR's published ones (see *What it measured* for what was).
+> **Status.** Nothing in this section has been run against URSim or a
+> real robot yet. The interfaces are UR's published ones and the
+> simulated robot answers the way they do (see *What it measured*); the
+> program below is written from UR's script manual, not tested on a
+> controller.
 
-1. **URSim**, UR's free simulator (a Docker image,
-   `universalrobots/ursim_e-series`), or a real UR (CB3 or e-Series).
-   Expose ports 29999 and 502.
-2. On the robot, write a program (`pick_place.urp`) that does what
-   `PROGRAMS` does here: `read_port_register(128)` to wait for a part,
-   `write_port_register(131, 1)` when it has it, and so on — the
-   registers are the contract, not the program.
-3. In `db/db_CEL.xml`: `CN_DASH` → `con_host` = the robot's address;
-   `<dev id="ROBOT">` → `con_host` and `con_port="502"`.
-4. In `db/AyXDB.xml`: switch the simulated robot off —
+### What the simulation stands for
+
+| In the example | In a real cell | Connected to |
+|---|---|---|
+| `ROB/S00`, the arm and its controller | a **Universal Robots** cobot — UR3e / UR5e / UR10e (e-Series) or UR3 / UR5 / UR10 (CB3) — or **URSim**, UR's free simulator | Ethernet: the dashboard server (TCP 29999) and the Modbus TCP server (TCP 502) of the control box |
+| the program `pick_place.urp` in `PROGRAMS` | a program on the robot (the script below) | runs in the robot's controller, not in AyMON |
+| `GRIP`, register 130 | a gripper on the tool flange: a vacuum cup or a simple pneumatic gripper on a tool digital output, or an electric one (Robotiq 2F-85, OnRobot RG2 …) with its URCap | the robot's tool connector |
+| `BUMP` (walk into the arm) | the robot's own force and power limiting: a collision is a protective stop | inside the robot; nothing to wire |
+| `DOOR` (the guard door) | a safety door switch (two channels) | the robot's **safeguard stop** safety input — never through AyMON |
+| the feeder and "a part is ready" (register 128) | a conveyor or a parts tray, and a part-present sensor (a 24 V PNP photoelectric sensor) | today: the cell's timer; see *The feeder* below |
+| `CEL/S00`, the cell controller | AyMON on a PC, an industrial PC or a Raspberry Pi | the same network as the robot |
+
+The robot is the only expensive part. For a course, **URSim is the way to
+start**: it is the real controller software with the arm simulated, it
+answers on the same two ports, and it costs nothing. A desk-top arm from
+another maker (Dobot, uFactory, Elephant Robotics …) is **not** a drop-in
+replacement: none of them speaks UR's dashboard or UR's register map, so the
+cell would need its own connection for it.
+
+### The network
+
+```
+ AyMON (CEL/S00)                                     UR control box
+ PC / Raspberry Pi  --Ethernet--  switch  --Ethernet--  LAN port
+ 192.168.1.10                                        192.168.1.20
+                                                     29999 dashboard server
+                                                       502 Modbus TCP server
+
+ on the robot's own I/O, not AyMON's:
+   tool connector     gripper (tool digital output 0, or the gripper's URCap)
+   safety inputs      guard door switch -> safeguard stop (2 channels)
+                      emergency stop button
+```
+
+The addresses are examples: give the robot a fixed address
+(*Settings → System → Network* on the pendant) in the same subnet as the
+machine AyMON runs on.
+
+### Setting up the robot
+
+1. **URSim** (no robot): UR's Docker image `universalrobots/ursim_e-series`,
+   with the ports published —
+   ```bash
+   docker run --rm -it -p 6080:6080 -p 29999:29999 -p 502:502 universalrobots/ursim_e-series
+   ```
+   The pendant opens in a browser at `http://localhost:6080/vnc.html`.
+   The robot's address is then the address of the machine running Docker.
+2. **e-Series (and URSim e-Series): remote control.** In *Local* mode the
+   dashboard refuses `power on`, `brake release`, `load` and `play` —
+   only questions are answered. Turn it on once under *Settings → System →
+   Remote Control*, then switch the pendant to *Remote* (top right). CB3
+   robots have no such mode.
+3. **Services and firewall.** Newer PolyScope versions can switch the
+   dashboard server and the Modbus TCP server off and close ports
+   (*Settings → Security*). Both must be on, and 29999 and 502 open to the
+   address AyMON runs on.
+4. **The gripper** and the **guard door** are wired and configured the way
+   the robot's manual and the gripper's maker say. The cell only shows the
+   robot's safety state (`SAFETY_CODE`); it never clears it.
+
+### The program on the robot
+
+Create `pick_place.urp` on the pendant with one *Script* node that runs
+this file (save it as `pick_place.script` in `/programs`). The registers are
+the contract with the cell; how the robot moves between them is the
+robot's business.
+
+```python
+# pick_place.script - PRJEDU_robotarm's program for a real UR (URScript).
+# The waypoints are the SIMULATOR's: they assume no gripper and the
+# simulator's table. TEACH YOUR OWN before the first run (see below).
+def pick_place():
+  ready       = [d2r(162.8), d2r(-95.1), d2r(115.4), d2r(-110.3), d2r(-90), d2r(-107.2)]
+  pick_above  = [d2r(127.7), d2r(-81.0), d2r(117.4), d2r(-126.4), d2r(-90), d2r(-142.3)]
+  pick        = [d2r(127.7), d2r(-58.9), d2r(124.4), d2r(-155.5), d2r(-90), d2r(-142.3)]
+  place_above = [d2r(201.4), d2r(-81.0), d2r(117.4), d2r(-126.4), d2r(-90), d2r(-68.6)]
+  place       = [d2r(201.4), d2r(-61.8), d2r(124.3), d2r(-152.4), d2r(-90), d2r(-68.6)]
+  acc = 2.09                          # rad/s2 = 120 deg/s2, as the simulator
+
+  def vel():                          # register 132 = the cell's speed %, 10..100
+    s = read_port_register(132)
+    if s < 10:
+      s = 10
+    elif s > 100:
+      s = 100
+    end
+    return 1.05 * s / 100             # rad/s; 1.05 = 60 deg/s at 100 %
+  end
+
+  def grip(on):                       # a vacuum cup / simple gripper on tool output 0;
+    set_tool_digital_out(0, on)       # a Robotiq or OnRobot gripper: its URCap's calls
+    if on:
+      write_port_register(130, 1)
+    else:
+      write_port_register(130, 0)
+    end
+  end
+
+  movej(ready, a=acc, v=vel())
+  while True:
+    movej(pick_above, a=acc, v=vel())
+    while read_port_register(128) != 1:   # wait: a part is ready
+      sync()
+    end
+    movej(pick, a=acc, v=vel())
+    grip(True)
+    sleep(0.5)
+    write_port_register(131, 1)           # I have taken it
+    movej(pick_above, a=acc, v=vel())
+    while read_port_register(128) != 0:   # wait: the cell has seen it
+      sync()
+    end
+    write_port_register(131, 0)
+    movej(place_above, a=acc, v=vel())
+    movej(place, a=acc, v=vel())
+    grip(False)
+    sleep(0.3)
+    write_port_register(129, read_port_register(129) + 1)   # parts placed
+    movej(place_above, a=acc, v=vel())
+  end
+end
+```
+
+**Teach the waypoints first.** The simulator's angles put the *flange* at
+7 cm above its table; a gripper is longer than that, so on a real robot the
+first `movej(pick)` would drive the gripper into the table. Set the tool
+(TCP and payload) for the gripper on the pendant, move the arm by hand to
+each of the five positions at low speed, and paste the joint angles the
+pendant shows. Run the first cycles at 10–20 % speed.
+
+The simulated program also writes the step number into register 133; this
+one does not, so the cell's `PSTEP` stays 0.
+
+### The feeder
+
+The cell's feeder is a timer: every `FEED_S` seconds it decides a part
+has arrived and writes register 128. With a real arm that means a part
+must really be there — a person puts one on the pick position each time
+(raise `FEED_S` to give them time), or the timer is replaced by a
+part-present sensor. Reading such a sensor (on a Modbus TCP remote I/O
+module, or on one of the robot's configurable inputs, which its Modbus
+server also shows) is **not in this example**.
+
+### Pointing the cell at it
+
+1. In `db/db_CEL.xml`: `CN_DASH` → `con_host` = the robot's address;
+   `<dev id="ROBOT">` → `con_host` = the same address and `con_port="502"`.
+2. In `db/AyXDB.xml`: switch the simulated robot off —
    `<doc id="ROB/S00" sta="0x0000" ...>`.
+3. Start the example and use the page as before: **Brake release**,
+   **Load pick_place**, **Play**, feeder on.
 
-A real robot has its own safety system; nothing here replaces it.
+A real robot needs a risk assessment of the whole cell, and its own safety
+system does the stopping. Nothing in AyMON replaces either.
 
 ## What it measured
 

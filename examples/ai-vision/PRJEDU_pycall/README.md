@@ -200,6 +200,40 @@ The page shows `--` everywhere. Look in `log\VIB-*.log`:
 | `PY.CallArg function not found` | the name in `vib.forecast(...)` is not a function in `db_VIB.py` |
 | `init failed [ERR_COMMON_INVTYPE]` | `AyLIB_Python` and `AyPRO` are from different builds. Copy them together |
 
+## Real hardware
+
+> **Status.** Not tried with a sensor. What follows is the path, not a
+> tested recipe.
+
+The analysis needs a **waveform**, not a number: a block of samples taken
+fast enough to see 400 Hz (at least 800 samples a second; the simulator
+sends 512 at 2560 Hz). Python reads the rate from the block (`fs`), so any
+rate above that works.
+
+| What | Examples | Rough cost (2026) | Note |
+|---|---|---|---|
+| a **4–20 mA vibration transmitter** | the usual plant sensor | $100–400 | gives the RMS only — no waveform, no spectrum. Read it as a number (an analogue input on a Modbus I/O module); the RMS tile and its alarm still work, the spectrum and `BPFO` do not |
+| a **MEMS accelerometer on a microcontroller** | ADXL345 / ADXL355 on an ESP32 or a Raspberry Pi Pico W | under $30 | the classroom way: the microcontroller samples, collects 512 samples and sends the block |
+| an **IEPE accelerometer + a DAQ** | an industrial accelerometer on a USB DAQ card | $500 and more | the measurement-grade way; a Python script reads the card |
+
+**How a block gets in.** `WAVE` takes the same JSON the simulator writes:
+`{"t": <ms>, "fs": <samples a second>, "x": [<512 numbers, mm/s>]}`.
+
+- From a microcontroller: publish it over MQTT to `VIB/S00/WAVE/val/set`.
+  The page's connection (`CN_LIVE`) lets a guest write only the bearing
+  button, so give the sensor a connection of its own (an MQTT listener with
+  `con_acl` = the sensor's address) and the right to write `WAVE`
+  (`xdb_acl`).
+- From a DAQ: a Python script next to `db_VIB.py` reads the card and writes
+  `WAVE` itself.
+- Then switch the simulated sensor off: the timer that calls `main.sense`
+  in `db/db_VIB.xml`.
+
+**Mounting.** On the bearing housing, as close to the bearing as the casing
+allows, screwed or glued — a magnet or a cable tie changes what the sensor
+hears. The bearing's defect frequency (`BPFO`, 90 Hz here) comes from the
+bearing's data sheet and the pump's speed; set the band for yours.
+
 ## Licence
 
 Two connections, one document: well inside FREE. The Python module reports

@@ -15,6 +15,9 @@ server; the difference is configuration, not a different build.
   the master and the spare carries on from the same unit within a second or two.
 - **AI assistants, inside rules.** An MCP endpoint lets Claude or any MCP
   client read the plant and change what it is allowed to — and nothing else.
+- **In production.** The same engine runs data-centre monitoring (DCIM)
+  systems: one of them 1 837 devices, 272 000 points and three nodes. See
+  [In the field](docs/08_In_the_Field.md).
 - **Free to run.** The FREE edition never expires and allows production use
   within 5 documents, 8 connections, 8 devices and 4 logged-in users.
 
@@ -72,7 +75,7 @@ AyMON/
     labs/            course labs: a PLC program, PID, OEE, a robot arm
     ai-vision/       AI assistants over MCP, Python, machine vision
     hobby/           a drone, the aircraft overhead, your phone (PRJPER_*)
-  docs/            six short guides, written for these examples
+  docs/            six short guides, the real-hardware page and the field page
   media/           the pictures in this README
   licenses/        third-party licence texts
 ```
@@ -322,6 +325,8 @@ guide:
 | [04_Licensing.md](docs/04_Licensing.md) | what is free, and why the replication example runs anyway |
 | [05_Connections_and_Protocols.md](docs/05_Connections_and_Protocols.md) | transports and protocols, who dials and who asks, one port for several services, polled against subscribed |
 | [06_Access_and_Safety.md](docs/06_Access_and_Safety.md) | the three gates — `con_acl`, the login, `xdb_acl` — TLS, and what the examples leave open |
+| [07_Real_Hardware.md](docs/07_Real_Hardware.md) | what each example's simulation stands for, what to get to replace it, and where its README tells how to connect it |
+| [08_In_the_Field.md](docs/08_In_the_Field.md) | what the engine carries in production, what it measures in the lab, and how it is tested |
 
 The complete field notes — SNMP, OPC UA, MQTT, cluster and replication, access
 control, the plug-in SDK, the Python module, telnet, load metrics — come with

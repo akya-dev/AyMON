@@ -118,6 +118,36 @@ and the next poll carries it.
 
 ## Polling a real device instead
 
+### What to get
+
+SNMP is how IT and building equipment report: almost anything with a
+network port and a management page answers it.
+
+| What | Examples | Rough cost (2026) | Note |
+|---|---|---|---|
+| a **Linux machine** with `snmpd` | a Raspberry Pi, any PC | free | the easiest start. `sudo apt install snmpd`; it listens on localhost only until `/etc/snmp/snmpd.conf` says `agentaddress udp:161` and `rocommunity <community> <your subnet>` |
+| a **managed switch** | any switch with a management page | $50 and more | ports up/down, traffic counters |
+| a **UPS with a network card** | APC with a Network Management Card, Eaton with a Network-M card | the card $200–500 | battery, load, on battery or not — the standard UPS-MIB |
+| a **printer** | most network printers | | toner and paper levels (Printer-MIB) |
+
+Standard OIDs that every agent, or every agent of a kind, answers — start
+with these before reaching for the vendor's MIB:
+
+| OID | What |
+|---|---|
+| `1.3.6.1.2.1.1.3.0` | `sysUpTime`, in hundredths of a second |
+| `1.3.6.1.2.1.1.5.0` | `sysName` |
+| `1.3.6.1.2.1.2.2.1.8.<n>` | `ifOperStatus` of interface n (1 up, 2 down) |
+| `1.3.6.1.2.1.31.1.1.1.6.<n>` | `ifHCInOctets`, a 64-bit byte counter |
+| `1.3.6.1.2.1.25.3.3.1.2.<n>` | `hrProcessorLoad` of processor n, % (HOST-RESOURCES-MIB) |
+| `1.3.6.1.2.1.33.1.2.1.0` | UPS `upsBatteryStatus` (2 normal, 3 low) |
+| `1.3.6.1.2.1.33.1.2.3.0` | UPS `upsEstimatedMinutesRemaining` |
+
+`snmpwalk -v2c -c <community> <address> 1.3.6.1.2.1` (Net-SNMP) shows
+what a device answers before a line of XML is written.
+
+### Changing the example
+
 1. In `db\db_MON.xml`, set `con_host` and `con_port` on `<dev id="TANK">` to
    the device (port 161), and `pro_getc` to its read community. For SNMPv3
    use `pro_usr`, `pro_auth`, `pro_pwd` (and `pro_priv` / `pro_priv_key` for

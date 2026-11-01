@@ -217,6 +217,24 @@ both platforms; the subscription's Publish, cut short, leaves one
 
 ## A real machine instead
 
+### What to get
+
+The simulated machine is already a real OPC UA server, so the example is
+complete without hardware. For another server to point it at:
+
+| What | Examples | Rough cost (2026) | Note |
+|---|---|---|---|
+| a **simulation server** | Prosys OPC UA Simulation Server | free | a PC program with changing values, users and security settings to practise on |
+| a **soft PLC** | CODESYS Control (Windows, or on a Raspberry Pi) with its OPC UA server | free to try (runs for a limited time without a licence) | a PLC program's variables as nodes |
+| a **PLC** with an OPC UA server | Siemens S7-1500 (S7-1200 from firmware 4.4, with a runtime licence), Beckhoff TwinCAT, B&R, Omron NX | $500 and more | the server is usually switched on and its variables published in the PLC's own tool |
+| a **machine** with OPC UA | injection moulding machines (OPC 40077 / EUROMAP 77), CNC machines, robots | | the machine maker's documentation lists the nodes |
+
+`UaExpert` (Unified Automation, free) shows a server's endpoints, nodes and
+certificates before the XML is touched — the same things `OPC.browse` and
+`OPC.gen` give.
+
+### Changing the example
+
 1. Set `con_host`, `con_port` and `pro_adr` (the endpoint URL, exactly as the
    machine's documentation or UaExpert shows it) on the three `<dev>`s.
 2. Put the machine's namespace URI and node names in the `<io pro_adr>` —

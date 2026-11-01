@@ -179,6 +179,48 @@ the MES's Modbus master as the connection dropped. CTRL-C (SIGINT): exit 0.
 | stop the line's Modbus (`CN_SLV` sta `0x0000` in `LINE/S00`) | the MES books what it cannot see as downtime, reason 99 - is that fair to the line? (`POLL_LOST_S`) |
 | write a query | e.g. `SELECT reason, sum(dur_s) FROM stop WHERE kind='down' GROUP BY reason` in any SQLite tool on `log\oee.db` |
 
+## Real hardware
+
+> **Status.** Not tried on a real line. The MES is the same; the line's
+> seven registers have to come from somewhere real.
+
+A real machine rarely has these seven registers ready-made. There are three
+ways to get them:
+
+| Way | What to get | Rough cost (2026) | Note |
+|---|---|---|---|
+| **the machine's PLC** serves them | the PLC's Modbus TCP server (or OPC UA — see `PRJEDU_opcua`), and the PLC programmer's time | the hours of programming | the best: the PLC knows *why* it stopped (`I_REASON`). Ask for a running bit, a reason code, a total counter, a scrap counter and the product, as 16-bit registers |
+| **wires from the machine** to a remote I/O | a Modbus TCP I/O module with counter inputs (Moxa ioLogik E1212, Advantech ADAM-6050 …) | $150–400 | taps signals the machine already has: a "running" contact, a part sensor (a photo-eye on the outfeed) for the total, the reject gate for scrap. No reason codes — every stop waits for the operator on the page, which the MES already handles (reason 0) |
+| a **sensor on the outfeed** only | a photo-eye on a small I/O module | under $100 | counts parts; running / stopped is then inferred from the count. The poorest data, and still useful |
+
+### How it connects
+
+```
+ machine PLC  --Ethernet--+
+   or                     +-- switch -- PC / Raspberry Pi (AyMON, OEE/S00)
+ remote I/O   --Ethernet--+     |
+   (running contact, part sensor, reject sensor)
+```
+
+Any wire into a machine's control cabinet is the machine owner's and an
+electrician's decision — a dry contact of a relay, never a tap on a safety
+circuit.
+
+### Pointing the MES at it
+
+1. In `db/db_OEE.xml`, the `<dev>` that polls the line: `con_host`,
+   `con_port="502"`, `pro_adr` = the unit id.
+2. The `<io>`s `I_STATE` … `I_PRODUCT` are the seven registers by `pro_adr`.
+   For a remote I/O, the running contact is a discrete input and the
+   counters are its counter registers — change `pro_fni` / `pro_adr` to the
+   module's map (its manual). A counter that is 32 bits on the module: take
+   its low 16 bits; the MES already handles the wrap.
+3. `Q_HOLD` (register 6, the MES holding the line through a break) needs
+   the PLC's cooperation; without it, leave it unconnected.
+4. Switch the simulated line off: `<doc id="LINE/S00" sta="0x0000" ..>` in
+   `db/AyXDB.xml`. Set `SHIFT_S`, `BREAK_AT_S` and `PRODUCTS` (the ideal
+   cycle of each product) to the real plant's.
+
 ## Licence
 
 **Five connections** (the line's Modbus slave; the MES's Modbus master,

@@ -12,6 +12,8 @@ seen working.
 | [04_Licensing.md](04_Licensing.md) | You want to know what is free, what is not, and why the replication example runs anyway. |
 | [05_Connections_and_Protocols.md](05_Connections_and_Protocols.md) | You want to reach something outside the engine. Transports and protocols, who dials and who asks, one port for several services, polled against subscribed, and what to do about a protocol AyMON does not speak. |
 | [06_Access_and_Safety.md](06_Access_and_Safety.md) | You are about to let something in. The three gates — `con_acl`, the login, `xdb_acl` — TLS, and what the examples deliberately leave open. |
+| [07_Real_Hardware.md](07_Real_Hardware.md) | You want to put a real device where an example has a simulated one. What each simulation stands for, what to get, roughly what it costs, and where the example's README tells how to connect it. |
+| [08_In_the_Field.md](08_In_the_Field.md) | You want to know whether it holds up. A production DCIM system's size, the engine's measured throughput, and the regression rigs every change goes through. |
 
 ## Suggested order
 

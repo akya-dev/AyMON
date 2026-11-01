@@ -139,16 +139,47 @@ loop back the way it was. Every phase is in `TUNE_STATE` and the log.
 | MANUAL, move the heater, then AUTO | no bump: the integral was tracking |
 | **download CSV** | every sample since the page was opened: t, SP, PV, MV, P, I, D, the tuning, the mode, the fan. For the report |
 
-## A real heater
+## Real hardware
 
-The page, the controller and its measurements do not change. Replace
-`PLT/S00` with a connection to the heater: something that reads the
-temperature into a `<var>` and writes MV to the heater. Then point
-`main.tick` at those two values instead of `doc('PLT/S00')/id('TM')` and
-`doc('CTL/S00')/id('MV')`. Many control courses use a small Arduino heater
-board with a serial text protocol, which `PRO.raw` over `CON.ser` can speak
-(`PRJPER_tello` shows `PRO.raw` with a text protocol). That part is **not in
-this example and not tested**.
+> **Status.** Not in this example and not tested: the connection to a real
+> heater has to be written. What follows is what to get and how it fits.
+
+### What to get
+
+| What | Examples | Rough cost (2026) | Note |
+|---|---|---|---|
+| a **heater board with its own sensor** | the *Temperature Control Lab* (TCLab, an Arduino shield with two heaters and two sensors, made for control courses) or a home-made one: a power resistor, a MOSFET and a temperature sensor on an Arduino | $20–50 | the classroom way. USB to the PC; a text protocol over the serial port |
+| a **lab heater with an industrial controller** | a heater block, a PT100 or thermocouple, an SSR, and a temperature controller or I/O module with Modbus RTU | $100–400 | the plant way; AyMON's PID then writes the output, or the controller's own set point |
+| the machine AyMON runs on | a PC, or a Raspberry Pi with the board on its USB port | | |
+
+A real heater is **slower** than this simulator (the TCLab's time constant
+is minutes, not 30 s): the tuning the step test suggests will be very
+different, which is the point of measuring it.
+
+### How it connects
+
+```
+ Arduino heater board --USB-- PC / Raspberry Pi (AyMON)
+   Q1 <0..100>   heater power, %       <- MV
+   T1            temperature, degC     -> the measured value
+```
+
+- **A board with a text protocol** (TCLab and most home-made ones): a
+  `<con xdb_fnc="[CON.ser,PRO.raw]" con_port="COM3" con_spd="115200" ..>`
+  (`/dev/ttyACM0` or `ttyUSB0` on Linux), a timer that sends `T1` and reads
+  the answer in `pro_onparse`, and a write of `Q1 <MV>` when MV changes.
+  The commands and the speed are the firmware's — read its sketch.
+  `PRJPER_tello` shows `PRO.raw` with a text protocol.
+- **A Modbus RTU controller or I/O module**: `[CON.ser,PRO.modbus]` with
+  `pro_mod="RTU"` and a USB–RS-485 adapter; the temperature and the output
+  are registers (`PRJEDU_modbus` shows the four levels).
+- Then point `main.tick` at those two values instead of
+  `doc('PLT/S00')/id('TM')` and `doc('CTL/S00')/id('MV')`, and switch the
+  simulated plant off (`<doc id="PLT/S00" sta="0x0000" ..>` in
+  `db/AyXDB.xml`).
+
+**Safety.** A heater left at 100 % gets hot enough to burn. Keep a hardware
+limit (the board's own, a thermal fuse) — a PID in software is not one.
 
 ## Licence
 
