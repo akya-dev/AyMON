@@ -15,13 +15,17 @@ Then open **http://127.0.0.1:8091/**.
 On Linux the same example starts with `./run.sh` (the engine in `../../../bin/linux-x64`, or `linux-arm64` on a Raspberry Pi; see
 "On Linux" in the top README).
 
-**Needs a 64-bit Python with numpy** — 3.11 on Windows, 3.11 or 3.13 on
-Linux (`PRJEDU_pycall` needs the same Python without numpy; `PRJEDU_opcua` a
-Python of its own for the machine). On Windows, a python.org 3.11 installed "for
-all users" with "Add to PATH":
+**Needs a 64-bit Python 3.11 or 3.13 with numpy** (`PRJEDU_pycall` needs the same
+Python without numpy; `PRJEDU_opcua` a Python of its own for the machine). The
+engine directory holds a Python module for each version — `AyLIB_Python311.dll` /
+`AyLIB_Python313.dll` on Windows, `libAyLIB_Python311.so` / `libAyLIB_Python313.so`
+on Linux — and uses the one whose Python the machine has (both installed: the
+newer; `set AYMON_PYTHON_VER=3.11` before `run.bat` picks the other). On Windows,
+a python.org 3.11 or 3.13 installed "for all users" with "Add to PATH" (numpy 2.x
+on 3.13):
 
 ```bat
-py -3.11 -m pip install numpy
+py -3.13 -m pip install numpy
 ```
 
 On Linux the engine takes **Python 3.11 or 3.13**: its directory holds a
@@ -117,9 +121,10 @@ camera delivers:
 ```
 XDB:AyLIB: 'AyLIB_vision' attached (module abi 1.3, core 1.3)
 GAU/S00:AyLIB: 'AyLIB_Python' attached (module abi 1.0, core 1.3)
-GAU/S00:scr.Python(vision): ... interpreter home C:\Program Files\Python311 (... version 3.11.9 ...)
+GAU/S00:AyLIB: 'AyLIB_Python' -- AyLIB_Python313.dll chosen
+GAU/S00:scr.Python(vision): ... interpreter home C:\Program Files\Python313 (... version 3.13.x ...)
 GAU/S00:GAU: open http://127.0.0.1:8091/ - the picture, the reading, and how wrong it is
-GAU/S00:GAU: Python 3.11.9, numpy 1.26.4 - pictures travel as blobs
+GAU/S00:GAU: Python 3.13.17, numpy 2.5.4 - pictures travel as blobs
 GAU/S00:GAU: reader calibrated to 0..10 bar over -135..135 deg, radius 100 px
 GAU/S00:GAU: frame 1 - ok
 GAU/S00:GAU: compressor ON at 5.12 bar
@@ -293,7 +298,7 @@ camera.
 
 **Python beside the engine, with nothing in between.** A `<script
 language="Python">` is all it takes. The engine attaches its Python module the
-first time it sees one, finds the installed Python 3.11 through the `PATH`,
+first time it sees one, finds the installed Python (3.11 or 3.13) through the `PATH`,
 and runs the script on its own thread:
 
 ```xml
@@ -368,7 +373,7 @@ scalar is stored as a number only in a typed attribute, so the script writes
 
 Replace `draw_frame()` with a real picture: a grey `numpy` array, the dial
 roughly in the middle of the 240 × 240 region the reader looks at. With
-OpenCV installed (`py -3.11 -m pip install opencv-python`), for example:
+OpenCV installed (`py -3.13 -m pip install opencv-python`), for example:
 
 ```python
 cap = cv2.VideoCapture(0)                      # once, in cam_init
@@ -394,9 +399,9 @@ The page says "waiting for the first frame". Look in `log\GAU-*.log` and
 |---|---|
 | `AyLIB: 'AyLIB_vision' not loaded: ...AyLIB_vision.dll (Win32 error 126)`, then `engine will not start` | the image module is missing: copy `AyLIB_vision.dll` (`libAyLIB_vision.so` on Linux) with the rest of `bin`. It needs an engine of the same build, 4.3.4.564 or later |
 | `AyPLG: 'AyPRO_img' is now the engine module 'AyLIB_vision' (C563) -- loaded under its new name; rename it in xdb_lib` | a project written for an older engine: it still works; write `xdb_lib="AyLIB_vision"` and the line goes |
-| `AyLIB: 'AyLIB_Python' not loaded ... error 126` (Windows) | no 64-bit Python 3.11 found on the `PATH`. Install one "for all users" with "Add to PATH" ticked |
+| `AyLIB: 'AyLIB_Python' not loaded: AyLIB_Python313.dll (Win32 error 126 ...); AyLIB_Python311.dll (Win32 error 126 ...)` (Windows) | no 64-bit Python 3.11 or 3.13 found on the `PATH`. Install one "for all users" with "Add to PATH" ticked |
 | `AyLIB: 'AyLIB_Python' not loaded: libAyLIB_Python313.so (libpython3.13.so.1.0: cannot open ...); libAyLIB_Python311.so (libpython3.11.so.1.0: ...)` (Linux) | no Python library the engine has a module for — `python3` alone does not bring it: `sudo apt install libpython3.11` (Bookworm) or `libpython3.13` (Trixie) |
-| `GAU: numpy could not be imported - ... No module named 'numpy'` | not installed for **this** Python: `py -3.11 -m pip install numpy`; on Debian / Raspberry Pi OS `sudo apt install python3-numpy`; on Ubuntu with deadsnakes `python3.11 -m pip install --user numpy` (not `pip`, which may be another version) |
+| `GAU: numpy could not be imported - ... No module named 'numpy'` | not installed for **this** Python (the `chosen` line names it): `py -3.13 -m pip install numpy` (or `-3.11`); on Debian / Raspberry Pi OS `sudo apt install python3-numpy`; on Ubuntu with deadsnakes `python3.11 -m pip install --user numpy` (not `pip`, which may be another version) |
 | `init failed [ERR_COMMON_INVTYPE]` | `AyLIB_Python` and `AyPRO` are from different builds. Copy them together |
 
 The `numpy could not be imported` line carries numpy's own explanation, and the

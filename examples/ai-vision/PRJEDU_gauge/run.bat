@@ -3,7 +3,7 @@ rem ---------------------------------------------------------------------
 rem PRJEDU_gauge -- run the example in a console window.
 rem
 rem One window is enough. Then open http://127.0.0.1:8091/ in a browser.
-rem Needs a 64-bit Python 3.11 with numpy (see the README).
+rem Needs a 64-bit Python 3.11 or 3.13 with numpy (see the README).
 rem
 rem The engine is AyXDB.exe. This script looks for it in the usual places;
 rem if yours lives somewhere else, pass the directory:

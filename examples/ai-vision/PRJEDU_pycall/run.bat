@@ -3,7 +3,7 @@ rem ---------------------------------------------------------------------
 rem PRJEDU_pycall -- run the example in a console window.
 rem
 rem One window is enough. Then open http://127.0.0.1:8112/ in a browser.
-rem Needs a 64-bit Python 3.11 (see the README) - nothing else.
+rem Needs a 64-bit Python 3.11 or 3.13 (see the README) - nothing else.
 rem
 rem The engine is AyXDB.exe. This script looks for it in the usual places;
 rem if yours lives somewhere else, pass the directory:

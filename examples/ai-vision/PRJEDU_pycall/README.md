@@ -24,11 +24,12 @@ On Linux the same example starts with `./run.sh` (the engine in `../../../bin/li
 "On Linux" in the top README).
 
 **Needs a 64-bit Python** — nothing else: the analysis is the Python
-standard library (`json`, `math`), no numpy. On Windows a python.org **3.11**
-installed "for all users" with "Add to PATH". On Linux **3.11 or 3.13**: the
-engine directory holds a Python module for each (`libAyLIB_Python311.so`,
-`libAyLIB_Python313.so`) and the engine takes the one whose Python library
-the machine has:
+standard library (`json`, `math`), no numpy. **3.11 or 3.13**: the engine directory
+holds a Python module for each (`AyLIB_Python311.dll` / `AyLIB_Python313.dll` on
+Windows, `libAyLIB_Python311.so` / `libAyLIB_Python313.so` on Linux) and the
+engine takes the one whose Python the machine has (both: the newer;
+`AYMON_PYTHON_VER=3.11` picks the other). On Windows a python.org 3.11 or 3.13
+installed "for all users" with "Add to PATH". On Linux the Python library:
 
 ```bash
 sudo apt install libpython3.11     # Debian 12, Raspberry Pi OS Bookworm
@@ -193,7 +194,7 @@ The page shows `--` everywhere. Look in `log\VIB-*.log`:
 
 | Line | Meaning |
 |---|---|
-| `AyLIB: 'AyLIB_Python' not loaded ... error 126` (Windows) | no 64-bit Python 3.11 found on the `PATH`. Install one "for all users" with "Add to PATH" ticked |
+| `AyLIB: 'AyLIB_Python' not loaded: AyLIB_Python313.dll (Win32 error 126 ...); AyLIB_Python311.dll (Win32 error 126 ...)` (Windows) | no 64-bit Python 3.11 or 3.13 found on the `PATH`. Install one "for all users" with "Add to PATH" ticked |
 | `AyLIB: 'AyLIB_Python' not loaded: libAyLIB_Python313.so (libpython3.13.so.1.0: cannot open ...); libAyLIB_Python311.so (libpython3.11.so.1.0: ...)` (Linux) | no Python library the engine has a module for — `python3` alone does not bring it: `sudo apt install libpython3.11` (Bookworm) or `libpython3.13` (Trixie) |
 | no `JS wrappers generated for 2 python function(s)` | the functions are not marked `@xdb_fnc`, or `db_VIB.py` did not compile (the line before says why) |
 | `PY.CallArg function not found` | the name in `vib.forecast(...)` is not a function in `db_VIB.py` |
