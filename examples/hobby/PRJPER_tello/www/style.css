@@ -28,6 +28,11 @@ main { display: grid; gap: 16px; padding: 16px; max-width: 1100px; margin: 0 aut
        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 @media (max-width: 760px) { main { grid-template-columns: minmax(0, 1fr); } }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+.cam-card { grid-column: 1 / -1; }
+.cam-card .btn-row { grid-template-columns: repeat(2, minmax(0, 160px)); }
+.cam-box { background: var(--bg); border-radius: 8px; min-height: 120px; display: grid; place-items: center; }
+#video { display: none; width: 100%; max-width: 720px; height: auto; border-radius: 8px; }
+#video-none { padding: 24px; text-align: center; }
 
 .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin: 0 0 6px; }
 .muted { color: var(--muted); text-transform: none; letter-spacing: 0; }

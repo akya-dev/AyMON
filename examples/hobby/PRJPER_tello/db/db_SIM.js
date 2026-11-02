@@ -82,6 +82,60 @@ function on_nothing(exc)
     return RES.OKY;
 }
 
+// ---- the camera ----------------------------------------------------------
+//
+// After "streamon" a real Tello sends H.264 to UDP 11111 of the machine
+// that sent "command": the encoder's bytes cut into datagrams of at most
+// 1460, no RTP, no container. This one plays a recording of a flight
+// (sim/tello_clip.bin, 25 pictures a second, in a loop) the same way.
+// The file is a 4-byte length (big-endian) before each picture, so the
+// script needs no H.264 parser: read a length, send that many bytes.
+//
+// video_tick runs every 0.04 s on its own thread (TH_VID), one picture
+// per tick. What File.read gives is a byte buffer to hand on (append,
+// File.write, Blob.from), not to take apart byte by byte: indexing it
+// (h[2]) and its .length go by text characters and stop at a zero byte,
+// and video is full of them. So the length is read as hex text, and the
+// script counts with the file position (File.tell / File.size).
+
+var g_vid = 0;          // the open clip, 0 = closed
+var g_vid_size = 0;     // its size in bytes
+
+function video_tick(evt)
+{
+    if (evt.GetValue("id('VIDEO')/@val") != 1) {
+        if (g_vid) { File.close(g_vid); g_vid = 0; }
+        return;
+    }
+    var ses = xdb.con["CN_SIMVID"].get_ses(0);
+    if (!ses) return;
+    if (!g_vid) {
+        g_vid = File.open(evt.GetValue("id('CLIP')/@val"), "rb");
+        if (!g_vid) {
+            evt.Log(3, "SIM: no video clip at " + evt.GetValue("id('CLIP')/@val") + " - streamon sends nothing");
+            evt.SetValue("id('VIDEO')/@val", 0);
+            return;
+        }
+        g_vid_size = File.size(g_vid);
+    }
+    if (File.tell(g_vid) + 4 > g_vid_size) File.seek(g_vid, 0, 0);     // the end: play it again
+    var h = File.read(g_vid, 4);
+    var left = parseInt(CODEC.HEX_enc(h), 16);          // "00001280" -> 4736
+    if (left <= 0 || File.tell(g_vid) + left > g_vid_size) {            // not a clip of this kind
+        File.seek(g_vid, 0, 0);
+        return;
+    }
+    var exc = new CON_EXC(evt, ses);
+    while (left > 0) {
+        var n = left > 1460 ? 1460 : left;
+        exc.buf_send.remove();
+        exc.buf_send.append(File.read(g_vid, n));
+        exc.send();
+        left = left - n;
+    }
+    exc = 0;
+}
+
 // ---- a move ------------------------------------------------------------
 //
 // A move is what is left to do, in the WORLD frame, plus what happens at
@@ -174,7 +228,10 @@ function do_cmd(evt, cmd, a)
         return "ok";
     }
     if (cmd == "streamon" || cmd == "streamoff") {
-        evt.Log(4, "SIM: " + cmd + " - this drone has no camera; a real one sends H.264 to UDP 11111");
+        var on = (cmd == "streamon") ? 1 : 0;
+        if (evt.GetValue("id('VIDEO')/@val") != on)
+            evt.Log(4, "SIM: " + cmd + " - " + (on ? "the camera sends H.264 to UDP 11111" : "the camera stops"));
+        evt.SetValue("id('VIDEO')/@val", on);
         return "ok";
     }
     if (cmd == "speed") {

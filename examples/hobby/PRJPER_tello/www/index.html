@@ -157,6 +157,20 @@
         <div class="label">What it decided</div>
         <ol id="msgs"></ol>
     </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card cam-card">
+        <div class="label">Camera <span class="muted">- <code>streamon</code> / <code>streamoff</code> go to
+            <code>TEL/S00/CMD/val/set</code>; the picture is <code>GET /blob/TEL/S00/CN_VID/frm?stream=1</code></span></div>
+        <div class="btn-row">
+            <button data-cmd="streamon">Video on</button>
+            <button data-cmd="streamoff">Video off</button>
+        </div>
+        <div class="cam-box">
+            <img id="video" alt="the drone's camera">
+            <div id="video-none" class="muted">no picture - press Video on (the engine decodes on Windows; on Linux see the README)</div>
+        </div>
+    </section>
 </main>
 
 <script src="mqtt-lite.js"></script>

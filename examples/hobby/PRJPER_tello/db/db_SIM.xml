@@ -11,6 +11,8 @@
                   answered when the move is FINISHED, not when it starts.
        UDP 8890   STATE out, about ten times a second, to the address that
                   sent "command": "pitch:0;roll:0;yaw:0;...;h:80;bat:87;..."
+       UDP 11111  VIDEO out after "streamon", to the same address: H.264
+                  cut into datagrams of up to 1460 bytes
 
      This document is the same thing on 127.0.0.1, built from two
      connections with no protocol of their own (PRO.raw) and a script:
@@ -18,6 +20,9 @@
        CN_SIM     UDP server on 8889. pro_onparse hands each command to
                   main.on_cmd, which answers at once or starts a move.
        CN_SIMST   UDP client to 8890. main.tick sends the state line on it.
+       CN_SIMVID  UDP client to 11111. After "streamon", main.video_tick
+                  sends a recorded flight on it as H.264, as the real
+                  camera does.
 
      The drone itself is the <var>s below: position, height, heading,
      battery, and the move in progress. main.tick moves them ten times a
@@ -69,6 +74,22 @@
 		     pro_onparse="main.on_nothing(exc);"
 		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
 
+		<!-- 11111: THE CAMERA. A UDP client: after "streamon" main.video_tick
+		     sends a recorded flight as H.264, one picture every 0.04 s, on
+		     a thread of its own so the flight model never waits for it. -->
+		<con id="CN_SIMVID" xdb_fnc="[CON.udp,PRO.raw]" desc="Tello video stream (UDP 11111)"
+		     con_host="127.0.0.1" con_port="11111" con_mod="CLIENT"
+		     con_way="FULL" con_ses="0" con_tmo="5" con_clr="1" con_rcvlen="2048"
+		     con_keeptmo="0" con_idletmo="0" con_rct="1"
+		     pro_role="MASTER" pro_tmo="1" pro_try="1" pro="" pro_typ="0xD411" pro_fnc="[]"
+		     pro_onparse="main.on_nothing(exc);"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+		<thr id="TH_VID" xdb_fnc="[THR.cre]" thr_per="10" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+		<var id="T_VID" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_VID" evt_per="0.04" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.video_tick]" desc="one picture of the camera"/>
+
 		<!-- The flight model, ten times a second. -->
 		<var id="T_SIM" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
 		     evt="" evt_typ="0x5201" evt_thr="TH_SIM" evt_per="0.1" evt_dly="0" evt_syn="0"
@@ -108,5 +129,9 @@
 		<var id="DRAIN" sta="0x0303" val="0.4"  val_typ="0x0308" val_unt="%/s" desc="battery drain in flight"/>
 
 		<var id="CMDS"  sta="0x0303" val="0"    val_typ="0x0104" desc="commands received"/>
+
+		<!-- The camera: 1 between "streamon" and "streamoff", and what it plays. -->
+		<var id="VIDEO" sta="0x0303" val="0"    val_typ="0x0104" desc="1 while the camera streams"/>
+		<var id="CLIP"  sta="0x0303" val="%DB%/../sim/tello_clip.bin" val_typ="0x0401" desc="the recorded flight it plays"/>
 	</data>
 </xdb>

@@ -52,7 +52,7 @@ from its manual, and that is where most of the work is.
 | [PRJEDU_vision](../examples/ai-vision/PRJEDU_vision/README.md) | a camera over a bottle line (a recording) | an IP camera — Hikvision, Dahua, ONVIF ($50–150) — or a USB webcam ($25–80), constant light | Ethernet (RTSP, HTTP) or USB | [A real IP camera](../examples/ai-vision/PRJEDU_vision/README.md#a-real-ip-camera) |
 | [PRJEDU_mcp](../examples/ai-vision/PRJEDU_mcp/README.md) | a small tank plant | the plant of any other example, or a real one; the MCP side does not change | — | the example's README |
 | [PRJPER_adsb](../examples/hobby/PRJPER_adsb/README.md) | a dump1090 receiver | an RTL-SDR stick ($30–50), a 1090 MHz antenna, dump1090 or readsb (free) on a Raspberry Pi or the PC | TCP 30003 (SBS text) | [A real receiver](../examples/hobby/PRJPER_adsb/README.md#a-real-receiver) |
-| [PRJPER_tello](../examples/hobby/PRJPER_tello/README.md) | a Tello drone | a Ryze / DJI Tello or Tello EDU ($100–200), spare batteries, a machine with Wi-Fi | Wi-Fi (UDP 8889 / 8890) | [Flying a real Tello](../examples/hobby/PRJPER_tello/README.md#flying-a-real-tello) |
+| [PRJPER_tello](../examples/hobby/PRJPER_tello/README.md) | a Tello drone and its camera | a Ryze / DJI Tello or Tello EDU ($100–200), spare batteries, a machine with Wi-Fi | Wi-Fi (UDP 8889 / 8890, video on 11111) | [Flying a real Tello](../examples/hobby/PRJPER_tello/README.md#flying-a-real-tello) |
 | [PRJPER_phone](../examples/hobby/PRJPER_phone/README.md) | — | your phone: it is the real device already | Wi-Fi (a web page) | the example's README |
 
 The other examples — `PRJEDU_101`, `PRJEDU_web`, `PRJEDU_pages`,

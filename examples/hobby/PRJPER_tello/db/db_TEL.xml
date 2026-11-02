@@ -2,7 +2,7 @@
 <!-- =====================================================================
      TEL/S00 - the ground station.
 
-     Four connections, and every one of them is configuration:
+     Five connections, and every one of them is configuration:
 
        CN_TELLO   UDP client to the drone's 8889. Commands out, answers in.
                   PRO.raw: the Tello SDK is plain text, so the script speaks
@@ -12,6 +12,9 @@
        CN_WEB     http://127.0.0.1:8090/ - the page in ..\www
        CN_LIVE    ws://127.0.0.1:8090/mqtt - the live values, and the
                   buttons: a button PUBLISHES to TEL/S00/CMD/val/set.
+       CN_VID     the camera: after "streamon" the drone sends H.264 to
+                  UDP 11111; the engine decodes it (udp:, Windows) and
+                  the page shows it as MJPEG from CN_WEB's /blob mount.
 
      WHO DECIDES WHAT THE DRONE MAY DO. Not the page. A button only asks,
      and that is enforced, not agreed: xdb_acl="0xFF111111" on <xdb> lets
@@ -39,6 +42,7 @@
      A REAL TELLO. Join its Wi-Fi (TELLO-xxxxxx), then below:
        CN_TELLO  con_host="192.168.10.1"
        CN_STATE  con_host="0.0.0.0"  con_acl="192.168.10.1"
+       CN_VID    con_host="udp:0.0.0.0:11111?from=192.168.10.1"
      and in AyXDB.xml sta="0x0000" on SIM/S00. Read the README first.
      ===================================================================== -->
 <xdb id="TEL/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/TEL.log"
@@ -47,6 +51,16 @@
 	<config>
 		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_TEL.js" language="JScript"
 		        sta="0x0303" sta_typ="0x142"></script>
+
+		<!-- LINUX / RASPBERRY PI: the camera decoded in Python (OpenCV), because
+		     the engine has no H.264 decoder there yet. To switch, take the
+		     <script> below out of its comment, and on CN_VID set
+		     con_host="link:VID?atr=frm". It stays in a comment on Windows: a
+		     Python script loads the Python module even when it is off.
+		     Needs the Python module and OpenCV: the README, "Video on Linux".
+		<script id="vid" xdb_fnc="[SCR.prs]" src="%DB%/tello_video.py" language="Python"
+		        sta="0x0303" sta_typ="0x142" thr_tmo="5"></script>
+		-->
 	</config>
 
 	<data>
@@ -179,7 +193,7 @@
 		     con_host="127.0.0.1" con_port="8090" con_mod="SERVER" con_ses="8"
 		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
 		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
-		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html" pro_blob="/blob"
 		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
 
 		<!-- MQTT inside a WebSocket. pro_retain: a page that opens in the
@@ -193,6 +207,39 @@
 		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
 		     pro_pubqos="0" pro_pubrtn="0"
 		     pro_retain="1" pro_retain_adr="//var" pro_retain_atr="val,sta"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- ================================================================
+		     THE CAMERA. After "streamon" (the Video button) a Tello sends
+		     H.264 to UDP 11111 of this machine: the encoder's bytes cut into
+		     datagrams, no RTP, no container. CN_VID listens there (udp:),
+		     decodes every picture with Windows' own decoder, and keeps the
+		     newest one in its 'frm' as a JPEG, 10 a second. Nobody processes
+		     it: the page streams it from the engine's memory,
+		       GET /blob/TEL/S00/CN_VID/frm?stream=1   (CN_WEB's pro_blob)
+		     Until the first datagram CN_VID just listens (no streamon yet is
+		     no fault); once pictures came, none for con_cam_tmo seconds is
+		     "lost" (one ERROR line) and the port is opened again.
+
+		     ON LINUX there is no H.264 decoder in the engine yet: CN_VID
+		     says so in the log at every attempt (con_rct) and shows nothing. There, Python decodes
+		     (db	ello_video.py, OpenCV) - the README says how to switch.
+
+		     frm_typ 0x450E: a blob, not published on MQTT (the page takes
+		     pictures over HTTP). A real camera counts against the licence:
+		     FREE has two. -->
+		<!-- Where tello_video.py puts each picture on Linux (RGB, a blob that is
+		     not published on MQTT); CN_VID then reads it with link:VID?atr=frm.
+		     Its sta is RUNNING only while the stream runs: link: waits quietly
+		     before "streamon". -->
+		<var id="VID" sta="0x0302" val="0" val_typ="0x0104" frm="" frm_typ="0x450E"
+		     desc="Linux: the camera's picture from Python; sta 0x0303 while it streams"/>
+		<con id="CN_VID" xdb_fnc="[CON.cam,PRO.cam]" desc="the drone's camera (UDP 11111)"
+		     con_host="udp:127.0.0.1:11111" con_cam_fps="10" con_cam_out="jpeg" con_cam_q="70"
+		     con_cam_tmo="5" con_rct="10" frm="" frm_typ="0x450E"
+		     con_cam_info="" con_cam_info_typ="0x0401" con_cam_err="" con_cam_err_typ="0x0401"
+		     con_cam_rate="0" con_cam_rate_typ="0x0308"
+		     con_mod="CLIENT" pro_role="MASTER" con_ses="0" con_tmo="1"
 		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
 	</data>
 </xdb>

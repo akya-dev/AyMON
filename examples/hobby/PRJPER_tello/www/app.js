@@ -180,6 +180,18 @@ drawMap();
 
 function send(element, text) { mqtt.publish(DOC + "/" + element + "/val/set", text); }
 
+// ---- the camera --------------------------------------------------------------
+// An MJPEG stream from the engine's memory: every part is CN_VID's newest
+// frame. 404 while there is none (no streamon yet) - then try again.
+const video = $("video");
+function videoOpen() { video.src = `/blob/${DOC}/CN_VID/frm?stream=1&t=${Date.now()}`; }
+video.addEventListener("load", () => { video.style.display = "block"; $("video-none").style.display = "none"; });
+video.addEventListener("error", () => {
+    video.style.display = "none"; $("video-none").style.display = "block";
+    setTimeout(videoOpen, 2000);
+});
+videoOpen();
+
 // ---- buttons ------------------------------------------------------------------------
 document.querySelectorAll("button[data-cmd]").forEach((b) =>
     b.addEventListener("click", () => send("CMD", b.dataset.cmd)));

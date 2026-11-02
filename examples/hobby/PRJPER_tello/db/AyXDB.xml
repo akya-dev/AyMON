@@ -17,7 +17,8 @@
      With a real Tello: join its Wi-Fi, set sta="0x0000" on SIM/S00 below and
      point TEL/S00 at 192.168.10.1 - the README says where.
 
-     Six connections: exactly the FREE edition's limit.
+     Eight connections (three in the drone, five in the ground station)
+     and one camera: exactly the FREE edition's connection limit.
 
      Run:  run.bat,  then open  http://127.0.0.1:8090/
      ===================================================================== -->

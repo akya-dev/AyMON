@@ -4,7 +4,7 @@ Personal projects (PRJPER_*): they run on the FREE edition, with a simulated dev
 
 | Example | What it is | Needs |
 |---|---|---|
-| [PRJPER_tello](PRJPER_tello/) | fly a Tello drone from a web page - or the simulated one that comes with it | nothing; a Tello to fly a real one |
+| [PRJPER_tello](PRJPER_tello/) | fly a Tello drone from a web page, with its camera - or the simulated one that comes with it | nothing; a Tello to fly a real one |
 | [PRJPER_adsb](PRJPER_adsb/) | the aircraft overhead on a map, from an ADS-B receiver's SBS-1 stream - or the simulated receiver that comes with it | nothing; an RTL-SDR stick for real aircraft |
 | [PRJPER_phone](PRJPER_phone/) | your phone's motion sensors as a device with alarms - no app, a page over https on the same Wi-Fi (or a simulated phone) | a phone on the same Wi-Fi; nothing for the simulated one |
 
