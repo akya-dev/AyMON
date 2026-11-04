@@ -27,8 +27,9 @@ One `<con>` element sets up both the transport and the protocol:
 
 `CON.tcp` makes the connection, `PRO.modbus` the protocol. **The order
 matters** — the connection is always written first. The same `PRO.modbus`
-works over a serial line by writing `CON.ser` instead; the `<dev>`, `<bi>` and
-`<io>` elements underneath do not change at all.
+works over a serial line by writing `CON.ser` instead and telling it the frame
+format (`pro_mod="RTU"`); the `<dev>`, `<bi>` and `<io>` elements underneath do
+not change at all.
 
 ## The four levels
 
@@ -66,6 +67,10 @@ gets sent.
 
 On a slow device look at `pro_tmo` first; on a noisy line, `pro_try`.
 
+Many of these can be set per device: a `<dev>` may carry its own `con_host`,
+`con_port`, `con_tmo`, `pro_tmo`, `pro_try` and so on, so one slow unit on a
+connection does not set the pace for the others.
+
 ### `<dev>`, `<bi>`, `<io>`
 
 | Element | Field | Meaning |
@@ -76,6 +81,7 @@ On a slow device look at `pro_tmo` first; on a noisy line, `pro_try`.
 | `<bi>` | `pro_fni` / `pro_fno` | Read / write function (Modbus function code) |
 | | `pro_adr` / `pro_len` | Start of the block, and **how many elements it holds** |
 | | `pro` | The raw block. The reply lands here and is distributed from here |
+| | `pro_fnc` | `[PRO.inp]`: hands the block to its points. Leave it out and nothing reaches any `<io>` |
 | | `pro_typ` | What the block is made of — see below |
 | `<io>` | `pro_adr` | Position **inside** the block |
 | | `pro` | The raw value for this point |
@@ -111,8 +117,8 @@ Read the two chains left to right and the whole point is in them:
 * **`pro_fnc="[VAL.put]"`** — take the raw value and hand it to `val`. This is
   the bridge. Leave it out and the raw value arrives correctly, `val` stays at
   zero, and **nothing is logged**; the point simply never moves. The same is
-  true if you write `pro_typ="0x0102"` instead of `0x1102`: the `0x1000` bit is
-  what makes the chain run at all — see guide 2.
+  true if you write `pro_typ="0x0102"` instead of `0x1102`: without a run bit
+  the chain never runs at all — see guide 2.
 * **`val_fnc="[VAL.cnv,ATR.rou,ATR.lmt,ALM.onlvl]"`** — scale it
   (`val_cnv_dlt="0.1"`, so a raw `724` becomes `72.4`), round it to `val_rou`,
   clamp it to `val_min`…`val_max`, then compare it with the four alarm limits
@@ -129,9 +135,9 @@ field.
 ```
  0x F   F   F   F
     │   │   │   └── run state    what is actually happening (the engine writes this)
-    │   │   └────── configuration write permission, alarm mode
+    │   │   └────── handling      NEW, SUP, INH — an alarm's handling, and write permission
     │   └────────── command       what you or the operator asked for
-    └────────────── role          cluster / edge-hub (see the replication example)
+    └────────────── role          cluster state / edge-hub (see 10_Two_Engines)
 ```
 
 **Run state** (bits 0–3), written by the engine — an observation, not an order:
@@ -163,6 +169,10 @@ Two consequences worth knowing:
   for free — see `PRJEDU_rep`.
 * **To stop a running connection write `0x0000` or `0x0100`.** Writing
   `0x0300` to something already running is not a stop.
+* **Do not compare a whole `sta` with a number.** Connections, threads and
+  documents show their own health in the alarm bits, so a running thread with a
+  warning reads `0x0347`. Test the run state: `(sta & 0x0003) == 3`. See
+  `12_Keeping_It_Running`.
 
 ## How a value actually travels
 
@@ -175,28 +185,53 @@ timer fires
                   └─ val_fnc   scaling, limits, alarm evaluation
 ```
 
-For a poll to go out at all, four things must be true: the `<dev>` exists, its
-command nibble is not DISABLE, `pro_con` names a real `<con>`, and the session
-is connected. If any is missing the poll is skipped **silently** — that is not
-an error, it means "nothing to do".
+For a poll to go out at all, three things must be true: the `<dev>`'s command is
+above STOP, `pro_con` names a real `<con>`, and the session is connected. A
+device switched off is skipped without a line, because that means "nothing to
+do". The others say so: a `pro_con` naming no connection is an `ERROR` at the
+document's start, and with no link a firing comes again once the link can be
+there. If the dial fails, a block that was RUNNING goes WAITING with its points.
 
 **If no data arrived, nothing is distributed.** On a timeout the points are
-*not* written with zero; the last good value stays where it is. A plant that
-shows `0` because a cable came loose is worse than one that shows a stale
-reading you can see is stale.
+*not* written with zero; the last good value stays where it is and the block
+goes WAITING. A plant that shows `0` because a cable came loose is worse than
+one that shows a stale reading you can see is stale.
 
-Writing works the same way in reverse, with one rule: **if a write times out,
-`io.pro` is not updated.** The request went out; whether the device got it is
-unknown, so the next read decides rather than the engine guessing.
+Writing runs the other way, and **one `pro` carries both directions**:
+
+```xml
+<io id="SET" pro="0" pro_typ="0x1102" pro_fno="6" pro_adr="1" pro_fnc="[PRO.out,VAL.put]" .../>
+```
+
+A value written to `pro` is sent by `PRO.out` and **is not stored**, whether the
+write succeeds or not. What the device then says comes back into the same `pro`
+at the next poll and runs the functions after `PRO.out`. So `pro` right after a
+write still shows the old value, and `val` moves when the device has said it
+moved. That is the point of it: the plant's state is what the device reports, not
+what someone asked for.
+
+| | |
+|---|---|
+| The device said no | one `ERROR` line; the write is not repeated |
+| Nothing was sent (no link, a protocol that cannot write) | one `ERROR` line, `NOT SENT`, naming why; nothing stored |
+| A point nothing ever reads back (publish-only, an unpolled output) | use `PRO.outc`: the same, but the chain goes on with the value written |
+| To read a device back sooner than the next poll | `pro_refreshdly` |
 
 ## Reading the log
 
-Every protocol logs traffic in the same shape:
+Every protocol logs traffic in the same shape. Successful traffic is written at
+level DEBUG, so a device that works is quiet: put `xdb_log="7"` on the `<con>` to
+see it.
 
 ```
-CN_PLC:PRO.modbus(0).MAS-Q[1|12|RES_OKY]: 00 01 00 00 00 06 01 03 00 00 00 04
-       └ protocol  └ session   └ device  └ bytes  └ result
-                        └ Q sent · R received · I unsolicited
+N03_BL:PRO.modbus(0).M-Q[03|0C|INF_OKY]: 00 02 00 00 00 06 03 03 00 00 00 02
+└ element   │      │  │ │  │  │   └ result          └ the bytes
+            │      │  │ │  │  └ length, hex
+            │      │  │ │  └ device address, hex
+            │      │  │ └ Q sent · R received · I unsolicited
+            │      │  └ M master · S slave
+            │      └ session
+            └ protocol
 ```
 
 A `Q` with no `R` after it means the device is not answering. Unexpected `I`
@@ -206,18 +241,22 @@ lines usually mean an addressing problem or two masters on one line.
 
 | Symptom | Look at |
 |---|---|
-| No request goes out at all | `dev/@sta` and `bi/@sta` — DISABLE? Is `pro_con` spelled right? Is the timer running? (guide 2) |
+| No request goes out at all | `dev/@sta` and `bi/@sta` — switched off? Is `pro_con` spelled right (an `ERROR` at start says)? Is the timer running? (guide 2) |
 | `pro_pol_snd` climbs, `pro_pol_rcv` does not | Timeout. `pro_tmo`, the address, is the device on |
-| Neither counter climbs | The poll is never triggered — it is the timer or `sta`, not the protocol |
-| Values arrive but `val` stays 0 | `pro_fnc="[VAL.put]"` is missing |
+| Neither counter climbs | No poll reaches the wire: the timer, `sta`, or no link. A device that stopped answering is also asked less often for a while, up to `con_rct` |
+| Values arrive at the block but no point moves | `pro_fnc="[PRO.inp]"` is missing on the `<bi>`, or `pro_adr` is outside the block |
+| A point's `pro` moves but `val` stays 0 | `pro_fnc="[VAL.put]"` is missing, or `pro_typ` has no run bit |
 | The block reads one element however many you asked for | `pro_len` is being read in the wrong unit — check `pro_typ` |
 | Writes go out, nothing changes | `pro_out_snd` / `pro_out_rcv`. If sends climb and receives do not, the device is not answering |
+| A write leaves `pro` as it was | That is `PRO.out`: it comes back with the next read. Nothing reads this point back? `PRO.outc` |
 | Values drop to `0` when the line dies | Not expected — the last value should stay. Keep the log |
+| The same `ERROR` once and then silence | A poll refused for its configuration says so once, then every 10 minutes with a count |
+| A device is in alarm and you want to know why | `ALM.devsta` writes the reason: `12_Keeping_It_Running` |
 
 ## Where next
 
 This guide is the tree and one polled device. The connection itself — who
 dials, who asks, several services on one port, protocols that push instead of
 answering, and what to do when AyMON does not speak the protocol at all — is
-`05_Connections_and_Protocols`. Who may reach any of it is
-`06_Access_and_Safety`.
+`05_Connections_and_Protocols`. A board's own pins, as the same tree, are
+`09_Pins_and_Buses`. Who may reach any of it is `06_Access_and_Safety`.

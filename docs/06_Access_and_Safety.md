@@ -74,17 +74,32 @@ Worth knowing before you use it on a plant:
 * the user element is `<usr usr_id="...">`, **not** `id` — `id` is the
   document-wide index and a user is not an element anyone should address
 * passwords are stored hashed (PBKDF2, `auth_iter` rounds); with
-  `auth_rehash="1"` a plain-text password in the file is accepted once and
-  **rewritten as a hash** at the first successful login. That is why `admin`
-  in the example above is already a hash and the others are not yet — the
-  example keeps three of them readable on purpose, which is also why it
-  listens on loopback only
+  `auth_rehash="1"` a plain-text password in the file is accepted and turned into
+  a hash **in memory** at the first successful login. **The file keeps the plain
+  text until the document is saved** (`11_Records_and_Saving`), and a restart then
+  starts again. `AUTH.hash` makes one to put in the file: that is why `admin` in
+  the example above is already a hash and the others are not — the example keeps
+  them readable on purpose, which is also why it listens on loopback only
 * `auth_try` / `auth_lock` lock a user and address pair for `auth_lock`
-  seconds after `auth_try` failed attempts
+  seconds after `auth_try` failed attempts; `auth_host_try` locks an address after
+  that many failures of **any** user (a password spray)
 * a session that has not logged in runs at the connection's `con_role`
   (Guest, 0, unless the `<con>` says otherwise)
 * the `<auth>` element holds password material, so it carries an `xdb_acl` of
   its own — gate 3 protecting gate 2
+
+| `<auth>` beyond the file | |
+|---|---|
+| `auth_prv` | providers tried in order: `local`, `sql`, `ldap`, `script` |
+| `auth_sql`, `auth_sql_qry` | users in a database, through a `PRO.sql` connection |
+| `auth_ldap`, `auth_ldap_tmo`, `auth_ldap_down` | users in a directory. `auth_ldap_tmo` (5 s) is the budget for **all** its addresses, and a directory found down is not tried again for `auth_ldap_down` (10 s) |
+| `auth_addr`, `auth_addr_prv` | another provider for a connection that arrived on these local addresses |
+| `auth_2fa`, `auth_on2fa` | when a second factor is needed, and the hook that delivers the code |
+| `auth_tkn_ttl`, `auth_tkn_max` | how long a token lives (1800 s), how many are held (200) |
+
+A channel with no gate behaves by its own kind: **a telnet `<con>` with no `con_auth`
+and no `pro_onlogin` refuses every login**, while **an MCP endpoint with an empty
+`pro_mcp_key` is open to loopback clients only**.
 
 ---
 
@@ -117,11 +132,18 @@ The roles are 0 Guest, 1 Customer, 2 Monitor, 3 Operator, 4 Supervisor,
 replication peer) and System (9, the engine itself) — and they are outside the
 mask: the engine's own writes are never blocked by an `xdb_acl`.
 
-**No `xdb_acl` means no restriction.** An element without one is readable and
-writable by every role that got through gates 1 and 2. That is why the gates
-are cumulative rather than alternative: an engine with `xdb_acl` everywhere and
-no login has nothing to apply it to, and an engine with a login and no
-`xdb_acl` gives every user the whole plant.
+**An element takes its own `xdb_acl`, else its class's, else its nearest
+ancestor's**, so the one on the root element is the document's default. **With none
+anywhere there is no restriction:** every role that got through gates 1 and 2 reads
+and writes it. That is why the gates are cumulative rather than alternative: an
+engine with `xdb_acl` everywhere and no login has nothing to apply it to, and an
+engine with a login and no `xdb_acl` gives every user the whole plant.
+
+An attribute follows the element it is **written on**: one defined on a class takes
+that class's `xdb_acl`, so a class can open a field wider than the instance. The
+default write mode (`xdb_wri="3"`) keeps it there: writing a field whose value only
+a class holds, with another `xdb_acl` than the instance's, is refused rather than
+quietly copied to the instance. `xdb_wri="1"` on the document's root turns that off.
 
 `PRJEDU_telnet` puts the three values above on three elements and lets you log
 in as four different users to see the same plant through four different
@@ -165,8 +187,11 @@ TLS lives on the **listener**:
 * the transport name is what turns it on: `CON.tls`, `CON.wss`
 * a connection mounted on it (`con_host="#CN_WEBS"`) inherits the encrypted
   session and carries no `con_ssl_*` of its own
-* `con_ssl_verify="0"` on a server means "do not ask the client for a
-  certificate"; it does not weaken the encryption
+* on a **server**, not asking the client for a certificate is the default, and
+  `con_ssl_verify="0"` says so; it does not weaken the encryption
+* on a **client** the server's certificate **is** checked by default, against
+  `con_ssl_cacert`. There, `con_ssl_verify="0"` turns the check off: the link is
+  still encrypted, but to anyone. Make it a deliberate decision
 
 **The certificates in `PRJEDU_web` and `PRJEDU_telnet` are public.** Their
 private keys are in this repository for anyone to read, so that https works
@@ -176,11 +201,13 @@ before TLS protects anything that matters.
 
 **OPC UA carries its own security**, not TLS: a policy (`pro_sec`, e.g.
 Basic256Sha256) and a mode (`pro_mod`, Sign or SignAndEncrypt) on the
-client's `<con>`, and certificates that must be trusted **in both
-directions** — ours on the server (a server refuses an unknown one and files
-it in its "rejected" folder until someone moves it), the server's by us
-(`pro_trust`, a PEM file). The user and password go on the `<dev>`, and the
-server decides what that user may do. `PRJEDU_opcua` walks through all of it
+client's `<con>` or `<dev>`, and certificates trusted **in both directions** —
+ours on the server (a server refuses an unknown one and files it in its
+"rejected" folder until someone moves it), the server's by us (`pro_trust`, a PEM
+file). An empty `pro_trust` still connects, and says at every connect that the
+server's certificate was not verified: fill it in. The user and password go on the
+`<dev>` (or are inherited from the `<con>`), and the server decides what that user
+may do. `PRJEDU_opcua` walks through all of it
 against a machine that refuses an anonymous write. Its engine certificate is
 made at the first run and never leaves the computer: it is not in this
 repository.
@@ -207,25 +234,75 @@ pointed at a network.
 
 ---
 
+## What the engine does not do for you
+
+AyMON was built to run inside a plant's own network. **Do not publish its ports
+directly.** Its parsers have not been fuzz-tested, secrets are plain XML attributes
+(`pro_pwd`, `con_ssl_pwd`, ODBC `PWD=`, `pro_mcp_key`), and one process holds every
+document. So:
+
+```
+internet ──► reverse proxy (TLS, login, size and rate limits)
+               │  only /, /*.ayp, /mqtt to the engine's web listener
+               ▼
+             engine (a non-privileged account, one per customer)
+               │  con_host="127.0.0.1" or a firewall, xdb_acl default-deny on the root
+               ▼
+             plant network (Modbus, OPC UA, SNMP ...)
+
+VPN only:  telnet shell, PRO.mcp, replication and cluster links
+```
+
+## The fields that close the rest
+
+| Door | Field | Default | Meaning |
+|---|---|---|---|
+| Files from script | `xdb_file_role` | 3 | the lowest role that may call `File.open`, `remove`, `rename`. Engine scripts pass; a page runs with its visitor's role |
+| | `xdb_file_dirs` | anywhere | `;` list of directories, holding **every** script, the engine's too. `..` is refused |
+| A request handler | `pro_onreq_ses` | as below | `pro_onreq` on `PRO.http`, `rest`, `soap` runs as the **engine** with no `con_auth`, and as the **visitor** with one. `"1"` or `"0"` says which |
+| HTTP size | `pro_http_max` | 16 MiB | larger is 413 before a body byte is read |
+| HTTP listing | `pro_http_list` | off | `"1"` lists a directory with no index |
+| HTTP headers | `pro_http_hdr` | none | extra lines, `\|` between them: `Strict-Transport-Security: max-age=31536000\|X-Frame-Options: SAMEORIGIN` |
+| HTTP rate | `pro_http_rate` | off | `"20,60"`: requests a second per address, with a burst; 429 over it |
+| Sessions per address | `con_addr_max` | off | on any listener |
+| WebSocket size | `con_ws_max` | 16 MiB | largest message |
+| WebSocket origin | `con_ws_origin` | own host, localhost | browser origins allowed besides those; 403 otherwise. **Behind a proxy that rewrites `Host`, list the public origin** |
+| CSRF | `pro_http_csrf` | on | `"0"` is off. An unsafe request whose login came from the cookie needs the token |
+| Login cookie | `pro_http_cookie`, `pro_http_auth_pfx` | `aymon_tkn`, `/auth` | |
+| MCP key | `pro_mcp_key` | empty | empty means **loopback clients only**; compared in constant time |
+| MCP origin | `pro_mcp_cors` | none | a request with an `Origin` not listed is 403 before anything runs |
+| MCP rights | `pro_mcp_acc`, `pro_mcp_role`, `mcp_pub` | `ro`, none | read or read+write, the endpoint's role, and the documents it may see. **With no role, it reads everything published**: `PRJEDU_mcp` |
+
+`con_addr_max`, `pro_http_rate` and `auth_host_try` count the **socket's peer**,
+never `X-Forwarded-For`, which the client writes. Behind a proxy every visitor is the
+proxy: set them on the proxy, not on the engine port behind it.
+
 ## Before you open a plant to a network
 
 1. `con_host` stops being `127.0.0.1` **last**, not first.
 2. `con_acl` on every listener, as narrow as the site allows.
 3. `con_auth` on every channel a human can reach; real users, no shared
    accounts, `auth_try` / `auth_lock` set. On a web listener also decide
-   which pages are public (`pro_http_auth="1"` + `pro_http_pub`).
-4. `xdb_acl` on the elements that matter — starting with the `<auth>` element
-   itself and anything that commands equipment. Read access is as much a
-   decision as write access.
+   which pages are public (`pro_http_auth="1"` + `pro_http_pub`), and leave CSRF on.
+4. `xdb_acl` on the elements that matter — starting with the root as a default deny,
+   the `<auth>` element itself and anything that commands equipment. Read access is
+   as much a decision as write access.
 5. TLS with your own certificate on anything that crosses a network you do not
-   own.
-6. Read the log once with `xdb_log="7"`: refusals are logged, and seeing them
-   is how you learn a rule is actually in force.
+   own. On a client, `con_ssl_verify` is not `0` and `pro_trust` is filled in.
+6. `pro_mcp_key` on every MCP endpoint, and MCP behind the VPN.
+7. `xdb_file_dirs` set; `xdb_file_role` not lowered without a reason.
+8. On a port that faces clients directly: `con_addr_max`, `pro_http_rate`,
+   `pro_http_hdr`. Behind a proxy: `con_ws_origin`, and limits on the proxy.
+9. A service account without administrator rights; one engine per customer; backups
+   encrypted, since the XML holds the passwords.
+10. Watch the refusals once in the log: a refused write is an `ALERT` line at the
+    default level, so seeing them is how you learn a rule is in force. A refused
+    read in a bulk answer is silent: that element simply is not there.
 
 `PRJEDU_hardening` is this list as a lab: a plant delivered without most of
 it, a self-check that reads the configuration, and an access test that logs in
 as four people and tries.
 
-The complete rules — the ACL resolution order, per-attribute control,
-authentication providers (SQL, LDAP), tokens and two-factor codes — are in the
-licensed product's access-control and authentication field notes.
+The complete rules — per-attribute control, every provider's fields, tokens and
+two-factor codes — are in the licensed product's access-control and authentication
+field notes.

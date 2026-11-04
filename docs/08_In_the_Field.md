@@ -67,7 +67,7 @@ Every change to the engine goes through the same checks before a release:
   the Python examples, for instance, under both Python versions on all
   three.
 - **Unit tests** of the core library (types, the XML engine, XPath,
-  values): 1 282 checks, on Windows and Linux.
+  values): more than 1 300 checks, on Windows and Linux.
 - **Linux CI** builds everything with gcc and clang, and once more with
   `char` unsigned, as ARM sees it, on every push.
 

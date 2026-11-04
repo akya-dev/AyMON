@@ -15,8 +15,8 @@ An engine with no licence file is not crippled. It is a small plant:
 | `<con>` elements | 8 |
 | Devices | 8 |
 | Logged-in users | 4 |
-| Protocols | Modbus, MQTT, HTTP / REST / SOAP, SNMP, OPC UA, RFID, bridge, SQL, telnet — **and every plug-in**: SQLite, ODBC, S7, HID, Python |
-| Counted, never refused by address | cameras (`vision`): 2 with a real source — `link:` views and the `IMG.*` functions are free; smart-building devices (`sb`: ATEIS, AyBUS, VISCA, BLE RTU): 4; mail and file transfer (`net`): 20 operations a day |
+| Protocols | Modbus, MQTT, HTTP / REST / SOAP, SNMP, OPC UA, RFID, bridge, SQL, telnet — **and every plug-in**: SQLite, ODBC, S7, HID, Python. A board's own pins (GPIO, I²C, SPI, `AyLIB_hw`) are not a licence feature at all; a chip is a device like any other |
+| Counted, never refused by address | cameras (`vision`): 2 with a real source — `link:` views and the `IMG.*` functions are free; smart-building devices (`sb`: ATEIS, AyBUS, VISCA, BLE RTU): 4; mail and file transfer (`net`): 20 operations a day, in memory, so a restart starts the count again |
 | Not included | cluster, replication, RPC, MCP — but see below |
 
 FREE is also the edition for personal use; there is no separate personal
@@ -98,9 +98,9 @@ The engine looks in this order and the log says which one it used:
 `-lic:` takes a directory (the file in it is `AyMON.lic`) or, if the value
 ends in `.lic`, the file itself. **A relative path is relative to the
 executable, not to the current directory** — so `-lic:..\lic` with the engine
-in `bin\win-x64` means `bin\lic`, wherever you start it from. Every `run.bat`
-here passes it as an absolute path, because you may point it at an engine of
-your own.
+in `bin\win-x64` means `bin\lic`, wherever you start it from. The `run.bat` of every
+`PRJEDU_*` example passes it as an absolute path, because you may point it at an
+engine of your own; the `PRJPER_*` and `PRJHW_*` ones pass none and run on FREE.
 
 ```bat
 AyXDB.exe -console C:\plants\north\db\AyXDB.xml -lic:C:\licences\north
@@ -123,19 +123,28 @@ directory — the engine keeps a small state file beside the licence.
 
 ## Reading the start-up log
 
-One line is the truth for the whole run:
+One line is the truth for the whole run, with what it leaves open right after it.
+On FREE:
 
 ```
-XDB:LIC: enforced for this run: edition EDU, con 8 / ses 32 / cli 4, features off: cluster,rep,rpc,mcp
+XDB:LIC: enforced for this run: edition FREE, con 8 / dev 8 / cli 4, features off: cluster,rep,rpc,mcp,net,vision,sb
+XDB:LIC: documents allowed: 5
+XDB:LIC: cluster,rep,rpc,mcp are not licensed: they work on LOCAL connections (loopback, non-IP) and are refused on remote ones
+XDB:LIC: net is not licensed: mail and file transfer (PRO.smtp / ftp / sftp) work at any address and are COUNTED, 20 operations a day
+XDB:LIC: vision is not licensed: 2 camera(s) (CON.cam with a real source; link: and none: are free)
+XDB:LIC: sb is not licensed: 4 device(s) of PRO.ateis / aybus / visca / blertu
 ```
 
-Everything above it explains how the engine got there; everything it refuses
-later follows from it. On a running engine the same thing is one command away
-in the maintenance shell:
+Everything above those lines explains how the engine got there; everything it
+refuses later follows from them. The licence file's own key for devices is still
+called `max_ses`; a licence with `vision` may limit cameras with `max_cam`. On a
+running engine the same thing is one command away in the maintenance shell:
 
 ```
 XDB> ver
 ```
+
+and in script `LIC.list()` shows each count, used and refused.
 
 ## The decision is made at start
 
@@ -149,9 +158,11 @@ The practical consequence for you: **a new licence file means a restart.**
 
 | What you see | What it usually is |
 |---|---|
-| `NOT STARTED -- licence feature 'x' is not in edition FREE` | That protocol is not in your tier |
 | `NOT STARTED -- 'rep' is refused on a REMOTE connection` | The locality rule — the peer is not on this machine |
+| `LIC: camera CN_C3 (usb:2) NOT STARTED -- licence feature 'vision' is not in edition FREE: 2 camera(s) allowed` | One unit too many. A `link:` view takes none; `con_rct` tries again |
 | A `<con>` late in the document never appears | `max_con` reached; connections are taken in document order |
 | A device never polls, others do | the device limit reached (`max_ses`, shown as `dev`); devices are first come, first served |
-| `REJECTED` | The file was edited, or copied to a machine it is bound away from |
+| `REJECTED` | The file was edited, so its signature no longer holds. FREE applies |
+| `-- licence still holds, N tolerance day(s) left` | The machine differs from the one it was issued for: 30 days' tolerance, then `tolerance used up` and FREE |
+| `the licence is for another project` | A licence bound to other directories: this is the `PRJEDU_*` file in a real project |
 | Everything runs but `LIC:` says FREE | No file was found — the line names the path it tried and, for `-lic:` or `AYMON_LIC`, which one |

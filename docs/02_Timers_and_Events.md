@@ -1,6 +1,6 @@
 # 2 — Timers, and what makes things happen
 
-Run **PRJEDU_101** first. Its `<thr>` and two `<var>` timers are the whole of
+Run **PRJEDU_101** first. Its `<thr>` and its `<var>` timer are the whole of
 this guide in practice.
 
 ---
@@ -28,9 +28,11 @@ chains. There is no main loop you can put code in.
 
 Three things follow from that shape:
 
-* **The thread cycle is the floor.** A timer fires only when its thread wakes
-  up; `thr_per` is that cycle, in **milliseconds**. A 50 ms poll on a 100 ms
-  thread runs at 100 ms and no log line tells you.
+* **`thr_per` is not a floor for timers.** The thread sleeps until its next timer
+  is due, however long `thr_per` is: measured, a 20 ms timer on a 100 ms thread
+  fired 50 times a second. `thr_per`, in **milliseconds**, is the longest it
+  sleeps, and the budget of one cycle: how often it looks at its queue and its
+  sessions.
 * **Timers are not threads.** A thousand elements on one `<thr>` are a thousand
   entries in one list, served by one dispatching thread and `thr_wrk` workers.
   Slow work does not block the clock, but it does occupy the workers.
@@ -47,11 +49,11 @@ Three things follow from that shape:
 
 | Field | Unit | Default | Meaning |
 |---|---|---|---|
-| `thr_per` | ms | 100 | How often the thread wakes to serve its timers (10 … 10000) |
+| `thr_per` | ms | 100 | The longest the thread sleeps, and one cycle's budget (10 … 10000) |
 | `thr_wrk` | count | 0 | Worker threads that run the callbacks |
-| `xdb_fnc` | — | — | Must be `[THR.cre]`, or no thread object is created |
-| `sta_fnc` | — | — | `[THR.sta]`, or writes to `sta` do nothing |
+| `xdb_fnc` | — | — | Must be `[THR.cre]`, or no thread object is created. It also puts `THR.sta` into `sta_fnc` |
 | `sta` | — | — | `0x0303` running, `0x0000` off |
+| `que_max` | count | 65000 | How much may wait in its queue. Work beyond it is refused, with an alarm |
 
 **`thr_wrk="0"` is a real mode, not an oversight.** With no workers the
 dispatching thread runs the callbacks itself: simpler, lower latency, and one
@@ -80,9 +82,9 @@ like `<thr>`, and poll timers live on it by default. That is why a slow device
 on a busy connection is best moved to its own `<con>`, not just its own
 `evt_thr`: the thing being shared is the *conversation*, not the clock.
 
-> Only `dev`, `bi`, `io`, `var`, `rec`, `list` and `item` elements are scanned
-> for timers. Putting `evt_cfg` on anything else is silently dead — no timer,
-> no error.
+> Only `dev`, `bi`, `io`, `var`, `rec`, `list` and `item` elements below the
+> document's `<data>` are scanned for timers. Putting `evt_cfg` on anything else
+> is silently dead — no timer, no error.
 
 ## A timer, in full
 
@@ -96,17 +98,17 @@ on a busy connection is best moved to its own `<con>`, not just its own
 
 | Field | Meaning |
 |---|---|
-| `xdb_fnc="[XDB.evt]"` | Creates the timer object. Without it the element is inert |
+| `evt_cfg` | **What makes it a timer.** `0x0002` is the one you want: periodic. Add `0x4000` (`0x4002`) to fire once at start — see below. The examples write `0x0042`: the `0x0040` bit is ignored, and it means the same |
 | `evt` / `evt_typ` | The attribute the timer writes, and its type |
-| `evt_cfg` | Mode and flags. `0x0042` is the one you want: periodic, queued. Add `0x4000` (`0x4042`) to fire once at start — see below |
 | `evt_per` | Period, in **seconds**, decimal allowed. `0.05` is 50 ms, `86400` is a day |
 | `evt_dly` | Phase offset added to each tick |
 | `evt_syn` | `0` = free-running. `>0` = anchor to a wall-clock boundary of that size |
 | `evt_fnc` | What to run. The same chain syntax as `val_fnc` |
-| `sta_fnc="[EVT.sta]"` | Lets `sta` start and stop the timer |
+| `xdb_fnc="[XDB.evt]"` | Puts `EVT.sta` into `sta_fnc`, or write `sta_fnc="[EVT.sta]"` yourself |
+| `sta_fnc="[EVT.sta]"` | Re-phases the timer when `sta` switches it back on. A firing is skipped whenever the command is STOP or below, with or without it |
 
-**All four time fields are seconds.** Queue delays, elsewhere, are
-milliseconds — the two surfaces differ and always have.
+**The time fields are seconds.** Queue delays, elsewhere, are milliseconds — the
+two surfaces differ and always have.
 
 ### The first firing waits a whole period — unless you ask
 
@@ -116,7 +118,7 @@ seconds in. That is the right default for polls — a device is not asked
 before its connection has had time to come up — but a report or a sampler
 usually wants to run at once.
 
-`evt_cfg="0x4042"` (the `0x4000` bit) moves the first firing to
+`evt_cfg="0x4002"` (the `0x4000` bit) moves the first firing to
 **start + `evt_dly`**, then every `evt_per` as usual. "Start" is when the
 engine starts the timer and when its `sta` switches it back on; writing
 `evt_per` on a running timer is not a start. Needs engine 4.3.4.441 or later —
@@ -127,7 +129,19 @@ an older engine ignores the bit and waits the period.
 `evt_syn="0"` means "start counting when the thread starts, then every
 `evt_per`". That is what you want almost always. `evt_syn="86400"` with
 `evt_per="86400"` means "midnight, then daily" — use it when the *phase*
-matters, not the interval.
+matters, not the interval. The boundaries are **local time** (engine 4.3.4.618
+and later): that midnight is this machine's, and a daylight-saving change moves
+the timer with the clock. `evt_dly` is kept at every firing, so `evt_syn="60"
+evt_dly="15"` is quarter past every minute.
+
+### Spreading many timers out
+
+A hundred devices on `evt_per="60"` fire together unless you stop them. Give each a
+different `evt_dly` under one `evt_syn`, or make them a **rotation**: `evt_cfg="0x0001"`
+with `evt_dly` as the spacing. Every such element on one `evt_thr` then shares one
+slot, so `evt_dly="0.1"` over four devices polls each one every 400 ms, and the
+period follows the number of members by itself. A rotation reads `evt_dly` only:
+an `evt_per` on it is refused with an `ERROR` and no timer.
 
 ### Each firing is a pulse
 
@@ -140,9 +154,9 @@ replicated mirror) is sent the `1` and never the `0`, so on the wire treat
 
 ### Two rules that decide what you see under load
 
-* **Missed ticks are skipped, never replayed.** A timer configured faster than
-  its thread can serve simply runs at the thread's rate. There is never a
-  catch-up burst.
+* **Missed ticks are skipped, never replayed.** A firing is dropped when the one
+  before it has not started yet, and `tmr_skp` in the `stats` line counts them
+  (`12_Keeping_It_Running`). There is never a catch-up burst.
 * **Lateness is free; earliness would double-fire.** The engine rounds its
   sleep up and re-checks. If you measure your period and get it plus a
   millisecond or two, that is the design.
@@ -164,16 +178,26 @@ functions (`ATR.rou`, `ALM.onlvl`, `PRO.pol`) or your own script
 `val` is written, `sta_fnc` when `sta` is written, `evt_fnc` when the timer
 writes `evt`.
 
-### The one bit that decides whether `val_fnc` runs
+### The bits that decide whether `val_fnc` runs
 
 ```xml
 val_typ="0x1308"      not 0x0308
 ```
 
-The **`0x1000` bit in `val_typ`** is what says "run this value's `val_fnc`
-chain". Leave it out and the chain is declared and **never runs**: no scaling,
-no rounding, no alarm — and no error and no log line either. The value stores
-raw and nothing tells you why.
+The type's top nibble says how the attribute behaves:
+
+| Bit | Meaning |
+|---|---|
+| `0x1000` | run the chain now, on the writer's thread |
+| `0x2000` | run the chain queued, on `evt_thr`: every write |
+| `0x3000` | run the chain queued, newest only (`<atr>_que` chooses another merge) |
+| `0x4000` | local: not published, not writable from outside the document |
+| `0x8000` | volatile: never kept, never saved |
+
+So the **`0x1000` bit in `val_typ`** is what normally says "run this value's
+`val_fnc` chain". With no run bit the chain is declared and **never runs**: no
+scaling, no rounding, no alarm — and no error and no log line either. The value
+stores raw and nothing tells you why.
 
 Measured, two elements side by side, same chain `[ATR.rou]`, same
 `val_rou="0.1"`, both written with `1.23456`:
@@ -189,7 +213,7 @@ It makes no difference how the value is written — through an address
 
 **`pro_typ` works the same way** — a `pro_fnc="[VAL.put]"` under
 `pro_typ="0x0204"` never runs, and the point never reaches `val`. That is why
-every `<io>` in `PRJEDU_modbus` carries `pro_typ="0x1102"` and not `0x0102`.
+the points in `PRJEDU_modbus` carry `pro_typ="0x1102"` and `0x1111`, not `0x0102`.
 
 > **But the rule is not uniform, so do not generalise it.** `evt_fnc` and
 > `sta_fnc` run whether or not their `evt_typ` / `sta_typ` carries `0x1000` —
@@ -222,10 +246,12 @@ stops firing but the element stays registered, ready to be switched back on.
 * **`evt_per` is seconds; queue delays are milliseconds.**
 * **`evt_syn` is an anchor, not a period.**
 * **`thr_wrk="0"` serialises everything on that thread**, the clock included.
-* **A missing `0x1000` in `val_typ` / `pro_typ` silently disables that chain** — but `evt_fnc` and `sta_fnc` do not need it.
+* **A missing run bit in `val_typ` / `pro_typ` silently disables that chain** — but `evt_fnc` and `sta_fnc` do not need it.
 * **Inside a callback the attribute holds the old value** — use `evt.valn`.
-* **`evt_per` below 10 ms costs what it asks for.** `evt_per="0.0005"` will
-  wake the thread every 500 µs and burn a core. Check the decimal point.
+* **A timer that fires every few ms costs what it asks for.** A 1 ms timer takes
+  about 5 % of a core and can be late by a step of the system's sleep (0.5 ms on
+  Windows); `thr_spin` on the thread trades CPU for accuracy. Check the decimal
+  point of `evt_per`.
 * **Not everything needs a clock.** A block is given a timer because its
   protocol has to *ask* — Modbus, SNMP. A subscribed protocol is told: there
   is no timer anywhere in `PRJEDU_mqtt`'s monitoring document, and a `<bi>`
@@ -234,13 +260,13 @@ stops firing but the element stays registered, ready to be switched back on.
 
 ## Checklist
 
-1. Every `<thr>` has `xdb_fnc="[THR.cre]"`, `sta_fnc="[THR.sta]"`, `sta="0x0303"`.
+1. Every `<thr>` has `xdb_fnc="[THR.cre]"` and `sta="0x0303"`.
 2. `thr_wrk` ≥ 1 wherever a callback talks to a device, a database or a script
    of any size.
 3. Every timer element declares `evt`, `evt_typ`, `evt_cfg`, `sta`,
-   `sta_fnc="[EVT.sta]"` and an `evt_fnc`.
+   `xdb_fnc="[XDB.evt]"` and an `evt_fnc`, below the document's `<data>`.
 4. Each timer runs on the thread you *meant*: its `evt_thr`, or — with none —
    its connection (a `<dev pro_con>` element) or the document's own thread
    (4.3.4.495+; on older engines name the thread). The start log has no
    `names no <thr> or <con>` line.
-5. Every `val` / `pro` with a chain carries `0x1000` in its `val_typ` / `pro_typ`.
+5. Every `val` / `pro` with a chain carries a run bit in its `val_typ` / `pro_typ`.

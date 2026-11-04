@@ -19,11 +19,12 @@ to get to replace it, and where its README tells how to connect it**.
       recommendations.
     - **Safety is the hardware's.** An emergency stop is wired, a robot has
       its own safety system, a heater has a thermal fuse. Nothing in AyMON
-      replaces them.
+      replaces them. A killed engine leaves a Pi's pin driving and its PWM
+      running: `pro_safe` works at a controlled stop only.
 
 ## The common pattern
 
-Every example that stands in for hardware has the same two steps:
+Almost every example that stands in for hardware has the same two steps:
 
 1. **Point the connection at the device.** `con_host` / `con_port` on the
    `<con>` or `<dev>` (an address and a port), or `con_port` for a serial
@@ -33,6 +34,10 @@ Every example that stands in for hardware has the same two steps:
 
 The address map (registers, OIDs, nodes, topics) is then the device's own,
 from its manual, and that is where most of the work is.
+
+The `PRJHW_*` examples have no document playing the device: their chips are in
+memory (`con_host="sim:.."`) and only the `con_host` lines marked `REAL` change.
+See [Pins and buses](09_Pins_and_Buses.md).
 
 ## Example by example
 
@@ -67,15 +72,23 @@ second machine are the real counterparts, and their READMEs say how).
 ## The machine AyMON runs on
 
 Any of the examples runs on a Windows PC, a Linux PC or a **Raspberry Pi**
-(4 or 5, 64-bit Raspberry Pi OS; the engine in `bin/linux-arm64`). On a Pi:
+(64-bit Raspberry Pi OS; the engine in `bin/linux-arm64`). The engine and the
+examples have run on a real Raspberry Pi 5 with Debian 13; a Pi 4 has not been tried.
+On a Pi:
 
 - a USB–RS-485 adapter is `ttyUSB0`; an RS-485 HAT on the Pi's own serial
   port is `ttyAMA0` (enable the port in `raspi-config`, disable its login
   console). The serial path has been used in the field on Windows, not yet
   on a Pi.
+- the Pi's own GPIO, I²C, SPI and PWM need nothing installed: the user in groups
+  `gpio`, `i2c`, `spi`, and `dtparam` / `dtoverlay` lines in `config.txt`. The pins
+  are 3.3 V and do not tolerate 5 V. See [Pins and buses](09_Pins_and_Buses.md). The
+  lines have been measured with nothing wired; **no real chip has been tried yet.**
+  Automatic PWM channels know a Pi 5's PWM0; on another board name the channel with
+  `con_gpio_pwm` or a `pwm-pio` overlay.
 - a USB webcam works through `usb:` (V4L2) — not yet run on a device; the
   Pi's own camera modules (CSI) need libcamera and are not read directly
-  yet. RTSP cameras are not decoded on Linux yet: use their MJPEG or
-  snapshot URL.
+  yet. RTSP cameras and `udp:` video are not decoded on Linux yet: use a camera's
+  MJPEG or snapshot URL, or decode in Python and hand frames in through `link:`.
 - Python examples need the Python library of the Pi's Python
   (`sudo apt install libpython3.11` on Bookworm, `libpython3.13` on Trixie).

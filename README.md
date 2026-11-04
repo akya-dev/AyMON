@@ -63,8 +63,9 @@ The same pages as a searchable site: **https://docs.aymon.ca/**
 AyMON/
   bin/win-x64/     the engine (AyXDB.exe) and its runtime, Windows x64
   bin/linux-x64/   the same engine for Linux x86-64 (AyXDB + lib*.so)
-  bin/lic/         the education / personal licence - one file, every example
-                   and every platform
+  bin/linux-arm64/ the same engine for 64-bit ARM, such as a Raspberry Pi
+  bin/lic/         the education licence - one file, every PRJEDU_ example and
+                   every platform
   examples/        the examples, one folder per group:
     start/           first steps (PRJEDU_101)
     protocols/       Modbus, MQTT, SNMP, OPC UA - both ends, no hardware
@@ -76,7 +77,7 @@ AyMON/
     ai-vision/       AI assistants over MCP, Python, machine vision
     hobby/           a drone, the aircraft overhead, your phone (PRJPER_*)
     board/           a Raspberry Pi's own pins: a fan, a lock, a parking sensor (PRJHW_*)
-  docs/            six short guides, the real-hardware page and the field page
+  docs/            short guides, the real-hardware page and the field page
   media/           the pictures in this README
   licenses/        third-party licence texts
 ```
@@ -119,9 +120,9 @@ The same education licence works on both platforms.
 | | |
 |---|---|
 | **Machine** | x86-64 with glibc 2.34 or newer and OpenSSL 3: Ubuntu 22.04+, Debian 12+, Fedora 35+, RHEL / Rocky 9, and WSL on Windows. The engine takes `libssl.so.3` from the system (`sudo apt install libssl3` if `run.sh` says it is missing); everything else ships in `bin/linux-x64`. |
-| **Raspberry Pi / ARM** | 64-bit ARM (aarch64) with the same glibc and OpenSSL: Raspberry Pi 4 or 5 with **64-bit** Raspberry Pi OS (Bookworm or Trixie), or another arm64 board. `run.sh` picks `bin/linux-arm64` by itself. A 32-bit system has no engine here. This engine has been checked in an arm64 Debian 12 container; it has not yet been run on a real Raspberry Pi. |
+| **Raspberry Pi / ARM** | 64-bit ARM (aarch64) with the same glibc and OpenSSL: Raspberry Pi 4 or 5 with **64-bit** Raspberry Pi OS (Bookworm or Trixie), or another arm64 board. `run.sh` picks `bin/linux-arm64` by itself. A 32-bit system has no engine here. The engine and the examples have run on a real Raspberry Pi 5 (Debian 13); a Pi 4 has not been tried. |
 | **Helpers** | `examples/web/PRJEDU_telnet/shell.sh` and `examples/ai-vision/PRJEDU_mcp/try.sh` run small Python 3 scripts (standard library only) — the counterparts of `shell.ps1` / `try.ps1`. |
-| **Python in the engine** | only `PRJEDU_gauge` and `PRJEDU_pycall`: `bin/linux-x64` (and `bin/linux-arm64`, like `bin\win-x64` on Windows) holds a Python module for **Python 3.11** (`libAyLIB_Python311.so`: Debian 12, Raspberry Pi OS Bookworm; deadsnakes on Ubuntu) and one for **Python 3.13** (`libAyLIB_Python313.so`: Debian 13, Raspberry Pi OS Trixie); the engine takes the one whose Python the machine has — the gauge with numpy installed for that version, pycall with the standard library only. The engine needs Python's **shared library**, a package of its own that `python3` does not bring: `sudo apt install libpython3.11` on Bookworm, `libpython3.13` on Trixie (and `python3-numpy` for the gauge). Every other example runs without it — the module is loaded only when a document has a Python script. |
+| **Python in the engine** | only `PRJEDU_gauge` and `PRJEDU_pycall` (and `PRJPER_tello`'s optional video decoder on Linux): `bin/linux-x64` (and `bin/linux-arm64`, like `bin\win-x64` on Windows) holds a Python module for **Python 3.11** (`libAyLIB_Python311.so`: Debian 12, Raspberry Pi OS Bookworm; deadsnakes on Ubuntu) and one for **Python 3.13** (`libAyLIB_Python313.so`: Debian 13, Raspberry Pi OS Trixie; it needs glibc 2.38, which Ubuntu 22.04 does not have); the engine takes the one whose Python the machine has — the gauge with numpy installed for that version, pycall with the standard library only. The engine needs Python's **shared library**, a package of its own that `python3` does not bring: `sudo apt install libpython3.11` on Bookworm, `libpython3.13` on Trixie (and `python3-numpy` for the gauge). Every other example runs without it — the module is loaded only when a document has a Python script. |
 | **ODBC** | `PRJEDU_odbc` runs on its embedded SQLite out of the box. For PostgreSQL or SQL Server install unixODBC and the driver (`sudo apt install unixodbc odbc-postgresql`); on Linux the drivers are named in `/etc/odbcinst.ini` — `{PostgreSQL Unicode}`, not Windows' `{PostgreSQL Unicode(x64)}`. |
 | **Paths** | the projects write `%PRJ%` / `%DB%` paths with `/`, which both platforms read; a file database written as `Database=log\x.db` works too — on Linux the engine reads the `\` as a separator. |
 | **Copied from Windows?** | a zip loses the executable bits: `chmod +x examples/*/*/*.sh bin/linux-*/AyXDB`. A `git clone` keeps them. |
@@ -214,8 +215,8 @@ Run an example from its own folder.
 |---|---|---|
 | [**PRJEDU_mcp**](examples/ai-vision/PRJEDU_mcp/) | an AI assistant (Claude Code, Claude Desktop, any MCP client) on the plant: publishing a document with `mcp_pub`, a read-only and a read+write endpoint, why the endpoint's role and each element's `xdb_acl` decide everything, the four answers to a write (`OKY` / `refused` / `PARTIAL` / `dry_run`), and tools a project adds in script — with every call runnable without an AI; a live page at http://127.0.0.1:8109/ | nothing; an MCP client to try it with an assistant |
 | [**PRJEDU_robot_mcp**](examples/ai-vision/PRJEDU_robot_mcp/) | the robot cell of PRJEDU_robotarm with an MCP endpoint an AI assistant (Claude Code, Claude Desktop, any MCP client) comes in through: three project tools (`cell_status`, `robot_command`, `set_speed`), a separate assistant channel kept apart from the person's by `xdb_acl` in both directions, the robot's document off the MCP whitelist, and rules the assistant cannot change — power, brakes and a protective stop stay with a person, a speed ceiling, a switch on the page that turns the assistant off; `try.bat` makes every call without an assistant | an MCP client to connect an assistant; seven connections, inside FREE |
-| [**PRJEDU_gauge**](examples/ai-vision/PRJEDU_gauge/) | Python beside the engine: a `<script language="Python">` that draws what a camera would see of an old dial gauge and finds the needle in it with numpy — the dial, a ray scan, a calibration that is configuration, and a confidence that decides whether a frame is used at all — so the reading becomes an ordinary point with rounding and alarms; the frame is a blob that Python hands to the engine as a numpy array, the engine measures (`IMG.stats`) and encodes (`IMG.encode`) without copying it, and the page fetches over HTTP, while the old way, a base64 PNG on MQTT, stays one button away to compare; the true pressure is shown too, so the error can be seen | a 64-bit Python 3.11 with numpy (`py -3.11 -m pip install numpy`; on Linux 3.11 or 3.13, `sudo apt install libpython3.X python3-numpy` on Debian / Raspberry Pi OS); engine 4.3.4.564 or later and its picture module `AyLIB_vision` (in `bin`) |
-| [**PRJEDU_pycall**](examples/ai-vision/PRJEDU_pycall/) | calling Python from the engine without waiting for it: a function marked `@xdb_fnc` becomes a JScript wrapper, and its parameters decide the kind of call — `analyse(evt)` hung on a point as `val_fnc="[vib.analyse]"` (an event call: Python sees the value being written, the engine stores it afterwards) and `vib.forecast(4.5, now)` from JScript (an argument call: the caller gets `1`, "queued", never the result). A pump bearing's vibration, 512 samples every 2 s, analysed in plain Python (RMS, crest factor, a DFT, the bearing's band) and a forecast of when the RMS reaches its alarm limit; the results go back as points with their own rounding and alarms, and the page shows how long every call waited and ran — and what happens when Python is slower than the data; a live page at http://127.0.0.1:8112/ | a 64-bit Python 3.11 (on Linux 3.11 or 3.13), standard library only; engine 4.3.4.513 or later |
+| [**PRJEDU_gauge**](examples/ai-vision/PRJEDU_gauge/) | Python beside the engine: a `<script language="Python">` that draws what a camera would see of an old dial gauge and finds the needle in it with numpy — the dial, a ray scan, a calibration that is configuration, and a confidence that decides whether a frame is used at all — so the reading becomes an ordinary point with rounding and alarms; the frame is a blob that Python hands to the engine as a numpy array, the engine measures (`IMG.stats`) and encodes (`IMG.encode`) without copying it, and the page fetches over HTTP, while the old way, a base64 PNG on MQTT, stays one button away to compare; the true pressure is shown too, so the error can be seen | a 64-bit Python 3.11 or 3.13 with numpy (`py -3.13 -m pip install numpy`; on Linux `sudo apt install libpython3.X python3-numpy` on Debian / Raspberry Pi OS); engine 4.3.4.564 or later (4.3.4.634 for 3.13 on Windows) and its picture module `AyLIB_vision` (in `bin`) |
+| [**PRJEDU_pycall**](examples/ai-vision/PRJEDU_pycall/) | calling Python from the engine without waiting for it: a function marked `@xdb_fnc` becomes a JScript wrapper, and its parameters decide the kind of call — `analyse(evt)` hung on a point as `val_fnc="[vib.analyse]"` (an event call: Python sees the value being written, the engine stores it afterwards) and `vib.forecast(4.5, now)` from JScript (an argument call: the caller gets `1`, "queued", never the result). A pump bearing's vibration, 512 samples every 2 s, analysed in plain Python (RMS, crest factor, a DFT, the bearing's band) and a forecast of when the RMS reaches its alarm limit; the results go back as points with their own rounding and alarms, and the page shows how long every call waited and ran — and what happens when Python is slower than the data; a live page at http://127.0.0.1:8112/ | a 64-bit Python 3.11 or 3.13, standard library only; engine 4.3.4.513 or later (4.3.4.634 for 3.13 on Windows) |
 | [**PRJEDU_vision**](examples/ai-vision/PRJEDU_vision/) | machine vision with nothing to install: a camera that is a **connection** (`CON.cam`: `sta` on and off, redialled when lost, every frame a blob in its `frm`), here playing back a recording of a filling line, one button away from your own camera; three more views of the same camera with `link:`, each with its own rate, window, size and format, changed while they run (live `con_cam_*` fields); an inspection in twenty lines of JScript on its own thread — colour masks, labelled parts, a count and a centroid (`IMG.hsv`, `inrange`, `label`, `count`, `moments`) — that finds a missing cap, the wrong cap, a cap not pressed down and a short fill, with the colours and limits as configuration; the verdict drawn on the picture (`IMG.rect`, `line`, `text`, `encode`), the live view an MJPEG stream from the engine's memory, the last six rejects as pictures, and what happens when the inspection looks too seldom: bottles pass uninspected and are rejected; a line-speed button up to 1000 frames a second shows what the engine really keeps up with (measured: ~500 frames and ~3800 bottles a minute inspected, none missed); the same line watched **without a script** by `PRO.vision` — a camera device whose blocks the engine runs on every frame (motion, a light barrier, the light, has the camera moved), each an ordinary point with alarm limits, and a watchdog that puts the device in alarm when the camera stops; a live page at http://127.0.0.1:8113/ | nothing; engine 4.3.4.577 or later and its picture module `AyLIB_vision` (in `bin`) |
 
 ### [Hobby projects](examples/hobby/)
@@ -326,7 +327,7 @@ Full details: [docs/04_Licensing.md](docs/04_Licensing.md).
 
 ## The guides
 
-[docs/](docs/) holds six short guides written for someone who has just run
+[docs/](docs/) holds short guides written for someone who has just run
 the examples — not the product reference. Run the example first, then read the
 guide:
 
@@ -334,13 +335,17 @@ guide:
 |---|---|
 | [01_The_Element_Tree.md](docs/01_The_Element_Tree.md) | `<con>` / `<dev>` / `<bi>` / `<io>`, addresses, `sta`, how a value reaches the tree |
 | [02_Timers_and_Events.md](docs/02_Timers_and_Events.md) | threads, `evt_*`, and why a write runs a chain of functions |
-| [03_Scripting.md](docs/03_Scripting.md) | where script lives, how XML calls it, and the six places the language is not JavaScript |
+| [03_Scripting.md](docs/03_Scripting.md) | where script lives, how XML calls it, the eight places the language is not JavaScript, decimals and times |
 | [04_Licensing.md](docs/04_Licensing.md) | what is free, and why the replication example runs anyway |
-| [05_Connections_and_Protocols.md](docs/05_Connections_and_Protocols.md) | transports and protocols, who dials and who asks, one port for several services, polled against subscribed |
-| [06_Access_and_Safety.md](docs/06_Access_and_Safety.md) | the three gates — `con_acl`, the login, `xdb_acl` — TLS, and what the examples leave open |
+| [05_Connections_and_Protocols.md](docs/05_Connections_and_Protocols.md) | transports and protocols, who dials and who asks, one port for several services, polled against subscribed, mail, file transfer, cameras |
+| [06_Access_and_Safety.md](docs/06_Access_and_Safety.md) | the three gates — `con_acl`, the login, `xdb_acl` — TLS, what the examples leave open, and what to close before a network |
 | [07_Real_Hardware.md](docs/07_Real_Hardware.md) | what each example's simulation stands for, what to get to replace it, and where its README tells how to connect it |
 | [08_In_the_Field.md](docs/08_In_the_Field.md) | what the engine carries in production, what it measures in the lab, and how it is tested |
+| [09_Pins_and_Buses.md](docs/09_Pins_and_Buses.md) | a board's own GPIO, PWM, I²C and SPI, and what has not been tried with real parts |
+| [10_Two_Engines.md](docs/10_Two_Engines.md) | replication, the election, what a failover changes, a majority, groups, a field node |
+| [11_Records_and_Saving.md](docs/11_Records_and_Saving.md) | alarm, event and value history written by the engine, and saving a document without losing its comments |
+| [12_Keeping_It_Running.md](docs/12_Keeping_It_Running.md) | health in `sta`, why a device is in alarm, reading the load, the log |
 
-The complete field notes — SNMP, OPC UA, MQTT, cluster and replication, access
-control, the plug-in SDK, the Python module, telnet, load metrics — come with
-the licensed product.
+The complete field notes — SNMP, OPC UA, MQTT, cluster and replication, the record
+pipeline, access control, the plug-in SDK, the Python module, telnet, GPIO and buses,
+load metrics — come with the licensed product.

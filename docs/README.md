@@ -1,6 +1,6 @@
 # The guides
 
-Six short guides, written for someone who has just run the examples. They are
+Short guides, written for someone who has just run the examples. They are
 not the product reference — they are the *why* behind what you have already
 seen working.
 
@@ -8,12 +8,16 @@ seen working.
 |---|---|
 | [01_The_Element_Tree.md](01_The_Element_Tree.md) | You want to talk to a real device. `<con>` / `<dev>` / `<bi>` / `<io>`, addresses, `sta`, how a value gets from the wire into the tree. |
 | [02_Timers_and_Events.md](02_Timers_and_Events.md) | You want something to happen on its own. Threads, `evt_*`, why a write runs a chain of functions. |
-| [03_Scripting.md](03_Scripting.md) | You want to write the logic. Where script lives, how XML calls it, the six places the language is **not** JavaScript, and web pages written in script (`.ayp`). |
+| [03_Scripting.md](03_Scripting.md) | You want to write the logic. Where script lives, how XML calls it, the eight places the language is **not** JavaScript, decimals and times, and web pages written in script (`.ayp`). |
 | [04_Licensing.md](04_Licensing.md) | You want to know what is free, what is not, and why the replication example runs anyway. |
-| [05_Connections_and_Protocols.md](05_Connections_and_Protocols.md) | You want to reach something outside the engine. Transports and protocols, who dials and who asks, one port for several services, polled against subscribed, and what to do about a protocol AyMON does not speak. |
-| [06_Access_and_Safety.md](06_Access_and_Safety.md) | You are about to let something in. The three gates — `con_acl`, the login, `xdb_acl` — TLS, and what the examples deliberately leave open. |
+| [05_Connections_and_Protocols.md](05_Connections_and_Protocols.md) | You want to reach something outside the engine. Transports and protocols, who dials and who asks, one port for several services, polled against subscribed, mail, file transfer and cameras, and what to do about a protocol AyMON does not speak. |
+| [06_Access_and_Safety.md](06_Access_and_Safety.md) | You are about to let something in. The three gates — `con_acl`, the login, `xdb_acl` — TLS, what the examples deliberately leave open, and the fields that close the rest before a plant faces a network. |
 | [07_Real_Hardware.md](07_Real_Hardware.md) | You want to put a real device where an example has a simulated one. What each simulation stands for, what to get, roughly what it costs, and where the example's README tells how to connect it. |
 | [08_In_the_Field.md](08_In_the_Field.md) | You want to know whether it holds up. A production DCIM system's size, the engine's measured throughput, and the regression rigs every change goes through. |
+| [09_Pins_and_Buses.md](09_Pins_and_Buses.md) | You want a board's own pins. GPIO, interrupts, counters, encoders, PWM, servos, HC-SR04, DHT, key matrices, I²C and SPI chips in XML or in script — and what has not been tried with real parts. |
+| [10_Two_Engines.md](10_Two_Engines.md) | You want a second engine. Replication, the election, what a failover changes and what it leaves, a majority, a master per document group, a field node. |
+| [11_Records_and_Saving.md](11_Records_and_Saving.md) | You want something kept. Alarm, event and value history written by the engine, a journal that survives a node going down, and saving a document without losing its comments. |
+| [12_Keeping_It_Running.md](12_Keeping_It_Running.md) | You are running it for real. Health in `sta`, why a device is in alarm, reading the `stats` line, the log, and getting in while it runs. |
 
 ## Suggested order
 
@@ -35,8 +39,8 @@ PRJEDU_pages    →  03_Scripting          →  06_Access_and_Safety
 PRJEDU_telnet   →  06_Access_and_Safety
 PRJEDU_hardening → 06_Access_and_Safety
 PRJEDU_mcp      →  06_Access_and_Safety   →  04_Licensing
-PRJEDU_rep      →  04_Licensing
-PRJEDU_cluster  →  04_Licensing          →  03_Scripting
+PRJEDU_rep      →  10_Two_Engines         →  04_Licensing
+PRJEDU_cluster  →  10_Two_Engines         →  04_Licensing
 PRJEDU_gauge    →  03_Scripting
 PRJEDU_pycall   →  03_Scripting
 PRJEDU_vision   →  03_Scripting          →  05_Connections_and_Protocols
@@ -48,6 +52,9 @@ PRJEDU_robot_mcp → 06_Access_and_Safety  →  04_Licensing
 PRJPER_tello    →  05_Connections_and_Protocols  →  06_Access_and_Safety
 PRJPER_adsb     →  01_The_Element_Tree   →  05_Connections_and_Protocols
 PRJPER_phone    →  01_The_Element_Tree   →  06_Access_and_Safety
+PRJHW_fan       →  09_Pins_and_Buses     →  03_Scripting
+PRJHW_lock      →  09_Pins_and_Buses     →  06_Access_and_Safety
+PRJHW_reverse   →  09_Pins_and_Buses
 ```
 
 `PRJEDU_101` is the one to run first. It has no hardware, no database and no
@@ -67,7 +74,8 @@ a way in while it runs (`PRJEDU_telnet`), a plant's access to harden (`PRJEDU_ha
 program (`PRJEDU_plc`), a line's OEE to account for (`PRJEDU_oee`), a robot arm to run in a cell (`PRJEDU_robotarm`) and
 an AI assistant to let run it (`PRJEDU_robot_mcp`),
 a drone to fly (`PRJPER_tello`), the aircraft overhead to track
-(`PRJPER_adsb`), a phone's sensors to watch (`PRJPER_phone`).
+(`PRJPER_adsb`), a phone's sensors to watch (`PRJPER_phone`), a Raspberry Pi's own
+pins to use (`PRJHW_fan`, `PRJHW_lock`, `PRJHW_reverse`).
 
 ## One page of vocabulary
 
@@ -103,9 +111,10 @@ replicated, logged and licensed.
 ## Where the full reference is
 
 These guides are deliberately small. The complete field notes — SNMP, OPC UA,
-MQTT, cluster and replication, access control, authentication, the plug-in SDK,
-the Python module, telnet, raw protocols, load metrics, mail (SMTP), file
-transfer (FTP, SFTP) and file functions, camera capture and image functions,
-blob, decimal and time values — come with the licensed
+MQTT, cluster and replication, the record pipeline, saving documents, access
+control, authentication, security hardening, the plug-in SDK, the Python module,
+telnet, RPC, raw protocols, load metrics, mail (SMTP), file transfer (FTP, SFTP)
+and file functions, camera capture and image functions, GPIO and I²C / SPI, blob,
+decimal and time values, installation as a service — come with the licensed
 product. If you are doing something the examples do not cover, that is where to
 look.

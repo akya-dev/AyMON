@@ -21,7 +21,7 @@ Scripts are elements, declared in the document's `<config>` section:
 | `id` | **The module name.** Its functions are reached as `main.foo()` — not the file name |
 | `xdb_fnc="[SCR.prs]"` | Binds the loader. **Without it the script is never loaded and no error is given** |
 | `src` | The file. Path macros work: `%DB%`, `%PRJ%`, `%BIN%`, `%ROOT%`. Leave it out and the element's own text is the source |
-| `language` | `JScript` is the default. `Python` runs through the engine's Python module (`AyLIB_Python`, in `bin\win-x64`) and needs an installed 64-bit Python 3.11 or 3.13 (every `bin` directory has a module for each and the engine takes the one the machine has) — see `PRJEDU_gauge` (numpy and camera frames), and `PRJEDU_pycall` for calling it (below) |
+| `language` | `JScript` is the default. `Python` runs through the engine's Python module and needs a 64-bit Python 3.11 or 3.13: every `bin` directory has a module for each. On Windows a project's own `Python311-64` / `Python313-64` folder under its root wins, then the newest Python found on the search path; `AYMON_PYTHON_VER=3.11` pins one. See `PRJEDU_gauge` (numpy and camera frames), and `PRJEDU_pycall` for calling it (below) |
 
 The file must be **UTF-8**. A small helper does not need a file at all:
 
@@ -33,7 +33,8 @@ function kw(v) { return Number.toFixed(v / 1000.0, 2) + " kW"; }
 
 ## How the XML calls it
 
-There is no `main()`. Script runs in exactly three situations:
+There is no `main()`. Script runs because the engine called it, mostly in three
+situations (a protocol hook and a web page, further down, are two more):
 
 **1 — A name in a `*_fnc` chain.**
 
@@ -50,8 +51,10 @@ expression — a call, not just a name:
 ```
 
 `xdb_init` runs while the document is being set up (this is where you write
-configuration such as a connection string); `xdb_start` runs once everything
-is up.
+configuration such as a connection string); `xdb_wait` when its connections are
+about to come up; `xdb_start` once everything is up. On a cluster's spare
+`xdb_init` and `xdb_wait` run and `xdb_start` waits until it is master. A syntax
+error is found when a function is first called, not when the file loads.
 
 **3 — Inside an address**, which is how a web front end reaches your code:
 
@@ -147,10 +150,10 @@ document with thousands of elements.
 > `doc('X')/count(data/var)` works; `count(doc('X')/data/var)` silently
 > answers `0`. The same order applies to `xml(...)` and `json(...)`.
 
-## Seven places this is not JavaScript
+## Eight places this is not JavaScript
 
 The language is close enough to JavaScript to be readable and different enough
-to bite. These seven are the ones that actually cost people an afternoon.
+to bite. These eight are the ones that actually cost people an afternoon.
 
 **1 — Arithmetic is typed, and the LEFT operand decides.**
 
@@ -171,16 +174,23 @@ missing JSON key, an element that is not there and an SQL NULL all arrive as
 true. Do not rely on them; test for the missing value first.
 
 **4 — Hex values stay hex.** Arithmetic on a hex-subtype value (such as
-`evt.stan`) produces a hex result, and comparing it with `1` fails:
+`evt.stan`) produces a hex result, so a result you print or concatenate reads as
+hex. Comparing works by number, against a number or a hex text alike. Measured
+on `sta` = `0x0303`:
 
 ```js
-if (evt.stan == "0x0303") { ... }     // correct
+h + 1                 // 0x0304, not 772
+h == 771              // true
+h == "0x0303"         // true
+(h & 3) == 3          // true: this is how to test a run state
 ```
 
-**5 — `switch`, classes, `async`/`await`, template strings, destructuring,
+**5 — `switch`, `do`, classes, `async`/`await`, template strings, destructuring,
 spread and real regular expressions do not exist.** `var`/`let`/`const`,
-`if`/`for`/`while`/`do`, `for (x in obj)`, `try`/`catch`/`finally`, `throw`,
-`?:`, `??`, `?.`, arrow functions and object/array literals all do. A regex
+`if`/`for`/`while`, `for (x in obj)`, `try`/`catch`/`finally`, `throw`,
+`?:`, `??`, `?.`, arrow functions with their parentheses (`(x) => x + 1`, not
+`x => x + 1`) and object/array literals all do. A `do` or a bare `x =>` is a
+syntax error, and it takes the whole module with it. A regex
 literal is accepted only for plain text and is turned into a string at compile
 time; a metacharacter in one is a **compile error** with a line and column,
 not a silent wrong answer.
@@ -207,6 +217,47 @@ signed from engine 4.3.4.466 on; before that it was unsigned and
 `now - later` wrapped the same way — `0.0 + Time.GetTimeMs()` is the old
 remedy, and it still works.
 
+**8 — The library's names mean something else.** Measured:
+
+```js
+"aXbXc".replace("X", "-")       // "a-b-c": every match, not the first
+[1].push(5)                     // 0: a result code, not the new length
+[10, 9, 1].sort()               // [1, 9, 10]: by value, not as text
+if (true) { let q = 5; } q      // 5: let has no block scope
+```
+
+## Decimals and times
+
+A `double` cannot hold money, and a number cannot hold an offset. Two types carry
+more, and both live in an attribute with no allocation:
+
+| | `val_typ` | Script | Text |
+|---|---|---|---|
+| decimal, 28 digits, scale kept | `0x030C` (`0x130C` with a chain) | `"12.50".toDEC()`, `x.toDEC(2)` | `12.50` |
+| time, an instant with its offset | `0x0248` | `"2026-10-01T12:00:00+03:00".toDTM()`, `Time.now()` | `2026-10-01T12:00:00.000+03:00` |
+| date, zone-free | `0x0244` | `"2026-10-01".toDATE()` | `2026-10-01` |
+| time of day | `0x0254` | `x.toTIME()` | `09:30:00.123` |
+| duration, with months and days | `0x0258` | `"P1M".toDUR()` | `P1M` |
+
+```js
+var a = "12.50".toDEC();
+a + 1                    // 13.50: a decimal
+1 + a                    // 14: the left operand decides, and it is an integer (difference 1)
+var t = "2026-10-01T12:00:00+03:00".toDTM();
+t + 1000                 // a second later: t ± a number keeps a time
+t - t2                   // milliseconds
+"2026-10-01".toDATE() + "P1M".toDUR()   // 2026-11-01
+```
+
+A decimal rounds half away from zero, and `x/0` is 0 as with floats. Times compare by
+instant, whatever their offset. Text with no offset means **local** time. A value
+that is not one of these, written to an attribute declared as one, is **refused** with
+one `ERROR` line, and the attribute keeps its value.
+
+SQL decimal columns answer decimals. Date-and-time columns answer time values when the
+`<con>` says `con_dtm="1"`. In Python they arrive as `decimal.Decimal`, `datetime`,
+`date` and `timedelta`, and go back the same way.
+
 ## What is built in
 
 | Scope | |
@@ -215,22 +266,35 @@ remedy, and it still works.
 | `String` | search, slice, case, trim, split, replace, pad, `fromCharCode` |
 | `Array` `Number` `Object` `JSON` `Buffer` | the usual, with the differences above |
 | `Time` | `now` `GetTimeStr` `FmtTimeStr` `GetTimeMs` `ParseTimeMs` `AddDurationMs` `SleepMs` |
-| `File` | `open close read gets write puts remove rename` |
+| `File` | `open close read gets write puts seek size tell remove rename` |
 | `CODEC` | `B64_enc/dec` `Z64_enc/dec` `HEX_enc/dec` `JWT_sign/verify/dec` |
+| `RES` | the result codes a hook returns: `RES.OKY`, `RES.INF_SUB_CONTINUE` … |
+| `Blob` | `from`, `live`: large binary values, below |
+| `BYTES` | read and make bytes: `i16be`, `u32le`, `text`, `hex`, `make`, `crc8` … (`09_Pins_and_Buses`) |
 | `SQL` | see below |
-| `FILE` | `list exists mkdir rmdir move zip` — directories and ZIP archives, from the module `AyLIB_net`; Engineer and above (`PRJEDU_net`) |
+| `HIS` | records and history (`11_Records_and_Saving`) |
+| `CLT` `REP` | the cluster's state, replication (`10_Two_Engines`) |
+| `AUTH` `LIC` | logins and tokens; the licence's own list, `LIC.list()` |
+| `FILE` | `list exists mkdir rmdir move zip` — directories and ZIP archives, from the module `AyLIB_net` (`PRJEDU_net`) |
 | `IMG` `CAM` | image functions on blobs and the camera list, from the module `AyLIB_vision` (`PRJEDU_gauge`, `PRJEDU_vision`) |
+| `GPIO` `I2C` `SPI` | the board's lines and buses, from the module `AyLIB_hw` (`09_Pins_and_Buses`) |
 
-`FILE`, `IMG` and `CAM` live in engine modules beside the engine in `bin`; the
-first call attaches the module, no `xdb_lib` needed. `FILE` is refused to a
-script started from a page that did not log in: it runs with the page's role,
-and the engine's own timers run as the engine (`PRJEDU_net` makes its report
-on a timer for that reason).
+`FILE`, `IMG`, `CAM`, `GPIO`, `I2C` and `SPI` live in engine modules beside the
+engine in `bin`; the first call attaches the module, no `xdb_lib` needed.
+
+Reaching files takes a role. **`FILE` needs Engineer or above**, so it is refused
+to a script started from a page or a command of anyone below that, logged in or
+not; the engine's own timers run as the engine (`PRJEDU_net` makes its report on
+a timer for that reason). `FILE.rmdir` and the source of `FILE.move` work only
+below `%PRJ%` and `%DB%`. **`File.open`, `remove` and `rename` need role 3
+(Operator) or above**: `xdb_file_role` on the root changes that, and
+`xdb_file_dirs` confines every script, the engine's own too, to a list of
+directories (`06_Access_and_Safety`).
 
 There is no `Date`. `Time.now()` (engine 4.3.4.530 and later) is the instant
-as a time value — it prints as `2026-10-01T12:00:00.123+03:00`, and
-`t2 - t1` is milliseconds. The text stamp most examples log is
-`Time.GetTimeStr(0)` → `2026-09-20 22:31:04`.
+as a time value, with all the precision the clock has
+(`2026-11-04T00:21:26.602876500-07:00`), and `t2 - t1` is milliseconds. The text
+stamp most examples log is `Time.GetTimeStr(0)` → `2026-09-20 22:31:04`.
 
 **Every scope documents itself**, and the key is always lower-case `help`:
 
@@ -257,7 +321,9 @@ will meet in the examples:
 | `EVT.sta` `THR.sta` | let `sta` start and stop a timer or thread | all |
 | `XDB.evt` `THR.cre` `SCR.prs` | create the timer / thread / script object | all |
 | `SQL.qry` | run the SQL in `@qry` and turn the rows into elements | sqlite |
-| `IF.*` | cut the rest of the chain on a condition | — |
+| `IF.*` | cut the rest of the chain on a condition; `IF.chg` goes on only when the value changed | — |
+| `HIS.val` `HIS.evt` | a value's history, an event record (`11_Records_and_Saving`) | — |
+| `HIS.cfg` `HIS.new` | make a history sink, take a record into it | — |
 | `REP.cfg` | work out this node's end of a replication link | rep, cluster |
 | `CLT.cfg` `CLT.cmd` | the same for an election link; a hand-over written to `pro_clt_cmd` | cluster |
 | `ELM.new` | make an element from what was written to `@new` | cluster |
@@ -289,6 +355,23 @@ array of numbers is **not** a byte source, and a byte in a copied buffer
 cannot be written through its index. Returning `RES.INF_SUB_CONTINUE` after
 setting `exc.buf_recv.nxt` asks for more bytes instead.
 
+Three things catch everyone:
+
+* **Advance `pos`.** A hook that returns `RES.OKY` without moving it is called
+  again with the same bytes; the engine stops after 200 turns with
+  `on_parse2 cnt>200`.
+* **On TCP what is left over is not kept for the next arrival.** Keep it yourself:
+  `exc.ses.mem` is an object per session that survives between calls.
+* **A script error is not a return value.** It is logged and the engine falls back
+  to its built-in behaviour for that exchange.
+
+| Hook | When |
+|---|---|
+| `pro_onparse` | bytes arrived |
+| `pro_onaccept` | a server's connection was accepted, before the first read: for a protocol whose server speaks first. `RES.OKY` keeps it, an error closes it |
+| `pro_onclose` | an accepted connection ended, after its last bytes went through `pro_onparse`: an FTP upload ends this way |
+| `pro_onpol`, `pro_onout` | a poll and a write, on a bus or any `PRO.raw` device (`09_Pins_and_Buses`) |
+
 `PRJEDU_snmp` does this for real: its device end is an SNMP v2c agent in
 script, because `PRO.snmp` is a manager and does not answer. Reach for it when
 the protocol is not one the engine knows — and expect to keep the parsing
@@ -303,12 +386,15 @@ and EJS use:
 
 ```html
 <% var t = main.tank(evt, "T1"); -%>
-<p><%= t.name %>: <%= t.level %> %</p>     <!-- <%= %> escapes, <%- %> does not -->
+<p><%= t.name %>: <%= t.level %> %</p>
 <% if (t.alarm > 0) { %><p class="alarm"><%= t.text %></p><% } %>
 ```
 
+An output tag with `=` escapes what it writes, one with `-` does not. Do not write
+an empty one, even inside an HTML comment: the page is refused.
+
 A page sees `evt`, `req` (`req.getForm("sp")` reads a form field), `res`
-(`res.status`, `res.type`, `res.header`, `res.redirect`), `ses` and your
+(`res.status`, `res.type`, `res.header`, `res.redirect`), `ses`, `exc` and your
 modules by name — `main.tank()` above is an ordinary function in the
 document's script. Everything in this guide holds inside a page: typed
 arithmetic, `evt.GetValue` addresses, `return` to stop early. Statements need
@@ -348,7 +434,8 @@ var q = vib.forecast(4.5, Time.GetTimeMs());   // q = 1: queued
 ```
 
 **Both are asynchronous.** The call goes into the Python thread's queue and
-the caller goes on; JScript gets `1` ("queued"), never the function's result.
+the caller goes on; JScript gets `1` ("queued") or `0` (it was not), never the
+function's result.
 The result comes back the way every value does: Python writes it into a point,
 and that point runs its own `val_fnc` — rounding, alarms — like any
 measurement. In an event call the engine stores the attribute itself after the
@@ -374,14 +461,16 @@ var s = IMG.stats(frame, { x: 60, y: 60, w: 120, h: 120 });   // AyLIB_vision, i
 var j = IMG.encode(frame, "jpeg", 80);
 ```
 
-From Python a numpy array becomes a blob with one copy, and a blob comes back
-as a read-only numpy view with none. A `PRO.http` connection with
-`pro_blob="/blob"` serves the bytes from memory, once
-(`GET /blob/DOC/NODE/ID/val`) or as an MJPEG stream (`?stream=1`). The
-`IMG.*` functions come from the engine module `AyLIB_vision`, named on the
-root document (`xdb_lib="AyLIB_vision"`; up to 4.3.4.562 the plug-in
-`AyPRO_img`). `PRJEDU_gauge` uses all of it, and keeps the old way
+From Python a numpy array becomes a blob with one copy, and a raw blob comes back
+as a read-only numpy view with none (an encoded one, a JPEG, as a read-only
+`memoryview`). A `PRO.http` connection with `pro_blob="/blob"` serves the bytes
+from memory, once (`GET /blob/DOC/NODE/ID/val`) or as an MJPEG stream
+(`?stream=1`). The `IMG.*` functions come from the engine module `AyLIB_vision`,
+attached by the first call. `PRJEDU_gauge` uses all of it, and keeps the old way
 (a base64 PNG in a string on MQTT) one button away, to compare.
+
+`xdb_blb_max` on the root limits one blob (64 MiB by default). Replication skips
+blobs. `Clear: Done (blobs alive: N)` at a clean stop should say 0.
 
 ## SQL from script
 
@@ -394,8 +483,16 @@ while (SQL.fetch(rs)) { ... SQL.getdata(rs, 1) ... }
 SQL.close(rs);                           // always
 ```
 
-You never disconnect `con` — it belongs to the connection's pool and goes back
-by itself. Closing the **result set** is what you owe.
+`con` is a loan from the connection's pool and goes back by itself when the
+variable dies, so a long function holds its link for as long as it runs:
+`SQL.disconnect(con)` gives it back early, and a later call on that loan answers
+null with one `ERROR` line. Closing the **result set** is what you owe.
+
+The pool is the `<con>`'s session list: `con_ses` links (one if absent), each opened
+when first needed and closed by its own `con_idletmo`. A borrower that finds them all
+busy waits up to `pro_tmo`; `SQL pool exhausted` then names who holds each link.
+A `<dev pro_con>` under a SQL connection is a database of its own: `SQL.attach("CN",
+"DEV")`.
 
 * Use `prepare` / `parameter` / `execute` the moment a **value** goes into the
   statement. A bound value is data and never becomes SQL. `PRJEDU_sqlite`
@@ -405,7 +502,10 @@ by itself. Closing the **result set** is what you owe.
 * **An SQL NULL comes back as `undefined`** — see difference 2 above.
 * `SQL.qry` is the other way in: write SQL into a `<list>` element's `@qry` and
   every row becomes an `<item>` whose attributes are named after the columns.
-  After that the rows are addressable: `id('L_RECENT')/item[1]/@val`.
+  After that the rows are addressable: `id('L_RECENT')/item[1]/@val`. The old rows
+  go only after the query has run: a failed query leaves them, and `<atr>_err` and
+  the log say why.
+* History does not need any of this: the engine writes it (`11_Records_and_Saving`).
 
 ## Debugging
 
@@ -432,9 +532,9 @@ for the `catch`.
 2. Are the functions the outside world may call in a module called `api`?
 3. Are your divisions written with a decimal point where you meant a decimal?
 4. Are you testing for a missing value with `x == null`, not `x == ""`?
-5. Are hex values compared with a hex string?
+5. Is a run state tested with `(sta & 0x0003) == 3`, not by comparing a whole `sta`?
 6. Every `SQL.exec_direct` / `prepare` matched by a `SQL.close`?
-7. Is the `val_typ` of anything with a `val_fnc` carrying `0x1000`? (guide 2)
+7. Is the `val_typ` of anything with a `val_fnc` carrying a run bit? (guide 2)
 8. Is everything you subtract signed - a time stamp in a `0x0208` attribute, an
    unsigned (`0x01..`) value read through `parseInt`? (item 7)
 9. Does a function that runs because a page wrote into ANOTHER document (the
