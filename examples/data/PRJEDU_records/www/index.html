@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_records - the page reads the history back. Served by HIS/S00 on
+     127.0.0.1:8116; the values come over MQTT inside a WebSocket on the same
+     port (/mqtt). Every table below is rows of log/history.db, read with
+     SQL.qry. The page writes two things: a set point and the writer's hold.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Record Pipeline</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>The engine keeps the history <span class="doc">HIS/S00 &rarr; log/history.db</span></h1>
+    <div class="chips"><span id="c-live" class="chip">--</span></div>
+</header>
+
+<main>
+    <section class="card">
+        <div class="label">The tank <span class="muted">TANK/S00 has no SQL and no table name</span></div>
+        <div class="gauge-row">
+            <div class="gauge">
+                <i id="fill"></i>
+                <b style="bottom:80%"></b>
+                <b class="a" style="bottom:85%"></b>
+            </div>
+            <div style="flex:1;min-width:0">
+                <div class="tiles">
+                    <div class="tile" id="t-lvl"><div class="t">level</div><div class="v"><span id="lvl">--</span><span class="u"> %</span></div><div class="s" id="lvl-h">--</div></div>
+                    <div class="tile"><div class="t">temperature</div><div class="v"><span id="tmp">--</span><span class="u"> C</span></div></div>
+                    <div class="tile"><div class="t">pump</div><div class="v" id="pump">--</div></div>
+                </div>
+                <div class="ctl" style="margin-top:12px">
+                    Stop the pump at
+                    <button class="sp" data-v="90">90 %</button>
+                    <button class="sp" data-v="78">78 %</button>
+                    <span class="muted small">now <span id="sp">--</span> %</span>
+                </div>
+                <div class="note">The alarm limit is 85 %. At 90 every fill is an alarm; at 78 they end. Each press
+                    is an audit record.</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="label">After a kill <span class="muted">the journal holds a record until its row is committed</span></div>
+        <div class="tiles">
+            <div class="tile"><div class="t">doses made, this run</div><div class="v" id="made">--</div></div>
+            <div class="tile"><div class="t">waiting for a row</div><div class="v" id="wait">--</div></div>
+        </div>
+        <div class="ctl" style="margin-top:12px">
+            <button id="hold">Stop the writer</button>
+            <span class="muted small" id="hold-t">the rows are written once a second</span>
+        </div>
+        <div class="note">Stop the writer, let some rows wait, then run <code>kill.bat</code> or <code>./kill.sh</code>
+            and start the example again. The rows arrive, and the run below has no gap.</div>
+        <div class="table-wrap" style="margin-top:10px"><table>
+            <thead><tr><th>run started</th><th>rows</th><th>numbers</th><th></th></tr></thead>
+            <tbody id="runs"></tbody>
+        </table></div>
+    </section>
+
+    <section class="card wide">
+        <div class="label">LEVEL's rows <span class="muted">the line is what the tank did, a dot is a row in table val</span></div>
+        <canvas id="chart" style="height:180px"></canvas>
+        <div class="note">At most two rows a period (<code>his_per="10"</code>). TEMP has a deadband (<code>his_dbd="1"</code>):
+            <span id="dbd">--</span>.</div>
+    </section>
+
+    <section class="card">
+        <div class="label">Table alm <span class="muted">from ALM.onlvl, <span id="n-alm">--</span> rows</span></div>
+        <div class="table-wrap"><table><thead id="h-alm"></thead><tbody id="b-alm"></tbody></table></div>
+    </section>
+
+    <section class="card">
+        <div class="label">Table evt <span class="muted">HIS.evt and HIS.rec, doses not listed, <span id="n-evt">--</span> rows in all</span></div>
+        <div class="table-wrap"><table><thead id="h-evt"></thead><tbody id="b-evt"></tbody></table></div>
+    </section>
+
+    <section class="card wide">
+        <div class="label">Table val <span class="muted">from HIS.val, <span id="n-val">--</span> rows</span></div>
+        <div class="table-wrap"><table><thead id="h-val"></thead><tbody id="b-val"></tbody></table></div>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="kit.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

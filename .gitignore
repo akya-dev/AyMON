@@ -5,6 +5,8 @@
 **/log/*.db-journal
 **/log/*.db-wal
 **/log_archive/
+# The record journal (rec_dir): PRJEDU_records
+**/log/rec/
 
 # Written by the engine beside the licence it used (last-seen time, host tolerance)
 AyMON.lst

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     HIS/S00 - where the records end up.
+
+       <his>       a sink: one kind of record into one table. The engine
+                   writes the rows, once a second, in multi-row statements.
+       CN_SQL      the connection that writes. Nothing else uses it.
+       CN_READ     the connection the page's queries use. Apart, so that the
+                   page keeps working while the writer is stopped.
+       <list>      the rows read back: SQL.qry makes each row an <item>.
+
+     A TABLE MUST EXIST BEFORE ITS FIRST ROW. main.start makes them, and this
+     document is listed first in AyXDB.xml. A sink never makes a table.
+     ===================================================================== -->
+<xdb id="HIS/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/HIS.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFFFFFFF1">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_HIS.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+		<tcon id="cls_DB" con_host="%PRJ%/log/history.db"
+		      con_mod="CLIENT" con_ses="0" con_clr="1" con_tmo="5" con_rct="2"
+		      con_keeptmo="0" con_idletmo="0"
+		      pro_role="MASTER" pro_tmo="10" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		      sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</config>
+
+	<data>
+		<thr id="TH_MAIN" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="1"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<con id="CN_SQL"  xdb_cls="cls_DB" xdb_fnc="[CON.sqlite,PRO.sql]" sta="0x0303" desc="writes the rows"/>
+		<con id="CN_READ" xdb_cls="cls_DB" xdb_fnc="[CON.sqlite,PRO.sql]" sta="0x0303" con_pool="2" desc="reads them back for the page"/>
+
+		<!-- THE SINKS.
+		     his_rec   the kinds this one takes
+		     his_tbl   the table
+		     his_col   the columns, a WHITE LIST: column[=field][:kind]. Nothing a
+		               record carries reaches SQL unless it is named here.
+		                 id=uid   the record's id is the table's key, which is
+		                          what makes a repeat one row
+		                 tim:loc  local time as text, with its offset
+		                 ms=tim   the same field again, as a number
+		     qry_con   the connection that writes
+		     new, new_typ, new_fnc   how a record arrives: written to @new.
+		               0x1401 runs at once on the writer's thread. -->
+		<his id="ALM_H" xdb_fnc="[HIS.cfg]" sta="0x0303" sta_typ="0x142"
+		     his_rec="alm" his_tbl="alm" qry_con="CN_SQL"
+		     his_col="id=uid,tim:loc,ms=tim,doc,rid,atr,fnc,valp,valn,stap,stan,why"
+		     new="" new_typ="0x1401" new_fnc="[HIS.new,ATR.nup]"/>
+
+		<his id="EVT_H" xdb_fnc="[HIS.cfg]" sta="0x0303" sta_typ="0x142"
+		     his_rec="evt,aud" his_tbl="evt" qry_con="CN_SQL"
+		     his_col="id=uid,tim:loc,ms=tim,knd,doc,rid,txt,rol,sta,run,n"
+		     new="" new_typ="0x1401" new_fnc="[HIS.new,ATR.nup]"/>
+
+		<his id="VAL_H" xdb_fnc="[HIS.cfg]" sta="0x0303" sta_typ="0x142"
+		     his_rec="val" his_tbl="val" qry_con="CN_SQL"
+		     his_col="id=uid,tim:loc,ms=tim,doc,rid,val,sta"
+		     new="" new_typ="0x1401" new_fnc="[HIS.new,ATR.nup]"/>
+
+		<!-- THE ROWS READ BACK. There is no query path in the pipeline:
+		     SQL.qry reads a table back into elements, as anywhere else. -->
+		<list id="L_ALM"   qry="" qry_typ="0x1401" qry_fnc="[SQL.qry]" qry_max="6"   qry_con="CN_READ" sta="0x0303" sta_typ="0x0142"/>
+		<list id="L_EVT"   qry="" qry_typ="0x1401" qry_fnc="[SQL.qry]" qry_max="6"   qry_con="CN_READ" sta="0x0303" sta_typ="0x0142"/>
+		<list id="L_VAL"   qry="" qry_typ="0x1401" qry_fnc="[SQL.qry]" qry_max="6"   qry_con="CN_READ" sta="0x0303" sta_typ="0x0142"/>
+		<list id="L_TREND" qry="" qry_typ="0x1401" qry_fnc="[SQL.qry]" qry_max="120" qry_con="CN_READ" sta="0x0303" sta_typ="0x0142"/>
+		<list id="L_RUNS"  qry="" qry_typ="0x1401" qry_fnc="[SQL.qry]" qry_max="6"   qry_con="CN_READ" sta="0x0303" sta_typ="0x0142"/>
+
+		<var id="T_VIEW" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="TH_MAIN" evt_per="1" evt_dly="2" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.view]" desc="reads the tables for the page"/>
+
+		<!-- ================================================================
+		     WHAT THE PAGE SHOWS, written by main.view: JSON, one var a panel.
+		     ================================================================ -->
+		<var id="TANK"   sta="0x0303" val="" val_typ="0x0401" desc="the tank now"/>
+		<var id="ALARMS" sta="0x0303" val="" val_typ="0x0401" desc="the last rows of alm"/>
+		<var id="EVENTS" sta="0x0303" val="" val_typ="0x0401" desc="the last rows of evt, doses left out"/>
+		<var id="VALUES" sta="0x0303" val="" val_typ="0x0401" desc="the last rows of val"/>
+		<var id="TREND"  sta="0x0303" val="" val_typ="0x0401" desc="LEVEL's rows, for the chart"/>
+		<var id="RUNS"   sta="0x0303" val="" val_typ="0x0401" desc="the numbered events of each run"/>
+		<var id="STATS"  sta="0x0303" val="" val_typ="0x0401" desc="rows per table, made and waiting, HIS.valstat()"/>
+
+		<!-- ================================================================
+		     WHAT THE PAGE MAY WRITE. xdb_acl="0xFFFFFFF1" on the document gives a
+		     Guest (a page that did not log in) read and nothing else; xdb_acl
+		     on each of these two adds the write.
+		       SET_SP  the tank's set point, and an audit record of it. @opr,
+		               not @val: a val chain runs as the engine (role 9), a
+		               command channel with the role of whoever wrote it, and
+		               that is the role the audit record should carry.
+		       HOLD    1 = stop the connection that writes the rows
+		     ================================================================ -->
+		<var id="SET_SP" sta="0x0303" opr="90" opr_typ="0x1308" opr_fnc="[main.set_sp]" xdb_acl="0xFFFFFFF3"
+		     desc="a new set point, from the page"/>
+		<var id="HOLD"   sta="0x0303" val="0"  val_typ="0x1104" val_fnc="[main.hold]"   xdb_acl="0xFFFFFFF3"
+		     desc="1 = the writer is stopped, rows wait"/>
+
+		<!-- THE PAGE - http://127.0.0.1:8116/ (only from this computer) -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the page"
+		     con_host="127.0.0.1" con_port="8116" con_mod="SERVER" con_ses="8" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="the live values for the page"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_HISW" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//var" pro_retain_atr="val"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

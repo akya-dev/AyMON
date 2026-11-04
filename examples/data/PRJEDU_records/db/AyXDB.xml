@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_records - the engine keeps the history, no script writes a row.
+
+     A small tank makes alarms, events and value changes. Nothing in its
+     document knows about a table: it makes RECORDS, and the three addresses
+     below say which element keeps each kind. HIS/S00 declares those elements
+     as <his> sinks, and the engine writes their rows into SQLite.
+
+       rec_nid   this node's number, written into every record's id (uid).
+                 Different on every node of an installation.
+       rec_dir   THE JOURNAL ON DISK. A record is written here first and
+                 leaves only after its row is committed, so it survives a
+                 killed process: the next start reads it back.
+       alm_adr   who keeps alarms          (ALM.*)
+       evt_adr   who keeps events, audit   (HIS.rec, HIS.evt)
+       his_adr   who keeps value history   (HIS.val)
+
+     Written once here: TANK/S00 has none of them and uses these.
+
+     xdb_lib names the SQLite driver: CON.sqlite does not exist without it.
+
+     Run:   run.bat, then http://127.0.0.1:8116/
+     Kill:  kill.bat (from a second window), then run.bat again.
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO, AyPRO_sqlite" xdb_log="4" log_cfg="0x39C0"
+     log_lnk="%PRJ%/log/XDB.log" sta="0x0300" tid="S01"
+     rec_nid="1" rec_dir="%PRJ%/log/rec"
+     alm_adr="doc('HIS/S00')/id('ALM_H')"
+     evt_adr="doc('HIS/S00')/id('EVT_H')"
+     his_adr="doc('HIS/S00')/id('VAL_H')">
+	<config>
+		<!-- HIS first: its tables are made before the tank makes a record. -->
+		<doc id="HIS/S00"  sta="0x0300" src="%DB%/db_HIS.xml"  desc="the history: sinks, tables, the page"/>
+		<doc id="TANK/S00" sta="0x0300" src="%DB%/db_TANK.xml" desc="the tank: it only makes records"/>
+	</config>
+	<data>
+	</data>
+</xdb>

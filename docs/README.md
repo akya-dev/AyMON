@@ -25,6 +25,7 @@ PRJEDU_101      →  02_Timers_and_Events   →  03_Scripting
 PRJEDU_modbus   →  01_The_Element_Tree    →  05_Connections_and_Protocols
 PRJEDU_sqlite   →  03_Scripting  (the SQL section)
 PRJEDU_odbc     →  03_Scripting
+PRJEDU_records  →  11_Records_and_Saving
 PRJEDU_mqtt     →  05_Connections_and_Protocols
 PRJEDU_snmp     →  05_Connections_and_Protocols
 PRJEDU_net      →  05_Connections_and_Protocols  →  04_Licensing
@@ -57,7 +58,7 @@ If you are here because of one particular job, start at the example that does
 it: a device to poll (`PRJEDU_modbus`, `PRJEDU_snmp`), a machine with an OPC
 UA server (`PRJEDU_opcua`), values to publish or
 subscribe (`PRJEDU_mqtt`), a page to put them on (`PRJEDU_web`), history to
-keep (`PRJEDU_sqlite`, `PRJEDU_odbc`), a second engine to feed (`PRJEDU_rep`),
+keep (`PRJEDU_sqlite`, `PRJEDU_odbc`), history the engine writes and a journal that survives a crash (`PRJEDU_records`), a second engine to feed (`PRJEDU_rep`),
 a second engine to take over (`PRJEDU_cluster`),
 a way in while it runs (`PRJEDU_telnet`), a plant's access to harden (`PRJEDU_hardening`), an AI assistant to let in
 (`PRJEDU_mcp`), Python and image processing next to the engine

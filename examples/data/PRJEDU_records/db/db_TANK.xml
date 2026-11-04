@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     TANK/S00 - a tank that fills and drains. There is no SQL in this file
+     or in its script, and no table name. Four things make records:
+
+       LEVEL   ALM.onlvl     an alarm record when the level crosses a limit
+               HIS.val       value records, at most two a period
+       TEMP    HIS.val       the same with a deadband: a noisy value writes
+                             far fewer rows
+       PUMP    HIS.evt       an event record when the pump changes
+       main.step  HIS.rec    one numbered 'dose' event every half second:
+                             the numbers are how a gap would show
+     ===================================================================== -->
+<xdb id="TANK/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/TANK.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_TANK.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<thr id="TH_MAIN" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="1"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<var id="T_STEP" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="TH_MAIN" evt_per="0.5" evt_dly="1" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.step]"
+		     cnt="0" cnt_typ="0x5104" desc="the process, twice a second"/>
+
+		<!-- A VALUE'S HISTORY.
+		     ATR.rou      round to val_rou
+		     ALM.onlvl    compare with the limits. A crossing moves sta and
+		                  makes an ALARM record: it goes to the root's alm_adr
+		     IF.chg       no change, the chain ends here
+		     HIS.val      a VALUE record for the root's his_adr
+		     his_per="10" a period of ten seconds, ending at multiples of 10.
+		                  The first change of a period is a record at once,
+		                  the last one is written when the period ends: at
+		                  most two rows a period, however often it changes.
+		                  The real default is 600. -->
+		<var id="LEVEL" sta="0x0303" sta_typ="0x1142"
+		     val="50" val_typ="0x1308" val_fnc="[ATR.rou,ALM.onlvl,IF.chg,HIS.val]" val_rou="0.1" val_unt="%"
+		     val_alm_onlhi_wrn="80" val_alm_onlhi_alm="85"
+		     his_per="10" desc="tank level"/>
+
+		<!-- his_dbd="1": inside a period, a change closer than 1 degree to the
+		     value last written makes no record. This one wobbles around a slow
+		     drift, so most of its changes are not rows. -->
+		<var id="TEMP" sta="0x0303" sta_typ="0x1142"
+		     val="20" val_typ="0x1308" val_fnc="[ATR.rou,IF.chg,HIS.val]" val_rou="0.1" val_unt="C"
+		     his_per="10" his_dbd="1" desc="tank temperature"/>
+
+		<!-- HIS.evt writes the event itself: "<desc>: 'old' -> 'new'" -->
+		<var id="PUMP" sta="0x0303" sta_typ="0x1142"
+		     val="1" val_typ="0x1104" val_fnc="[IF.chg,HIS.evt]" desc="fill pump"/>
+
+		<!-- Where the pump stops. Above the alarm limit every fill is an alarm;
+		     below it (the page writes it) the alarms end. -->
+		<var id="SP" sta="0x0303" val="90" val_typ="0x0308" val_unt="%" desc="the pump stops here"/>
+
+		<!-- The numbered events: this run's id and how many were made. -->
+		<var id="RUN"   sta="0x0303" val="0" val_typ="0x0108" desc="this run: the time it started, ms"/>
+		<var id="DOSES" sta="0x0303" val="0" val_typ="0x0108" desc="dose events made in this run"/>
+	</data>
+</xdb>
