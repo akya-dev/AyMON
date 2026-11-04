@@ -118,7 +118,7 @@ controller document: a page reads everything and writes only the lab's
 controls (`SP`, `MODE`, `MV_MAN`, `KP`, `TI`, `TD`, `AW`, `TUNE`), and each of
 them is clamped by `ATR.lmt`. A set point of 500 becomes 85. A write to `PV`
 or `T_TRIP` is refused, and the log says so:
-`CTL/S00:PV.val: xdb_acl yazma reddetti (rol 0)`. The fan belongs to the plant,
+`CTL/S00:PV.val: xdb_acl refused the write (role 0)`. The fan belongs to the plant,
 whose document has no `xdb_acl`: the lab bench's knobs are for turning.
 
 **A step test is a state machine.** `main.tune`: MANUAL at the current power,

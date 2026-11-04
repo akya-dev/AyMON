@@ -73,7 +73,7 @@ mosquitto already running on this machine.
 
 ```
 FLD/S00:FLD: MQTT broker on 127.0.0.1:1884, publishing FLD/S00/<id>/<attribute>
-FLD/S00:CN_BRK:PRO.mqtt(1).retain: 'FLD/S00/+/val' için 4 değer yayınlandı
+FLD/S00:CN_BRK:PRO.mqtt(1).retain: 'FLD/S00/+/val': 4 values published
 MON/S00:VALUES.mqtt(0).connect: bi: topic('FLD/S00/+/val')
 MON/S00:MON: level 51.5 % (set point 50), temp 18 C, pump on, level sta 0x0303
 MON/S00:MON: asking the field for set point 40 %
@@ -91,8 +91,7 @@ closed with its window, say — leaves one line behind:
 session, and there is nothing else to do.
 
 The `retain` line counts four values: `LEVEL`, `TEMP`, `PUMP` and `SETPOINT`.
-`STEPS` is local, so it is not among them. The line itself is one of the
-engine's own messages and is in Turkish ("4 values published for ...").
+`STEPS` is local, so it is not among them.
 
 The set point moves every 30 seconds, through 40, 70 and 95 %. At 95 the
 level climbs past both high limits, so the alarm path runs without anyone

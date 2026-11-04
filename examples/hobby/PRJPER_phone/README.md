@@ -146,7 +146,7 @@ role 0; 1 read, 3 read + write):
 A phone cannot write its own `VIB`. What it says goes through `main`, which
 checks the id, the line and the numbers. A refused write is an `ALERT` in
 the log, for example
-`BUZZ.val: xdb_acl yazma reddetti (rol 0)`.
+`BUZZ.val: xdb_acl refused the write (role 0)`.
 
 **Requests, not writes.** Every button publishes to a *request* element whose
 `val_fnc` decides what happens. `BUZZ` does not reach the phone. It counts up

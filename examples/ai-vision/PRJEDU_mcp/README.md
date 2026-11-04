@@ -212,12 +212,11 @@ Engineer) and every element without its own ACL inherits it; `SETPOINT` carries
 first — `1` read, `2` write, `4` create, `8` delete.
 
 A refused write is in the engine log, at ALERT, in the document of the element
-it tried to change, and a wrong key at FAIL in `AI/S00`'s log — some in
-Turkish, as the engine's own messages are:
+it tried to change, and a wrong key at FAIL in `AI/S00`'s log:
 
 ```
-AI/S00:CN_MCP:PRO.mcp(1).auth: yetkisiz istek reddedildi       "unauthorised request refused"
-PLT/S00:LEVEL.val: xdb_acl yazma reddetti (rol 3)              "write refused, role 3"
+AI/S00:CN_MCP:PRO.mcp(1).auth: unauthorized request refused
+PLT/S00:LEVEL.val: xdb_acl refused the write (role 3)
 PLT/S00:PLT/S00: '//var[@val_unt='%']/@val' -- xdb_acl refused 1 of 2 matched nodes (role 3), the others were written
 ```
 

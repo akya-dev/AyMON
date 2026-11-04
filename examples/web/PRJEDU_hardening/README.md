@@ -97,7 +97,7 @@ Engine 4.3.4.467, on a Windows 11 laptop and on Linux (WSL, Ubuntu 22.04):
 | access test | 3 of 8 — only the "0" rows pass | 8 of 8 |
 | no user name | accepted, as an Operator | refused, CONNACK 4 |
 | `opr` with a wrong password | accepted | refused, CONNACK 4 |
-| `mon` writes the setpoint | taken | not taken; `SETPOINT.val: xdb_acl yazma reddetti (rol 2)` in the log |
+| `mon` writes the setpoint | taken | not taken; `SETPOINT.val: xdb_acl refused the write (role 2)` in the log |
 | `opr` writes the trip level | taken | not taken; the same line with `TRIP_LEVEL`, role 3 |
 | `mon` subscribes | receives the recipe | never receives it |
 

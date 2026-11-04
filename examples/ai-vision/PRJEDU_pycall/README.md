@@ -138,7 +138,7 @@ put a better one in `forecast()` and nothing else changes.
 
 At 170 s the probe also tried to write `RMS` itself: refused, as for any
 page — the page may write `SERVICE` and nothing else (`xdb_acl`). The
-refusal is the one ALERT line in the log: `RMS.val: xdb_acl ... (rol 0)`.
+refusal is the one ALERT line in the log: `RMS.val: xdb_acl ... (role 0)`.
 
 ## When Python is slow
 

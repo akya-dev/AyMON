@@ -128,7 +128,7 @@ all — the spare never sees it. `ELM.new` (writing the list's `@new`) and
 `evt.DelElement` are: see `db_APP.xml`.
 
 **In the log:** when a node is promoted, or rejoins, one `ERROR` line from
-`PRO.rep.in` ("replikasyon almıyor") — a message that arrived while the
+`PRO.rep.in` ("takes no replication") — a message that arrived while the
 document was still changing roles, refused. Nothing is lost; the next
 message is taken. When a node is killed, the other logs a few `ERROR` lines
 about closing the connection to it.
@@ -142,7 +142,7 @@ about closing the connection to it.
 | stop both, start only S02 | it waits `pro_clt_init` for a master before it campaigns. Which unit does the job start from? |
 | `pro_clt_quorum="2"` on both election rows, then kill the master | the spare does **not** take over: a majority rule wants the node itself and one more, and alone it hears only itself — it stays in ELECTION (`heard=1 quorum=2` in its log; a master that loses its peer logs "MASTER GIVEN UP -- no majority"). **Take over** on the page still works: "MASTER by 'takeover' without a majority". A majority keeps a split network from having two masters, and is worth it with **three** nodes; with two, one crash stops the job |
 | add a `<var>` to `SYS/S00` and write it from the page on each node | it is different on the two nodes: `SYS/S00` is never replicated — the place for what belongs to *one* machine |
-| take away `pro=""` from the election rows | one `ALERT` a second (`CN_S01.pro: xdb_acl yaratma reddetti (rol 0)`): the peer's messages arrive as Guest (0), each one would create `pro`, and `SYS/S00` gives that role no such right (`xdb_acl`). `con_role="8"` silences it too — but gives the peer the DOCUMENT role |
+| take away `pro=""` from the election rows | one `ALERT` a second (`CN_S01.pro: xdb_acl refused the creation (role 0)`): the peer's messages arrive as Guest (0), each one would create `pro`, and `SYS/S00` gives that role no such right (`xdb_acl`). `con_role="8"` silences it too — but gives the peer the DOCUMENT role |
 | two machines | `pro_clt_host` / `pro_rep_host` of the other node's rows = its address, `con_host` of `CN_EXT` = this machine's address, `con_acl` in `cls_CLU` = the other machine's, and the two addresses in `www/app.js` — and a licence (below) |
 
 ## Licence

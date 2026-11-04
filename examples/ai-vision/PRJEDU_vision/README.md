@@ -97,12 +97,12 @@ VIS/S00:DV_SEN:PRO.vision: block S_SHIFT registered: match on every frame
 VIS/S00:CN_INS.con_cam_fps: applied to the running CON.cam = 1
 VIS/S00:VIS: inspection 10 -> 1 frames a second
 VIS/S00:VIS: camera off - its two views wait, idle, until it delivers again
-VIS/S00:S_MOVE:PRO.vision(1).pro.pol: @pro : Hata(ERR_RECEIVE_TIMEOUT)
+VIS/S00:S_MOVE:PRO.vision(1).pro.pol: @pro : Error(ERR_RECEIVE_TIMEOUT)
 VIS/S00:ALM.devsta_pbi: id('DV_SEN')/@sta ! 'sta' -> sta = 0x0347
 VIS/S00:ALM.devsta_nbi: id('DV_SEN')/@sta ! 'sta' -> sta = 0x034A
 VIS/S00:VIS: camera on
 VIS/S00:ALM.devsta_nrm: id('DV_SEN')/@sta ! 'sta' -> sta = 0x0343
-VIS/S00:SEN_REF:PRO.vision(1).pro.out: [986012] -> @pro : Tamam
+VIS/S00:SEN_REF:PRO.vision(1).pro.out: [986012] -> @pro : OK
 VIS/S00:DV_SEN:PRO.vision: block S_SHIFT -- template taken again (frame 312, ref command)
 ```
 

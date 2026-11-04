@@ -136,11 +136,10 @@ AUTH(SHL/S00/A_SHELL): telnet 'opr'@127.0.0.1 REFUSED: wrong password
 CN_TEL:PRO.telnet(1).login: 'opr' REFUSED (rc = 1)
 ```
 
-A write the ACL turned down is in there as well, at ALERT — that one is an
-engine message and is in Turkish ("xdb_acl refused the write, role 3"):
+A write the ACL turned down is in there as well, at ALERT:
 
 ```
-SHL/S00:MAINT.val: xdb_acl yazma reddetti (rol 3)
+SHL/S00:MAINT.val: xdb_acl refused the write (role 3)
 ```
 
 ### Failed logins

@@ -103,8 +103,8 @@ Two certificates have to be trusted:
 
 | | how | measured |
 |---|---|---|
-| the machine trusts **us** | the engine makes its certificate at the first start (`OPC.cert`, in `xdb_init`, into `db/pki/`). The machine refuses it and files it under `sim/pki/rejected/` — move that file to `sim/pki/trusted/` | refused every 5–6 s until then (`session: reddedildi 0x801A0000` = BadCertificateUntrusted); connected **6.2 s** after the file was moved (Linux 4.9 s) |
-| **we** trust the machine | `pro_trust` names its certificate — a PEM **file**, not a directory. The simulated machine is on this computer, so it points straight at `sim/pki/own/server_cert.pem`; for a real one you copy the machine's certificate | without it the engine connects anyway and says `sunucu sertifikasi DOGRULANMADI` (server certificate NOT VERIFIED) at every connect — even in the clear, which is why `CN_UA` and `CN_UAP` have it too |
+| the machine trusts **us** | the engine makes its certificate at the first start (`OPC.cert`, in `xdb_init`, into `db/pki/`). The machine refuses it and files it under `sim/pki/rejected/` — move that file to `sim/pki/trusted/` | refused every 5–6 s until then (`session: refused 0x801A0000` = BadCertificateUntrusted); connected **6.2 s** after the file was moved (Linux 4.9 s) |
+| **we** trust the machine | `pro_trust` names its certificate — a PEM **file**, not a directory. The simulated machine is on this computer, so it points straight at `sim/pki/own/server_cert.pem`; for a real one you copy the machine's certificate | without it the engine connects anyway and says `server certificate NOT VERIFIED` at every connect — even in the clear, which is why `CN_UA` and `CN_UAP` have it too |
 
 The machine's window says what it did with every certificate and login:
 
@@ -144,8 +144,8 @@ is an ERROR with the server's reason and a PANIC from the output layer,
 and the document's health goes to EMERGENCY:
 
 ```
-RUN_A:PRO.opc.out nsu=urn:aymon:examples:moulding;s=IMM1.Run: servis hatasi BadUserAccessDenied(0x801F0000)
-RUN_A:PRO.opc(1).pro.out: [0] -> @pro : Hata(ERR_COMMON_INVRESP)
+RUN_A:PRO.opc.out nsu=urn:aymon:examples:moulding;s=IMM1.Run: service error BadUserAccessDenied(0x801F0000)
+RUN_A:PRO.opc(1).pro.out: [0] -> @pro : Error(ERR_COMMON_INVRESP)
 UA/S00.hlt: sta alarm NORMAL -> EMERGENCY+new [log PANIC +1] (sta=0x034F)
 ```
 
@@ -201,17 +201,16 @@ RUNNING 30 s after Start.
 
 ```
 UA/S00:UA: no certificate yet - making one
-UA/S00:OPC.cert: uretildi. cert='C:\AyMON\AyMON\PRJEDU_opcua\db\pkiymon_cert.pem' key='...ymon_key.pem' uri='urn:AyMON:PRJEDU_opcua' ...
-UA/S00:IMM:PRO.opc(1).connect: oturum etkin
-UA/S00:IMMP_SUB:PRO.opc(1).sub: abonelik 78 kuruldu — periyot 100 ms, keepalive 20
-UA/S00:IMMS:PRO.opc(1).session: reddedildi 0x801A0000
-UA/S00:IMMS:PRO.opc(1).connect: oturum etkin
+UA/S00:OPC.cert: generated. cert='C:\AyMON\AyMON\PRJEDU_opcua\db\pkiymon_cert.pem' key='...ymon_key.pem' uri='urn:AyMON:PRJEDU_opcua' ...
+UA/S00:IMM:PRO.opc(1).connect: session active
+UA/S00:IMMP_SUB:PRO.opc(1).sub: subscription 78 set up -- period 100 ms, keepalive 20
+UA/S00:IMMS:PRO.opc(1).session: refused 0x801A0000
+UA/S00:IMMS:PRO.opc(1).connect: session active
 UA/S00:UA: request sp -> OK: wrote 70
 UA/S00:UA: request reset -> OK: ResetCounter() -> {"ok":true,"out":[{"i":0,"typ":"UInt32","val":0}]}
 ```
 
-(`oturum etkin` = session active, `abonelik ... kuruldu` = subscription set
-up, `reddedildi` = refused.) CTRL-C stops the engine with exit code 0 on
+CTRL-C stops the engine with exit code 0 on
 both platforms; the subscription's Publish, cut short, leaves one
 `IMMP_SUB ... ERR_CONNECT_0000` line as it goes.
 

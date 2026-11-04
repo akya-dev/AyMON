@@ -164,20 +164,20 @@ second machine.
 `PRO.rep` prints a line every ten seconds:
 
 ```
-PRO.rep: çıkış toplam=247 yayın=96 (+10/10sn) | giriş uygulanan=0 red=0 eksik=0 hata=0
-PRO.rep: eleman yarat=0 sil=0 gelen-sil=0 | id'siz=1 | istek=0 xml=0 senkron=2
+PRO.rep: out total=247 publish=96 (+10/10s) | in applied=0 refused=0 missing=0 error=0
+PRO.rep: element create=0 delete=0 in-delete=0 | no-id=1 | ask=0 xml=0 sync=2 added-at-end=0
 ```
 
-`giriş uygulanan` is what was applied from the peer, `red` what the
-direction gates refused, `eksik` elements that were not there yet,
-`id'siz` branches that were skipped because nothing under them has an `id`
+`in applied` is what was applied from the peer, `refused` what the
+direction gates refused, `missing` elements that were not there yet,
+`no-id` branches that were skipped because nothing under them has an `id`
 of its own — **an element without an id is not replicated**, because the
 wire addresses elements by id. (The `1` above is the empty `<config>`.)
 
 A start in either order writes **no error lines**. If you see this one:
 
 ```
-PRO.rep.in: yazılamadı: doc('PRC/P01')/id('LEVEL')/@val
+PRO.rep.in: could not write: doc('PRC/P01')/id('LEVEL')/@val
 ```
 
 the engine is older than **4.3.4.443**. It is a value arriving a few hundred
@@ -187,7 +187,7 @@ source holds deltas back until that subscriber's snapshot is queued, and says
 so once:
 
 ```
-PRO.rep: abone toplu senkronu bekliyor — delta atlandı (anlık görüntü taşıyacak)
+PRO.rep: subscriber waits for the bulk sync -- delta skipped (the snapshot will carry it)
 ```
 
 The same release stopped the empty mirror from publishing its own start-up

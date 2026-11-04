@@ -123,7 +123,7 @@ port.
 | supply tank at 3 % | `not full after 10 s - is the supply tank empty?`. Refill + RESET + START finished the half-filled bottle and ran on |
 | conveyor 40 cm/s | the bottle overshot the photo-eye while the PLC reacted, and left the nozzle during FILL: `the bottle left the nozzle while filling` |
 | pull the fieldbus cable while filling | the PLC faulted after 1.1 s (`no answer from the remote I/O for 1 s`), the remote I/O switched all outputs off after 1.4 s. No overflow, nothing spilled. Plugged back in: the outputs followed the PLC again, RESET + START ran on |
-| the page writes `STEP` or `Q_WORD` | refused, and logged: `CTL/S00:STEP.val: xdb_acl yazma reddetti (rol 0)` |
+| the page writes `STEP` or `Q_WORD` | refused, and logged: `CTL/S00:STEP.val: xdb_acl refused the write (role 0)` |
 
 ## Try this
 

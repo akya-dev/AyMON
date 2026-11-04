@@ -87,7 +87,7 @@
 		                 Not needed to talk in the clear - but without it
 		                 the engine cannot tell this machine from one that
 		                 pretends to be it, and says so at every connect
-		                 ("sunucu sertifikasi DOGRULANMADI").
+		                 ("server certificate NOT VERIFIED").
 		     ================================================================ -->
 		<con id="CN_UA" xdb_fnc="[CON.tcp,PRO.opc]" desc="OPC UA, in the clear, Anonymous"
 		     con_mod="CLIENT" con_way="FULL" con_ses="1"
