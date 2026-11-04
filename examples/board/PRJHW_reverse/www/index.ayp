@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PRJHW_reverse</title>
+<style>
+body{font:15px system-ui,sans-serif;margin:0;background:#f4f5f7;color:#222}
+main{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:8px 0 4px}p{margin:4px 0 14px;color:#555}
+.row{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}
+.card{flex:1 1 120px;background:#fff;border:1px solid #ddd;border-radius:6px;padding:10px}
+.card b{display:block;font-size:24px}
+#m{display:grid;grid-template-columns:repeat(8,18px);gap:3px;background:#222;padding:8px;width:max-content;border-radius:6px}
+#m i{display:block;width:18px;height:18px;border-radius:50%;background:#402020}#m i.on{background:#ff3b30}
+button{font:inherit;padding:6px 10px;margin:2px;border:1px solid #bbb;border-radius:5px;background:#fff;cursor:pointer}
+#w{display:none;background:#fff8e1;border:1px solid #e6d58a;border-radius:6px;padding:10px}
+</style></head><body><main>
+<h1>A parking sensor</h1>
+<p>An HC-SR04, a DHT11, a passive buzzer, a MAX7219 matrix and an MPU6050.</p>
+<div class="row">
+ <div class="card">Distance<b id="d">-</b></div>
+ <div class="card">Air<b id="a">-</b></div>
+ <div class="card">Slope<b id="s">-</b></div>
+ <div class="card">Buzzer<b id="z">-</b></div>
+</div>
+<div id="m"></div>
+<div id="w" style="margin-top:12px"><b>No parts wired: the chips are in memory.</b> Obstacle at <span id="o"></span>.<br>
+<button onclick="go('near')">Nearer</button><button onclick="go('far')">Further</button><button onclick="go('up')">Slope +</button><button onclick="go('down')">Slope -</button></div>
+</main><script>
+var m=document.getElementById('m'),c=[];
+for(var i=0;i<64;i++){var e=document.createElement('i');m.appendChild(e);c.push(e)}
+function show(j){
+ document.getElementById('d').textContent=j.cm<0?'nothing':j.cm.toFixed(1)+' cm';
+ document.getElementById('a').textContent=j.deg+' C, '+j.hum+' %';
+ document.getElementById('s').textContent=j.slope.toFixed(1)+'°';
+ document.getElementById('z').textContent=j.beep?'beep':'-';
+ var r=j.rows.trim().split(' ');
+ for(var y=0;y<8;y++)for(var x=0;x<8;x++)c[y*8+x].className=(parseInt(r[y]||'0',16)>>(7-x)&1)?'on':'';
+ document.getElementById('w').style.display=j.sim?'block':'none';
+ document.getElementById('o').textContent=j.dist+' cm';
+}
+function go(x){fetch('/state.ayp'+(x?'?a='+encodeURIComponent(x):'')).then(function(r){return r.json()}).then(show)}
+setInterval(function(){go()},200);go();
+</script></body></html>

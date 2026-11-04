@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- PRJHW_reverse. The three con_host lines marked REAL are all that change with the parts wired. -->
+<xdb id="REV/S00" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/REV.log"
+     sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="10">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_REV.js" language="JScript" sta="0x0303" sta_typ="0x142"></script>
+		<script id="mtx"  xdb_fnc="[SCR.prs]" src="%DB%/drv/max7219.js" language="JScript" sta="0x0303" sta_typ="0x142"></script>
+
+		<tio id="cls_S"  xdb_fnc="[XDB.evt]" sta="0x0302" sta_typ="0x1142" evt="0" pro="" pro_typ="0xD418" pro_fnc="[PRO.inp]"
+		     evt_typ="0x5204" evt_fnc="[PRO.pol]" evt_cfg="0x0002" sta_fnc="[EVT.sta,PRO.sta]"/>
+		<tio id="cls_SL" sta="0x0302" sta_typ="0x1142" pro="0" pro_typ="0x1308"/>
+		<tio id="cls_I16" sta="0x0302" sta_typ="0x1142" pro="0" pro_typ="0x1202" pro_swp="1"/>
+	</config>
+	<data>
+		<var id="T_CTL" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_per="0.1" evt_dly="1" evt_syn="0" evt_cfg="0x0042" evt_fnc="[main.ctl]"/>
+
+		<!-- The board's own lines: HC-SR04 TRIG = GPIO23, ECHO = GPIO24 through a divider; DHT11 on GPIO4; a passive buzzer on GPIO18.
+		     REAL: con_host="auto", dtoverlay=pwm-2chan in config.txt for the buzzer (it holds GPIO18 and GPIO19), and no dtoverlay=w1-gpio: it holds GPIO4. -->
+		<con id="CN_G" xdb_fnc="[CON.gpio,PRO.gpio]" con_host="sim:pwm=18:2"
+		     con_mod="CLIENT" pro_role="MASTER" con_ses="0" con_rct="5" con_tmo="1" pro_try="0"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+		<dev id="D_G" pro_con="CN_G" sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+			<bi id="B_SON" xdb_cls="cls_S" pro_fni="son" pro_adr="23,24" evt_per="0.1" evt_dly="1.5">
+				<io id="SON_US" xdb_cls="cls_SL" pro_adr="1"/>
+			</bi>
+			<bi id="B_DHT" xdb_cls="cls_S" pro_fni="dht" pro_adr="4" evt_per="2">
+				<io id="DEG" xdb_cls="cls_SL" pro_adr="0"/>
+				<io id="HUM" xdb_cls="cls_SL" pro_adr="1"/>
+			</bi>
+			<!-- a passive buzzer: pro_pwm_hz is read at every write. No pro_safe: at a stop the signal ends. -->
+			<io id="BUZ" pro_fno="pwm" pro_adr="18" pro_pwm_hz="2000" sta="0x0302" sta_typ="0x1142" pro="0" pro_typ="0x1308" pro_fnc="[PRO.out]"/>
+		</dev>
+
+		<!-- MAX7219 on SPI0, chip select 0. REAL: con_host="/dev/spidev0" -->
+		<con id="CN_SPI" xdb_fnc="[CON.spi,PRO.raw]" con_host="sim:max7219@0" con_spi_hz="5000000"
+		     con_mod="CLIENT" pro_role="MASTER" con_ses="0" con_rct="5" con_tmo="1" pro_tmo="0.2" pro_try="1"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+		<dev id="MX" pro_con="CN_SPI" pro_adr="0" sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+			<io id="ROWS" pro_fno="rows" pro_adr="0" pro_onout="mtx.out(evt, exc);" sta="0x0302" sta_typ="0x1142" pro="" pro_typ="0x1401" pro_fnc="[PRO.outc]"/>
+		</dev>
+
+		<!-- MPU6050, XML only: the chip checked, woken, its acceleration read in one transaction. REAL: con_host="/dev/i2c-1" -->
+		<con id="CN_I2C" xdb_fnc="[CON.i2c,PRO.reg]" con_host="sim:mpu6050@0x68"
+		     con_mod="CLIENT" pro_role="MASTER" con_ses="0" con_rct="5" con_tmo="1" pro_tmo="0.2" pro_try="1"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+		<dev id="IMU" pro_con="CN_I2C" pro_adr="0x68" pro_reg_chk="75=68" pro_reg_init="6B=00"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+			<bi id="B_IMU" xdb_fnc="[XDB.evt]" pro_fni="rd" pro_adr="0x3B" pro_len="6" evt="0" evt_per="0.2" evt_typ="0x5204" evt_fnc="[PRO.pol]" evt_cfg="0x0002"
+			    pro="" pro_typ="0xD411" pro_fnc="[PRO.inp]" sta="0x0302" sta_typ="0x1142" sta_fnc="[EVT.sta,PRO.sta]">
+				<io id="AX" xdb_cls="cls_I16" pro_adr="0"/>
+				<io id="AZ" xdb_cls="cls_I16" pro_adr="4"/>
+			</bi>
+		</dev>
+
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the page"
+		     con_host="127.0.0.1" con_port="8122" con_mod="SERVER" con_ses="4"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.ayp"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

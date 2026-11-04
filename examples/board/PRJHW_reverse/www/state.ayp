@@ -1,0 +1,7 @@
+<%
+// what index.ayp reads; ?a= moves the obstacle or the slope in the simulated world
+var a = "" + req.getForm("a");
+if (a != "" && a != "undefined" && a != "null") main.act(evt, a);
+res.type = "application/json";
+res.write(main.state(evt));
+%>

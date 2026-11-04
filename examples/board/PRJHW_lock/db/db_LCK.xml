@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- PRJHW_lock. The three con_host lines marked REAL are all that change with the parts wired. -->
+<xdb id="LCK/S00" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/LCK.log"
+     sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="10">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_LCK.js" language="JScript" sta="0x0303" sta_typ="0x142"></script>
+		<script id="lcd"  xdb_fnc="[SCR.prs]" src="%DB%/drv/lcd1602.js" language="JScript" sta="0x0303" sta_typ="0x142"></script>
+		<script id="rfid" xdb_fnc="[SCR.prs]" src="%DB%/drv/mfrc522.js" language="JScript" sta="0x0303" sta_typ="0x142"></script>
+
+		<tio id="cls_S"  xdb_fnc="[XDB.evt]" sta="0x0302" sta_typ="0x1142" evt="0" pro="" pro_typ="0xD418" pro_fnc="[PRO.inp]"
+		     evt_typ="0x5204" evt_fnc="[PRO.pol]" evt_cfg="0x0002" sta_fnc="[EVT.sta,PRO.sta]"/>
+		<tio id="cls_T"  sta="0x0302" sta_typ="0x1142" pro="" pro_typ="0x1401" pro_fnc="[PRO.outc]" pro_fno="text"/>
+	</config>
+	<data>
+		<!-- The code and the known card. xdb_acl: Engineer and Admin only, so a page (a Guest) cannot read them;
+		     main.on_key runs in the protocol's chain, as the engine. -->
+		<var id="CODE" val="1234" val_typ="0x0401" xdb_acl="0xFF000000"/>
+		<var id="CARD" val="3735928559" val_typ="0x0401" xdb_acl="0xFF000000"/>
+
+		<var id="T_CTL" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_per="0.2" evt_dly="1" evt_syn="0" evt_cfg="0x0042" evt_fnc="[main.ctl]"/>
+
+		<!-- MFRC522 on SPI0, chip select 0; its RST on GPIO25. REAL: con_host="/dev/spidev0" -->
+		<con id="CN_SPI" xdb_fnc="[CON.spi,PRO.raw]" con_host="sim:mfrc522@0" con_spi_hz="1000000"
+		     con_mod="CLIENT" pro_role="MASTER" con_ses="0" con_rct="5" con_tmo="1" pro_tmo="0.2" pro_try="1"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+		<dev id="RC" pro_con="CN_SPI" pro_adr="0" sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+			<bi id="B_RC" xdb_cls="cls_S" evt_per="0.3" pro_onpol="rfid.pol(evt, exc);">
+				<io id="RC_ON"  pro_adr="0" sta="0x0302" sta_typ="0x1142" pro="0" pro_typ="0x1308"/>
+				<io id="RC_UID" pro_adr="1" sta="0x0302" sta_typ="0x1142" pro="0" pro_typ="0x1308"/>
+			</bi>
+		</dev>
+
+		<!-- LCD1602. REAL: con_host="/dev/i2c-1". Measure SDA and SCL first: see the README. -->
+		<con id="CN_I2C" xdb_fnc="[CON.i2c,PRO.raw]" con_host="sim:pcf8574@0x27" pro_onout="lcd.out(evt, exc);"
+		     con_mod="CLIENT" pro_role="MASTER" con_ses="0" con_rct="5" con_tmo="1" pro_tmo="0.2" pro_try="1"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+		<dev id="LCD" pro_con="CN_I2C" pro_adr="0x27" sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+			<io id="L1" xdb_cls="cls_T" pro_adr="0"/>
+			<io id="L2" xdb_cls="cls_T" pro_adr="1"/>
+		</dev>
+
+		<!-- The board's own lines: keypad rows 5 6 13 26, columns 12 22 20 21; a servo on GPIO18; a buzzer on GPIO17; the reader's RST on GPIO25.
+		     REAL: con_host="auto", and dtoverlay=pwm-2chan in config.txt for the servo: it holds GPIO18 and GPIO19. -->
+		<con id="CN_G" xdb_fnc="[CON.gpio,PRO.gpio]" con_host="sim:pwm=18:2"
+		     con_mod="CLIENT" pro_role="MASTER" con_ses="0" con_rct="5" con_tmo="1" pro_try="0"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+		<dev id="D_G" pro_con="CN_G" sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+			<bi id="B_KEY" xdb_fnc="[XDB.evt]" pro_fni="key" pro_adr="5,6,13,26;12,22,20,21" pro_key_map="123A456B789C*0#D"
+			    evt="0" evt_per="0.02" evt_typ="0x5204" evt_fnc="[PRO.pol]" evt_cfg="0x0002"
+			    pro="" pro_typ="0x1401" pro_fnc="[main.on_key]" sta="0x0302" sta_typ="0x1142" sta_fnc="[EVT.sta,PRO.sta]"/>
+			<!-- pro_safe: at a controlled stop the bolt goes home. A crash leaves the signal as it is. -->
+			<io id="BOLT" pro_fno="servo" pro_adr="18" pro_srv_rate="180" pro_safe="0" sta="0x0302" sta_typ="0x1142" pro="0" pro_typ="0x1308" pro_fnc="[PRO.out]"/>
+			<io id="BUZ"  pro_fno="out" pro_adr="17" pro_safe="0" sta="0x0302" sta_typ="0x1142" pro="0" pro_typ="0x1104" pro_fnc="[PRO.out]"/>
+			<io id="RST"  pro_fno="out" pro_adr="25" sta="0x0302" sta_typ="0x1142" pro="0" pro_typ="0x1104" pro_fnc="[PRO.out]"/>
+		</dev>
+
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the page"
+		     con_host="127.0.0.1" con_port="8121" con_mod="SERVER" con_ses="4"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.ayp"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

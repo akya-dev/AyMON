@@ -77,7 +77,7 @@ features without pretending.
 connections, 8 devices) and **32 logged-in users** — a classroom that shares
 one engine. Delete it and every example still runs.
 
-It is bound to the directory names `PRJEDU_*` and `PRJDEV_*` (the `PRJPER_*`
+It is bound to the directory names `PRJEDU_*` and `PRJDEV_*` (the `PRJPER_*` and `PRJHW_*`
 examples run on FREE), so
 dropping it into a real project's `db\lic\` does nothing useful: the engine
 reports it and falls back. That binding is guidance, not security — a

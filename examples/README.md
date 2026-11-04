@@ -12,7 +12,8 @@ Every example runs with one command and needs no licence, no hardware and no dat
 | [Course labs](labs/) | [PRJEDU_plc](labs/PRJEDU_plc/), [PRJEDU_pid](labs/PRJEDU_pid/), [PRJEDU_oee](labs/PRJEDU_oee/), [PRJEDU_robotarm](labs/PRJEDU_robotarm/) |
 | [AI assistants, Python and vision](ai-vision/) | [PRJEDU_mcp](ai-vision/PRJEDU_mcp/), [PRJEDU_robot_mcp](ai-vision/PRJEDU_robot_mcp/), [PRJEDU_gauge](ai-vision/PRJEDU_gauge/), [PRJEDU_pycall](ai-vision/PRJEDU_pycall/), [PRJEDU_vision](ai-vision/PRJEDU_vision/) |
 | [Hobby projects](hobby/) | [PRJPER_tello](hobby/PRJPER_tello/), [PRJPER_adsb](hobby/PRJPER_adsb/), [PRJPER_phone](hobby/PRJPER_phone/) |
+| [On the board](board/) | [PRJHW_fan](board/PRJHW_fan/), [PRJHW_lock](board/PRJHW_lock/), [PRJHW_reverse](board/PRJHW_reverse/) |
 
-New examples are added to the group they belong to. The folder names of the projects themselves (`PRJEDU_*`, `PRJPER_*`) do not change: the education licence is bound to them.
+New examples are added to the group they belong to. The folder names of the projects themselves (`PRJEDU_*`, `PRJPER_*`, `PRJHW_*`) do not change: the education licence is bound to them.
 
 [The top README](../README.md)

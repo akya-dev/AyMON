@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJHW_fan - AyMON example: a fan that follows the temperature, on a
+     Raspberry Pi's own pins, or on chips in memory when no parts are wired.
+
+       FAN/S00   a thermistor and a knob through an ADC0834 (SPI), a fan
+                 through an L293D (PWM), an LCD1602 (I2C), a push button
+                 (an interrupt), and a page: http://127.0.0.1:8120/
+
+     Runs as it is on any machine: every bus says con_host="sim:..".
+     With the parts wired, three lines in db_FAN.xml change: see the README.
+
+     Four connections, four devices, one document: inside the FREE edition.
+
+     Run:  run.bat  or  ./run.sh,  then open  http://127.0.0.1:8120/
+     ===================================================================== -->
+<xdb id="XDB" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log" sta="0x0300" tid="S01">
+	<config>
+		<doc id="FAN/S00" sta="0x0300" src="%DB%/db_FAN.xml" desc="the fan, its sensors, its display" />
+	</config>
+	<data>
+	</data>
+</xdb>

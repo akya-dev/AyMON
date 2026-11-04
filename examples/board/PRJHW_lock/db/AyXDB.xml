@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJHW_lock - AyMON example: a door lock on a Raspberry Pi's own pins, or
+     on chips in memory when no parts are wired.
+
+       LCK/S00   a 4x4 keypad, an MFRC522 card reader (SPI), a servo as the
+                 bolt (PWM), a buzzer, an LCD1602 (I2C), and a page:
+                 http://127.0.0.1:8121/
+
+     A lesson, not a security product: the bolt of a real door fails safe in
+     hardware, and a code in a file is not a secret from whoever holds the card.
+
+     Four connections, three devices, one document: inside the FREE edition.
+
+     Run:  run.bat  or  ./run.sh,  then open  http://127.0.0.1:8121/
+     ===================================================================== -->
+<xdb id="XDB" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log" sta="0x0300" tid="S01">
+	<config>
+		<doc id="LCK/S00" sta="0x0300" src="%DB%/db_LCK.xml" desc="the lock, its keypad, its reader, its display" />
+	</config>
+	<data>
+	</data>
+</xdb>

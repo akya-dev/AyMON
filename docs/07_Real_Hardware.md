@@ -54,6 +54,9 @@ from its manual, and that is where most of the work is.
 | [PRJPER_adsb](../examples/hobby/PRJPER_adsb/README.md) | a dump1090 receiver | an RTL-SDR stick ($30–50), a 1090 MHz antenna, dump1090 or readsb (free) on a Raspberry Pi or the PC | TCP 30003 (SBS text) | [A real receiver](../examples/hobby/PRJPER_adsb/README.md#a-real-receiver) |
 | [PRJPER_tello](../examples/hobby/PRJPER_tello/README.md) | a Tello drone and its camera | a Ryze / DJI Tello or Tello EDU ($100–200), spare batteries, a machine with Wi-Fi | Wi-Fi (UDP 8889 / 8890, video on 11111) | [Flying a real Tello](../examples/hobby/PRJPER_tello/README.md#flying-a-real-tello) |
 | [PRJPER_phone](../examples/hobby/PRJPER_phone/README.md) | — | your phone: it is the real device already | Wi-Fi (a web page) | the example's README |
+| [PRJHW_fan](../examples/board/PRJHW_fan/README.md) | a thermistor, a knob, a fan and a display | a Raspberry Pi; ADC0834, NTC, potentiometer, L293D, DC fan, LCD1602, a button (a starter kit, $40-70) | the Pi's SPI, I²C, PWM, GPIO | the example's README |
+| [PRJHW_lock](../examples/board/PRJHW_lock/README.md) | a keypad, a card reader, a servo, a buzzer | the same kit: 4x4 keypad, MFRC522, SG90, buzzer, LCD1602 | the Pi's SPI, I²C, PWM, GPIO | the example's README |
+| [PRJHW_reverse](../examples/board/PRJHW_reverse/README.md) | a distance sensor, an air sensor, a matrix, a buzzer, a tilt sensor | the same kit: HC-SR04, DHT11, MAX7219, passive buzzer, MPU6050 | the Pi's SPI, I²C, PWM, GPIO | the example's README |
 
 The other examples — `PRJEDU_101`, `PRJEDU_web`, `PRJEDU_pages`,
 `PRJEDU_telnet`, `PRJEDU_hardening`, `PRJEDU_sqlite`, `PRJEDU_odbc`,

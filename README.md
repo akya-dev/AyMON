@@ -75,6 +75,7 @@ AyMON/
     labs/            course labs: a PLC program, PID, OEE, a robot arm
     ai-vision/       AI assistants over MCP, Python, machine vision
     hobby/           a drone, the aircraft overhead, your phone (PRJPER_*)
+    board/           a Raspberry Pi's own pins: a fan, a lock, a parking sensor (PRJHW_*)
   docs/            six short guides, the real-hardware page and the field page
   media/           the pictures in this README
   licenses/        third-party licence texts
@@ -225,6 +226,16 @@ Run an example from its own folder.
 | [**PRJPER_phone**](examples/hobby/PRJPER_phone/) | a phone as a device, with nothing installed on it: a page read from the engine over https reads the motion sensors and sends five lines a second - features, not samples (vibration RMS, the smallest and largest acceleration, tilt, heading) - and the engine makes each phone an element the first time it speaks, its values under classes that carry the units and the alarm limits, a link alarm when it goes quiet, a drop told from a toss by free fall followed by an impact; two doors with two roles (the phones may only report; the dashboard on the PC may move the limits for every phone at once, buzz a phone, reset a drop); the phone's banner is coloured by the engine's alarms; a simulated phone for a PC | a phone on the same Wi-Fi; nothing for the simulated one |
 
 
+### [On the board](examples/board/)
+
+A Raspberry Pi's own GPIO, I²C, SPI and PWM. Every bus can be a chip in memory, so these run on any machine with no parts; with the parts wired on a Pi, only the `con_host` lines change. Not yet tried with real parts.
+
+| Example | What it teaches |
+|---|---|
+| [**PRJHW_fan**](examples/board/PRJHW_fan/) | a control loop on real buses: a thermistor and a knob through an ADC0834 and an LCD1602, both with drivers written in script, a fan on hardware PWM, a button by interrupt |
+| [**PRJHW_lock**](examples/board/PRJHW_lock/) | a keypad, a card reader and a servo bolt, and a code a page cannot read (`xdb_acl`) |
+| [**PRJHW_reverse**](examples/board/PRJHW_reverse/) | a parking sensor: HC-SR04 and DHT11 timed by the kernel, a buzzer, a MAX7219 matrix, an MPU6050 described in XML alone |
+
 More examples will follow.
 
 | Prefix | Meaning |
@@ -232,6 +243,7 @@ More examples will follow.
 | `PRJEDU_*` | education — a classroom, a course, a workshop |
 | `PRJDEV_*` | development — trying something out before it becomes a plant |
 | `PRJPER_*` | personal / hobby |
+| `PRJHW_*` | a Raspberry Pi's own pins, on FREE; chips in memory until the parts are wired |
 
 The suffix names what the example is about (`_modbus`, `_snmp`); `PRJEDU_101`
 keeps its number because it is the one to read first.
@@ -305,7 +317,7 @@ it used:
 | 4 | `<directory of AyXDB.exe>\lic\AyMON.lic` | one binary directory shared by several projects |
 
 That file is bound to the `PRJEDU` / `PRJDEV` directory names, so it is of no
-use to a production project — and the `PRJPER_*` examples simply run on FREE.
+use to a production project — and the `PRJPER_*` and `PRJHW_*` examples simply run on FREE.
 It is not a production licence and does not pretend to be one — a real one
 lives in `db\lic\` next to the project it was issued for.
 

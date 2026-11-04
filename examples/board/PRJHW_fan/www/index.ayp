@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PRJHW_fan</title>
+<style>
+body{font:15px system-ui,sans-serif;margin:0;background:#f4f5f7;color:#222}
+main{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:8px 0 4px}p{margin:4px 0 14px;color:#555}
+.lcd{background:#2d4a9a;color:#dfe8ff;font:20px/1.4 ui-monospace,Consolas,monospace;padding:10px 14px;border-radius:6px;white-space:pre;overflow:hidden}
+.row{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}
+.card{flex:1 1 130px;background:#fff;border:1px solid #ddd;border-radius:6px;padding:10px}
+.card b{display:block;font-size:24px}
+.fan{width:60px;height:60px;border-radius:50%;border:6px dotted #36c;margin:auto}
+button{font:inherit;padding:6px 10px;margin:2px;border:1px solid #bbb;border-radius:5px;background:#fff;cursor:pointer}
+#w{display:none;background:#fff8e1;border:1px solid #e6d58a;border-radius:6px;padding:10px}
+</style></head><body><main>
+<h1>A fan that follows the temperature</h1>
+<p>An ADC0834, an L293D, an LCD1602 and a button on a board's own pins.</p>
+<div class="lcd" id="lcd">&nbsp;<br>&nbsp;</div>
+<div class="row">
+ <div class="card">Temperature<b id="t">-</b></div>
+ <div class="card">Fan starts at<b id="s">-</b></div>
+ <div class="card">Fan<b id="d">-</b><div class="fan" id="f"></div></div>
+</div>
+<div id="w"><b>No parts wired: the chips are in memory.</b> Room <span id="r"></span>, knob <span id="k"></span>.<br>
+<button onclick="go('hot')" id="hot">Heat on</button><button onclick="go('room+')">Room +2</button><button onclick="go('room-')">Room -2</button>
+<button onclick="go('knob+')">Knob +</button><button onclick="go('knob-')">Knob -</button><button onclick="go('button')">Press the button</button></div>
+</main><script>
+var a=0,sp=0;
+function show(j){
+ document.getElementById('lcd').textContent=j.l1+'\n'+j.l2;
+ document.getElementById('t').textContent=j.temp.toFixed(1)+' C';
+ document.getElementById('s').textContent=j.set.toFixed(0)+' C';
+ document.getElementById('d').textContent=j.duty+' %'+(j.force?' forced':'');
+ sp=j.duty;
+ document.getElementById('w').style.display=j.sim?'block':'none';
+ document.getElementById('r').textContent=j.room+' C';
+ document.getElementById('k').textContent=j.knob+' C';
+ document.getElementById('hot').textContent=j.load?'Heat off':'Heat on';
+}
+function go(x){fetch('/state.ayp'+(x?'?a='+encodeURIComponent(x):'')).then(function(r){return r.json()}).then(show)}
+setInterval(function(){go()},1000);go();
+setInterval(function(){a=(a+sp*0.6)%360;document.getElementById('f').style.transform='rotate('+a+'deg)'},50);
+</script></body></html>

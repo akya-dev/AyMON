@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- PRJHW_fan. Bus by bus; the three con_host lines marked REAL are all that change with the parts wired. -->
+<xdb id="FAN/S00" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/FAN.log"
+     sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="10">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_FAN.js" language="JScript" sta="0x0303" sta_typ="0x142"></script>
+		<script id="lcd"  xdb_fnc="[SCR.prs]" src="%DB%/drv/lcd1602.js" language="JScript" sta="0x0303" sta_typ="0x142"></script>
+		<script id="adc"  xdb_fnc="[SCR.prs]" src="%DB%/drv/adc0834.js" language="JScript" sta="0x0303" sta_typ="0x142"></script>
+
+		<!-- a block read in slots, a slot, a line of text -->
+		<tio id="cls_S"  xdb_fnc="[XDB.evt]" sta="0x0302" sta_typ="0x1142" evt="0" pro="" pro_typ="0xD418" pro_fnc="[PRO.inp]"
+		     evt_typ="0x5204" evt_fnc="[PRO.pol]" evt_cfg="0x0002" sta_fnc="[EVT.sta,PRO.sta]"/>
+		<tio id="cls_SL" sta="0x0302" sta_typ="0x1142" pro="0" pro_typ="0x1308"/>
+		<tio id="cls_T"  sta="0x0302" sta_typ="0x1142" pro="" pro_typ="0x1401" pro_fnc="[PRO.outc]" pro_fno="text"/>
+	</config>
+	<data>
+		<!-- once a second: what the temperature means for the fan -->
+		<var id="T_CTL" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_per="1" evt_dly="1" evt_syn="0" evt_cfg="0x0042" evt_fnc="[main.ctl]"/>
+
+		<!-- ADC0834 on SPI0, chip select 0. A thermistor on channel 0, a knob on channel 1.
+		     REAL: con_host="/dev/spidev0" -->
+		<con id="CN_SPI" xdb_fnc="[CON.spi,PRO.raw]" con_host="sim:adc0834@0" con_spi_hz="200000"
+		     con_mod="CLIENT" pro_role="MASTER" con_ses="0" con_rct="5" con_tmo="1" pro_tmo="0.2" pro_try="1"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+		<dev id="AD" pro_con="CN_SPI" pro_adr="0" sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+			<bi id="B_AD" xdb_cls="cls_S" evt_per="0.5" pro_onpol="adc.pol(evt, exc);">
+				<io id="AD_T" xdb_cls="cls_SL" pro_adr="0"/>
+				<io id="AD_K" xdb_cls="cls_SL" pro_adr="1"/>
+			</bi>
+		</dev>
+
+		<!-- LCD1602 behind a PCF8574, a script driver.
+		     REAL: con_host="/dev/i2c-1". Measure SDA and SCL first: see the README. -->
+		<con id="CN_I2C" xdb_fnc="[CON.i2c,PRO.raw]" con_host="sim:pcf8574@0x27" pro_onout="lcd.out(evt, exc);"
+		     con_mod="CLIENT" pro_role="MASTER" con_ses="0" con_rct="5" con_tmo="1" pro_tmo="0.2" pro_try="1"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+		<dev id="LCD" pro_con="CN_I2C" pro_adr="0x27" sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+			<io id="L1" xdb_cls="cls_T" pro_adr="0"/>
+			<io id="L2" xdb_cls="cls_T" pro_adr="1"/>
+		</dev>
+
+		<!-- The board's own lines. An L293D: EN = GPIO18 (PWM), IN1 = GPIO23, IN2 = GPIO24. A button on GPIO17, to ground.
+		     REAL: con_host="auto", and dtoverlay=pwm-2chan in config.txt for the PWM: it holds GPIO18 and GPIO19. -->
+		<con id="CN_G" xdb_fnc="[CON.gpio,PRO.gpio]" con_host="sim:pwm=18:2"
+		     con_mod="CLIENT" pro_role="MASTER" con_ses="0" con_rct="5" con_tmo="1" pro_try="0"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+		<dev id="D_G" pro_con="CN_G" sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]">
+			<bi id="B_BTN" xdb_fnc="[XDB.evt]" pro_fni="evt" evt="0" evt_per="1" evt_typ="0x5204" evt_fnc="[PRO.pol]" evt_cfg="0x0002"
+			    sta="0x0302" sta_typ="0x1142" sta_fnc="[EVT.sta,PRO.sta]">
+				<io id="BTN" pro_adr="17" pro_gpio_bias="up" pro_gpio_edge="fall" pro_gpio_deb="20"
+				    sta="0x0302" sta_typ="0x1142" pro="0" pro_typ="0x1104" pro_fnc="[main.on_btn]"/>
+			</bi>
+			<!-- pro_safe: at a controlled stop the fan stops. A crash leaves a PWM running: the L293D's supply is the real off switch. -->
+			<io id="FAN" pro_fno="pwm" pro_adr="18" pro_pwm_hz="1000" pro_safe="0" sta="0x0302" sta_typ="0x1142" pro="0" pro_typ="0x1308" pro_fnc="[PRO.out]"/>
+			<io id="IN1" pro_fno="out" pro_adr="23" pro_safe="0" sta="0x0302" sta_typ="0x1142" pro="0" pro_typ="0x1104" pro_fnc="[PRO.out]"/>
+			<io id="IN2" pro_fno="out" pro_adr="24" pro_safe="0" sta="0x0302" sta_typ="0x1142" pro="0" pro_typ="0x1104" pro_fnc="[PRO.out]"/>
+		</dev>
+
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the page"
+		     con_host="127.0.0.1" con_port="8120" con_mod="SERVER" con_ses="4"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.ayp"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

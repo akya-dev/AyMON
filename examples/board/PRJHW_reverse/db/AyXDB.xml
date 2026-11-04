@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJHW_reverse - AyMON example: a parking sensor on a Raspberry Pi's own
+     pins, or on chips in memory when no parts are wired.
+
+       REV/S00   an HC-SR04 and a DHT11 (the speed of sound depends on the
+                 temperature), a passive buzzer that beeps faster the nearer it
+                 gets (PWM), a MAX7219 bar graph (SPI), an MPU6050 for the slope
+                 (I2C, XML only), and a page: http://127.0.0.1:8122/
+
+     HC-SR04's ECHO is 5 V: through a divider, see the README.
+
+     Four connections, three devices, one document: inside the FREE edition.
+
+     Run:  run.bat  or  ./run.sh,  then open  http://127.0.0.1:8122/
+     ===================================================================== -->
+<xdb id="XDB" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log" sta="0x0300" tid="S01">
+	<config>
+		<doc id="REV/S00" sta="0x0300" src="%DB%/db_REV.xml" desc="the sensor, the buzzer, the bar graph" />
+	</config>
+	<data>
+	</data>
+</xdb>
