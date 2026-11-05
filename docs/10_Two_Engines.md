@@ -296,7 +296,7 @@ Every call starts at the first connection in `rpc_con`:
 
 So a cluster's document can be listed by its nodes and the caller changes nothing
 when the master dies. `PRJEDU_remote` measures it: the master killed, 0 to 12 writes
-refused, 0.6 to 3 s to the next acknowledged write with `pro_tmo="2"`.
+refused, 0.4 to 3 s to the next acknowledged write with `pro_tmo="2"`.
 
 A parked copy answers **reads** once it has had its first full sync, and until then
 says so and the list goes on. That is a mirror: **the first connection that answers
@@ -307,8 +307,8 @@ together: a source older than 4.3.4.657 does not say a sync has ended.
 
 ### What it costs
 
-Over loopback `PRJEDU_remote` measures a remote read at 60 to 820 µs and a local one
-at 1 to 6 µs, script included, on a busy machine. So:
+Over loopback `PRJEDU_remote` measures a remote read at 60 µs to about 1 ms and a local
+one at 1 to 11 µs, script included, on a busy machine. So:
 
 * **A remote call waits on the thread that makes it**, up to `pro_tmo`. Make it on a
   thread that may wait: a timer with `evt_thr` and a worker, or a chain queued onto

@@ -133,16 +133,17 @@ ask a function there.
 
 ## What it measured
 
-On a Windows 11 laptop and on Linux (WSL, Ubuntu 22.04), engine 4.3.4.659, a script killing the master
-and reading the page's values, with other work running on the same machine:
+On a Windows 11 laptop and on Linux (WSL, Ubuntu 22.04), engines 4.3.4.659 and 4.4.1.660, a script killing
+the master and reading the page's values, with other work running on the same machine (the highest Linux
+reads with a container build beside them):
 
 | | Windows | Linux |
 |---|---|---|
-| all three started, and the first master | 8 to 10 s, 35 to 45 writes refused until then | 10 s, 39 to 41 refused |
-| a read of `LINE/L2`, in this engine | 1.2 to 2.8 us | 1.8 to 5.8 us |
-| a read of `LINE/L1`, on another node | 60 to 220 us | 180 to 820 us |
-| the master killed: next acknowledged write | **1.2 to 3.0 s** (8 kills) | **0.6 to 2.6 s** (6 kills) |
-| writes refused meanwhile | 0 to 10 | 2 to 12 |
+| all three started, and the first master | 8 to 10 s, 35 to 48 writes refused until then | 10 to 12.5 s, 39 to 47 refused |
+| a read of `LINE/L2`, in this engine | 1.2 to 2.8 us | 1.8 to 11 us |
+| a read of `LINE/L1`, on another node | 60 to 220 us | 180 to 1250 us |
+| the master killed: next acknowledged write | **0.4 to 3.0 s** (12 kills) | **0.4 to 2.6 s** (10 kills) |
+| writes refused meanwhile | 0 to 10 | 1 to 12 |
 | the same with `pro_tmo="1"` | 0.6 to 1.6 s (4 kills) | 0.4 to 2.2 s (3 kills) |
 | the killed node started again | spare, and the list reads from it if it is S01; writes reach the master | the same |
 | CTRL-C (Ctrl-Break / SIGINT) | all three exit 0 | all three exit 0 |
