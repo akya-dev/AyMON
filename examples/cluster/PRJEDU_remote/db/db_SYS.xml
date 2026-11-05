@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     SYS/S00 - one node's own equipment. SHARED by S01 and S02: the same file,
+     read by two engines, each working out from tid which end it is.
+     Plain (0x0300): never replicated.
+
+     The election and the replication are PRJEDU_cluster's, unchanged: read
+     that example first if they are new to you. Run it next to this one and
+     nothing collides: these ports are 9211/9212 and 9221/9222.
+
+     WHAT THIS EXAMPLE ADDS IS ONE ROW, CN_RPC: the end that serves other
+     nodes. main.init takes its port from tid.
+
+       [CON.tcp,PRO.rpc]   its own port. A request from another node arrives here.
+       con_role="3"        the most a caller may be on this node, whoever it is
+                           on its own: an Operator. A timer on the other side is
+                           SYSTEM there and an Operator here. Keep this at 7 or
+                           below: role 8 is outside xdb_acl and could write
+                           anything, which is for replication rows only.
+       con_acl             who may connect at all.
+       pro_rpc_thr         requests run on the workers of TH_RPC, and the
+                           connection's thread goes on reading. Without it one
+                           slow function holds every other call on the link.
+                           One worker more than the slow calls you expect.
+
+     Six connections, two documents under the root: inside FREE. Cluster,
+     replication and RPC are not in FREE but work on local connections, which is
+     all this example uses. Across machines they need a licence.
+     ===================================================================== -->
+<xdb id="SYS/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/%TID%_SYS.log"
+     xdb_init="main.init(evt);"
+     sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFF111111">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_SYS.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+
+		<tcon id="cls_CLU" sta_typ="0x1142" sta_fnc="[PRO.sta]"
+		      con_tmo="5" con_rct="2" con_clr="1" con_keeptmo="30.0" con_idletmo="0"
+		      con_acl="127.0.0.1"
+		      pro_ver="3.1.1" pro_tmo="5" pro_try="1" pro_typ="0xC412" pro_fnc="[]" pro_subqos="0"/>
+	</config>
+
+	<data>
+		<!-- the listener for the election and replication. con_port from main.init -->
+		<con id="CN_EXT" xdb_fnc="[CON.tcp,PRO.http]" desc="the node's listener"
+		     con_host="127.0.0.1" con_port="" con_mod="SERVER" con_ses="12"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_E01" xdb_cls="cls_CLU" xdb_fnc="[CLT.cfg,CON.ws,PRO.clt]" desc="election - node S01"
+		     sta="0x0303" pro_nid="S01" con_host="" con_port="" pro=""
+		     pro_clt_link="#CN_EXT" pro_clt_path="/clt" pro_clt_host="127.0.0.1" pro_clt_port="9211"
+		     pro_clt_id="LINE" pro_clt_pri="1"
+		     pro_clt_hb="2" pro_clt_expiry="2" pro_clt_elec="2" pro_clt_init="5" pro_clt_preempt="0"/>
+		<con id="CN_E02" xdb_cls="cls_CLU" xdb_fnc="[CLT.cfg,CON.ws,PRO.clt]" desc="election - node S02"
+		     sta="0x0303" pro_nid="S02" con_host="" con_port="" pro=""
+		     pro_clt_link="#CN_EXT" pro_clt_path="/clt" pro_clt_host="127.0.0.1" pro_clt_port="9212"
+		     pro_clt_id="LINE" pro_clt_pri="2"
+		     pro_clt_hb="2" pro_clt_expiry="2" pro_clt_elec="2" pro_clt_init="5" pro_clt_preempt="0"/>
+
+		<con id="CN_R01" xdb_cls="cls_CLU" xdb_fnc="[REP.cfg,CON.ws,PRO.rep]" desc="replication - node S01"
+		     sta="0x0303" pro_nid="S01" con_host="" con_port="" con_role="8"
+		     pro_rep_link="#CN_EXT" pro_rep_path="/rep" pro_rep_host="127.0.0.1" pro_rep_port="9211"
+		     pro_rep_doc="LINE/L1" pro_rep_atr="*" pro_rep_dir="both"/>
+		<con id="CN_R02" xdb_cls="cls_CLU" xdb_fnc="[REP.cfg,CON.ws,PRO.rep]" desc="replication - node S02"
+		     sta="0x0303" pro_nid="S02" con_host="" con_port="" con_role="8"
+		     pro_rep_link="#CN_EXT" pro_rep_path="/rep" pro_rep_host="127.0.0.1" pro_rep_port="9212"
+		     pro_rep_doc="LINE/L1" pro_rep_atr="*" pro_rep_dir="both"/>
+
+		<!-- ================================================================
+		     THE END THAT SERVES OTHER NODES
+		     ================================================================ -->
+		<thr id="TH_RPC" xdb_fnc="[THR.cre]" thr_per="50" thr_wrk="3" que_max="500"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<con id="CN_RPC" xdb_fnc="[CON.tcp,PRO.rpc]" desc="other nodes' calls arrive here"
+		     con_host="127.0.0.1" con_port="" con_mod="SERVER" con_ses="8" con_acl="127.0.0.1"
+		     con_role="3" pro_rpc_thr="TH_RPC"
+		     con_way="FULL" con_tmo="5" con_clr="1" con_rcvlen="32768" con_keeptmo="60.0" con_idletmo="0"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="CN_RPC" pro_nid="CN_RPC" pro_pfx="+/+" pro_getsfx="" pro_setsfx="set"
+		     pro_subqos="0" pro_pubqos="0" pro_pubrtn="0" pro_retain="0"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

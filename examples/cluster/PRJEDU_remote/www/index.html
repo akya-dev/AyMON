@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_remote - the OPS engine's page, on 127.0.0.1:8123. It shows one
+     text, OPS/S00's VIEW, and writes one, OPS/S00's REQ. It calls nothing
+     itself: the engine asks, on a thread that may wait.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Remote Document</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header>
+    <h1>A document on another node <span class="doc">OPS/S00 asks. LINE/L1 runs on S01 or S02, LINE/L2 here.</span></h1>
+    <div class="chips"><span id="c-s01" class="chip">S01 --</span><span id="c-s02" class="chip">S02 --</span><span id="c-live" class="chip">--</span></div>
+</header>
+
+<main>
+    <section class="card wide">
+        <div class="label">The same call, four times <span class="muted"><code>evt.GetValue("doc('..')/api.snap()")</code></span></div>
+        <div class="table-wrap"><table>
+            <thead><tr><th>doc('..')</th><th>answered by</th><th>its copy there</th><th style="text-align:right">COUNT</th><th style="text-align:right">RATE</th><th style="text-align:right">SEQ</th><th>why not</th></tr></thead>
+            <tbody id="rows"></tbody>
+        </table></div>
+        <div class="note">Close the window of the node that says <b>master</b> and watch the first row. The script does not change. When S01 comes back as a spare, a read through the list comes from it again, a little behind, and a write still reaches the master.</div>
+    </section>
+
+    <section class="card">
+        <div class="label">Writes through the list <span class="muted"><code>rpc_con="CN_S01,CN_S02"</code></span></div>
+        <div class="tiles">
+            <div class="tile"><div class="t">acknowledged</div><div class="v" id="ack">--</div></div>
+            <div class="tile" id="t-ref"><div class="t">refused</div><div class="v" id="ref">--</div></div>
+            <div class="tile"><div class="t">longest gap</div><div class="v"><span id="gap">--</span><span class="u"> s</span></div></div>
+            <div class="tile"><div class="t">last write taken by</div><div class="v" id="took">--</div></div>
+        </div>
+        <div class="note">Five writes a second to <code>LINE/L1</code>'s SEQ. Nothing in the script knows about the failover.</div>
+    </section>
+
+    <section class="card">
+        <div class="label">What the far node allows <span class="muted">the link is <code>con_role="3"</code>, an Operator</span></div>
+        <div class="ctl"><span style="width:7em">RATE, L1</span><input type="range" id="r1" min="1" max="20" value="5"><b id="r1v">5</b></div>
+        <div class="ctl" style="margin-top:6px"><span style="width:7em">RATE, L2</span><input type="range" id="r2" min="1" max="20" value="5"><b id="r2v">5</b></div>
+        <div class="ctl" style="margin-top:10px"><button id="max1">Write RATE_MAX = 10 on L1</button><button id="max2">The same on L2</button></div>
+        <div class="note">RATE is open to an Operator (<code>xdb_acl="0xFF333111"</code>). RATE_MAX is an Engineer's. The timer that writes is SYSTEM on this engine: on L1 it is cut to the link's Operator and refused, on L2 it stays SYSTEM and is done.</div>
+    </section>
+
+    <section class="card">
+        <div class="label">What it costs</div>
+        <div class="tiles">
+            <div class="tile"><div class="t">a read, LINE/L2</div><div class="v"><span id="lus">--</span><span class="u"> us</span></div></div>
+            <div class="tile"><div class="t">a read, LINE/L1</div><div class="v"><span id="rus">--</span><span class="u"> us</span></div></div>
+        </div>
+        <div class="note">A value read all the time belongs in a mirror (PRJEDU_rep). A call is for what is asked now and then, and <code>api.snap()</code> is one call for many values.</div>
+    </section>
+
+    <section class="card">
+        <div class="label">A star covers both <span class="muted"><code>doc('LINE/*')/id('COUNT')/@val</code></span></div>
+        <div class="small"><code id="all">--</code></div>
+        <div class="note">The documents in this engine first, then the ones on other nodes. One that does not answer is left out.</div>
+    </section>
+
+    <section class="card wide">
+        <div class="label">What the caller saw <span class="muted">e.message, inside a try</span></div>
+        <div class="small" id="notes"></div>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="kit.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

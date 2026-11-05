@@ -15,7 +15,7 @@ seen working.
 | [07_Real_Hardware.md](07_Real_Hardware.md) | You want to put a real device where an example has a simulated one. What each simulation stands for, what to get, roughly what it costs, and where the example's README tells how to connect it. |
 | [08_In_the_Field.md](08_In_the_Field.md) | You want to know whether it holds up. A production DCIM system's size, the engine's measured throughput, and the regression rigs every change goes through. |
 | [09_Pins_and_Buses.md](09_Pins_and_Buses.md) | You want a board's own pins. GPIO, interrupts, counters, encoders, PWM, servos, HC-SR04, DHT, key matrices, I²C and SPI chips in XML or in script — and what has not been tried with real parts. |
-| [10_Two_Engines.md](10_Two_Engines.md) | You want a second engine. Replication, the election, what a failover changes and what it leaves, a majority, a master per document group, a field node. |
+| [10_Two_Engines.md](10_Two_Engines.md) | You want a second engine. Replication, the election, what a failover changes and what it leaves, a majority, a master per document group, a field node, a document on another node. |
 | [11_Records_and_Saving.md](11_Records_and_Saving.md) | You want something kept. Alarm, event and value history written by the engine, a journal that survives a node going down, and saving a document without losing its comments. |
 | [12_Keeping_It_Running.md](12_Keeping_It_Running.md) | You are running it for real. Health in `sta`, why a device is in alarm, reading the `stats` line, the log, and getting in while it runs. |
 
@@ -41,6 +41,7 @@ PRJEDU_hardening → 06_Access_and_Safety
 PRJEDU_mcp      →  06_Access_and_Safety   →  04_Licensing
 PRJEDU_rep      →  10_Two_Engines         →  04_Licensing
 PRJEDU_cluster  →  10_Two_Engines         →  04_Licensing
+PRJEDU_remote   →  10_Two_Engines         →  06_Access_and_Safety
 PRJEDU_gauge    →  03_Scripting
 PRJEDU_pycall   →  03_Scripting
 PRJEDU_vision   →  03_Scripting          →  05_Connections_and_Protocols
@@ -66,7 +67,7 @@ it: a device to poll (`PRJEDU_modbus`, `PRJEDU_snmp`), a machine with an OPC
 UA server (`PRJEDU_opcua`), values to publish or
 subscribe (`PRJEDU_mqtt`), a page to put them on (`PRJEDU_web`), history to
 keep (`PRJEDU_sqlite`, `PRJEDU_odbc`), history the engine writes and a journal that survives a crash (`PRJEDU_records`), a second engine to feed (`PRJEDU_rep`),
-a second engine to take over (`PRJEDU_cluster`),
+a second engine to take over (`PRJEDU_cluster`), a document to read and write on another node (`PRJEDU_remote`),
 a way in while it runs (`PRJEDU_telnet`), a plant's access to harden (`PRJEDU_hardening`), an AI assistant to let in
 (`PRJEDU_mcp`), Python and image processing next to the engine
 (`PRJEDU_gauge`), Python called from the XML and from script (`PRJEDU_pycall`), a camera to inspect a line with

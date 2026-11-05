@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     LINE/L2 - a production line in numbers, in the OPS engine. db_L1.xml is this
+     file with one difference, the id on the <xdb> line, and runs on S01 and S02.
+     The id in the FILE is the document's name, so two documents need two files;
+     the scripts are shared.
+
+     Every second COUNT grows by RATE. Nothing in here knows who asks, or from
+     where: a call from another node goes through the same gates as one from
+     this engine. Those gates are the xdb_acl values below.
+
+         xdb_acl = 0x76543210    a nibble per role, role 7 on the left
+                                 1 read, 2 write, 4 create, 8 delete
+
+     The document:   0xFF111111  roles 6 and 7 everything, the others read.
+     RATE, SEQ:      0xFF333111  an Operator (3) and above may write them too.
+     RATE_MAX:       the document's: an Engineer (6) and above.
+
+     The node's end of the link says con_role="3" (db_SYS.xml), so whoever
+     calls from another node is at most an Operator here. RATE goes through,
+     RATE_MAX does not, even when the caller on the other side is a timer,
+     which is SYSTEM over there.
+     ===================================================================== -->
+<xdb id="LINE/L2" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/%TID%_LINE.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFF111111">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_LINE.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+		<!-- A scope named api is what an address may call: doc('X')/api.snap().
+		     No other scope can be reached from outside (main.step cannot). -->
+		<script id="api" xdb_fnc="[SCR.prs]" src="%DB%/db_LINE_api.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<thr id="TH_LINE" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="0"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<var id="T_STEP" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_LINE" evt_per="1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.step]" desc="the line's second"/>
+
+		<var id="RATE" sta="0x0303" val="5" val_typ="0x1104" val_fnc="[ATR.lmt]" val_min="1" val_max="20"
+		     val_unt="1/s" xdb_acl="0xFF333111" desc="units a second, an Operator may change it"/>
+		<var id="RATE_MAX" sta="0x0303" val="20" val_typ="0x0104"
+		     val_unt="1/s" desc="the ceiling of RATE, an Engineer's value"/>
+		<var id="COUNT" sta="0x0303" val="0" val_typ="0x0104" desc="units made"/>
+		<var id="BY" sta="0x0303" val="" val_typ="0x0401" desc="the node that made the last unit"/>
+
+		<!-- The caller writes SEQ five times a second, so that a failover
+		     can be counted. val_fnc runs on the node that took the write. -->
+		<var id="SEQ" sta="0x0303" val="0" val_typ="0x1104" val_fnc="[main.on_seq]"
+		     xdb_acl="0xFF333111" desc="the caller's last write"/>
+		<var id="SEQ_BY" sta="0x0303" val="" val_typ="0x0401" desc="the node that took it"/>
+	</data>
+</xdb>

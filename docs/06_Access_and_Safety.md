@@ -223,6 +223,7 @@ repository.
 | `PRJEDU_snmp` | the script agent answers anyone who can reach the port, and SNMP v2c has no real authentication anyway (the community is a password in clear) |
 | `PRJEDU_net` | the mail and file sinks take every message and every upload from anyone who can reach their ports, with no real login and no TLS, and the connections to them say `pro_smtp_tls="none"` / `pro_ftp_tls="none"` out loud. All on loopback only |
 | `PRJEDU_rep` | the peer connects with `con_role="8"`, no TLS; both engines are on one machine |
+| `PRJEDU_remote` | no TLS and no login on the calls; `con_acl` and the link's `con_role="3"` are the gates. All three engines are on one machine |
 | `PRJEDU_telnet` | passwords in clear in the XML, so you can read them |
 | `PRJEDU_pages` | the same: two passwords in clear in the XML; the login crosses plain `http://`, so its cookie has no `Secure` flag. Loopback only - on a network use `CON.tls` (the cookie then gets `Secure` by itself) |
 | `PRJEDU_opcua` | the setter's password is in clear on the `<dev>`, and two of the three connections run in the clear — to show the difference. The machine listens on loopback only |

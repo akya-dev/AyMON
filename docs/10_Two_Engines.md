@@ -1,9 +1,10 @@
 # Two engines
 
 Run **[PRJEDU_rep](../examples/cluster/PRJEDU_rep/README.md)** and
-**[PRJEDU_cluster](../examples/cluster/PRJEDU_cluster/README.md)** first. Both run
-on one machine with no licence (see `04_Licensing`: the second machine is what is
-sold).
+**[PRJEDU_cluster](../examples/cluster/PRJEDU_cluster/README.md)** first, and
+**[PRJEDU_remote](../examples/cluster/PRJEDU_remote/README.md)** for
+[a document on another node](#a-document-on-another-node). All run on one machine
+with no licence (see `04_Licensing`: the second machine is what is sold).
 
 Several engines work together along two axes, and they are independent:
 
@@ -15,6 +16,9 @@ Several engines work together along two axes, and they are independent:
 `PRO.clt` only runs the **election** and carries no data. `PRO.rep` only carries
 **data** and takes no part in the election. What connects them is the document's
 `sta`: `PRO.clt` writes it, and `PRO.rep` reads it to decide which way to carry.
+
+`PRO.rpc` is neither: it lets a script **ask** the node that has a document, instead
+of keeping a copy. See [a document on another node](#a-document-on-another-node).
 
 ## A node is told apart by `tid`
 
@@ -219,6 +223,104 @@ commands come down over one link with `pro_rep_dir="both"`, with no other settin
 If it shares a file with the centre, switch the rows it does not use off by emptying
 `xdb_fnc` in `xdb_init`. Writing `@sta=0` is not enough: the engine reopens them.
 
+## A document on another node
+
+Replication keeps a copy here, to read with no network. Sometimes you want to ask
+the node that has the thing instead: a value read now and then, a set point to
+write, a function to run there. The script does not change, the `<doc>` line does:
+
+```xml
+<config>
+    <doc id="LINE/L2" sta="0x0300" src="%DB%/db_L2.xml"/>                 <!-- here -->
+    <doc id="LINE/L1" sta="0x0300" rpc_con="CN_S01,CN_S02"/>              <!-- on another node -->
+</config>
+```
+
+```js
+evt.SetValue("doc('LINE/L1')/id('RATE')/@val", 8);        // the same line as for LINE/L2
+var s = evt.GetValue("doc('LINE/L1')/api.snap()");        // a function there, one call for many values
+evt.GetValue("doc('LINE/L1@CN_S02')/id('COUNT')/@val");   // this connection, even when it is loaded here
+```
+
+A `<doc rpc_con>` creates nothing here: no document object, no thread, no log file,
+no licence slot (the node that has it counts it). A document loaded here is always
+local and costs nothing extra. Every `*Value` command crosses, on `xdb.` and on
+`evt.`. `ForEach`, `GetElement` and subscriptions do not, and neither does any `#`
+address, a blob or a buffer.
+
+**The two ends** are `PRO.rpc` rows of their own, with a port of their own:
+
+```xml
+<!-- where the document is -->
+<con id="CN_RPC" xdb_fnc="[CON.tcp,PRO.rpc]" con_host="10.0.0.11" con_port="9221" con_mod="SERVER"
+     con_ses="8" con_acl="10.0.0.20" con_role="3" pro_rpc_thr="TH_RPC" pro_role="SLAVE" .../>
+<!-- on the node that asks -->
+<con id="CN_S01" xdb_fnc="[CON.tcp,PRO.rpc]" con_host="10.0.0.11" con_port="9221" con_mod="CLIENT"
+     con_rct="1" pro_role="MASTER" pro_tmo="2" pro_rpc_down="5" .../>
+```
+
+| Field | Where | Meaning |
+|---|---|---|
+| `con_role` | serves | the most a caller may be here, whoever it is on its own. A timer, SYSTEM over there, is cut to it too. Without it the link is Guest. **7 or below**: role 8 is outside `xdb_acl` and could write anything |
+| `con_acl` | serves | who may connect at all |
+| `pro_rpc_thr` | serves | requests run on the workers of that `<thr>` and the link goes on reading. Without it one slow function holds every other call. A full queue answers `busy` at once |
+| `pro_tmo` | asks | how long a call waits for an answer, seconds |
+| `pro_rpc_down` | asks | after a call timed out with nothing received since it left, calls fail at once for this many seconds (default 10), then one tries. Do not set it to 0 on a listed connection |
+
+The far node applies every gate: `xdb_acl`, the write mode, the `*_fnc` chains.
+An address reaches only the `api.` scope. The engine never opens a connection because
+of an address: a host no `PRO.rpc` `<con>` talks to is refused with a line.
+
+**When it fails:**
+
+| | `GetValue` | `SetValue` | Log |
+|---|---|---|---|
+| no such attribute | undefined | 0 | none |
+| `xdb_acl` refused | undefined | 0 | on the far node: who and what |
+| no link, no answer, parked, the document is not there | undefined, **a throw inside `try`** with `e.message` | 0, a throw inside `try` | one line per peer and kind, then every 10 minutes |
+
+**A write with no answer is not repeated.** It may have been applied, and the line
+says the result is `UNKNOWN`.
+
+### A list: a failover the caller does not see
+
+Every call starts at the first connection in `rpc_con`:
+
+| On this connection | The next one |
+|---|---|
+| no link, `NOT TRIED`, busy | asked: nothing happened here |
+| parked there, and the command writes | asked |
+| no answer to a read | asked, after `pro_tmo` |
+| no answer to anything else | **not asked**: it may have been applied |
+| the document is not there, refused, the function threw | not asked: this is the answer |
+
+So a cluster's document can be listed by its nodes and the caller changes nothing
+when the master dies. `PRJEDU_remote` measures it: the master killed, 0 to 12 writes
+refused, 0.6 to 3 s to the next acknowledged write with `pro_tmo="2"`.
+
+A parked copy answers **reads** once it has had its first full sync, and until then
+says so and the list goes on. That is a mirror: **the first connection that answers
+decides which copy you read**, and after a master comes back as a spare your reads
+come from it again, one or two writes behind. When a read must be current, name the
+master with `doc('X@PEER')` or ask a function there. Update a source and its mirrors
+together: a source older than 4.3.4.657 does not say a sync has ended.
+
+### What it costs
+
+Over loopback `PRJEDU_remote` measures a remote read at 60 to 820 µs and a local one
+at 1 to 6 µs, script included, on a busy machine. So:
+
+* **A remote call waits on the thread that makes it**, up to `pro_tmo`. Make it on a
+  thread that may wait: a timer with `evt_thr` and a worker, or a chain queued onto
+  one. Not on a connection's thread and not on the document's own.
+* A value read all the time belongs in a mirror (`PRO.rep`).
+* One call for many values: `doc('X')/api.f()`, `doc('X')/json(..)`, `count(..)`
+  run on the far node.
+* A request may carry up to 8 MiB, nothing to configure.
+
+`doc('LINE/*')` covers the documents here and, after them, the ones in `<doc rpc_con>`,
+one call each. One that does not answer is left out of the array and the log says why.
+
 ## Security
 
 The peers do not log in; trust comes from the connection. So on these rows:
@@ -226,7 +328,7 @@ The peers do not log in; trust comes from the connection. So on these rows:
 | Field | Why |
 |---|---|
 | `con_acl` | the address list is the only protection. Without it, there is no filtering |
-| `con_role="8"` | gives a replication peer the Document role, which is outside `xdb_acl`. **On replication rows only**: an election row carries `pro=""` instead |
+| `con_role="8"` | gives a replication peer the Document role, which is outside `xdb_acl`. **On replication rows only**: an election row carries `pro=""` instead, and a `PRO.rpc` row 7 or below |
 | `con_idletmo="0"` | a replication link can stay silent for a long time |
 | TLS | `CON.wss` with your own certificates across any network you do not own |
 
@@ -242,6 +344,8 @@ The peers do not log in; trust comes from the connection. So on these rows:
 8. A vertical link is `pro_rep_dir="both"`.
 9. `pro_clt_cmd_fnc="[CLT.cmd]"` if you want a planned hand-over.
 10. A value crossing between documents is not an engine write into a spare.
+11. A `PRO.rpc` row that serves has `con_acl`, and `con_role` of 7 or below.
+12. A call to another node is made on a thread that may wait.
 
 ## Reading the log
 
@@ -250,6 +354,10 @@ PRO.clt: role=MASTER term=2                      on ONE node only
 PRO.clt.drive: MASTER APP/S00 sta=0x1303         the documents you expected
 PRO.clt.tick: 20 role=MASTER pri=1 master=S01    every 10 s; with a quorum, heard= and quorum=
 write refused -- document 'X' is SPARE on this node and the write came from document 'Y'
+CAyXDB.config: document 'LINE/L1' is on another node, over 'CN_S01,CN_S02'
+RMT: doc('LINE/L1') over 'CN_S02': no link -- id('SEQ')/@val
+RMT: doc('LINE/L1') over 'CN_S02': the document is parked (SPARE) there, the write was refused -- id('SEQ')/@val
+RMT: doc('LINE/L1') over 'CN_S01': no answer in 2000 ms, the result of the write is UNKNOWN -- id('SEQ')/@val
 ```
 
 Engines before 4.3.4.647 write `rol=` for `role=`.
@@ -262,3 +370,6 @@ Engines before 4.3.4.647 write `rol=` for `role=`.
 | Some elements never arrive | they have no `id` of their own |
 | Two clusters hear each other | the same `pro_clt_id` |
 | A non-preferred node wins at a cold start | the nodes start further apart than `pro_clt_init` + `pro_clt_elec` |
+| A remote write answers 0 with no throw | the far node's `xdb_acl` refused the role left after `con_role`; its log says who and what |
+| Every read of a remote document stops the page | the call is made on the thread that serves the page: move it to a worker |
+| A remote document loads under another name | the name is the `id` in the file's `<xdb>`, not in the `<doc>` line. Two documents need two files |

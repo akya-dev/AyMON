@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_remote - AyMON example: a document on another node.
+     Root file of NODE S02. AyXDB_S01.xml is this file with one difference:
+     tid. Together they run the job as a cluster; a third engine
+     (AyXDB_OPS.xml) reads and writes it without knowing which of them has it.
+
+       tid="S02"    WHO AM I. The rows in db_SYS.xml compare it with their
+                    pro_nid, and main.init takes the ports from it.
+       SYS/S00      this node's own equipment. Plain (0x0300): never replicated.
+       LINE/L1      THE JOB. 0x3200 = cluster member, in TRANSIT, parked: it
+                    waits for the election.
+
+     Run:  run_S02.bat  (with run_S01.bat and run_OPS.bat in other windows)
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0"
+     log_lnk="%PRJ%/log/%TID%_XDB.log" sta="0x0300" tid="S02">
+	<config>
+		<doc id="SYS/S00" sta="0x0300" src="%DB%/db_SYS.xml" desc="plain - this node's listener, election and replication rows, and the end that serves other nodes"/>
+		<doc id="LINE/L1" sta="0x3200" src="%DB%/db_L1.xml" desc="cluster member - the job; the election decides where it runs"/>
+	</config>
+	<data>
+	</data>
+</xdb>

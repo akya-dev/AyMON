@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     OPS/S00 - the engine that asks. Its page is on 127.0.0.1:8123.
+
+     THE TWO CONNECTIONS. CN_S01 and CN_S02 are the rows rpc_con names in
+     AyXDB_OPS.xml. An address can name them too: doc('LINE/L1@CN_S02').
+     The engine never opens a connection because of an address: a host no
+     PRO.rpc <con> talks to is refused with a line.
+
+       pro_tmo        how long a call waits for an answer, seconds. A broken
+                      link answers at once; this is for a peer that goes silent.
+       pro_rpc_down   after a call timed out with nothing received since it
+                      left, calls fail at once for this many seconds, then one
+                      tries. A list goes on to the next connection meanwhile.
+
+     THE THREAD. A remote call waits on the thread that makes it. So the timer
+     that asks has a thread of its own with a worker, TH_CALL, and what the page
+     asks for is queued onto that thread (REQ, below). Do not read another node
+     from a chain that runs on a connection's thread or the document's own.
+
+     Four connections, three documents with the root: inside FREE. The remote
+     document takes no licence slot here. RPC is not in FREE but works on local
+     connections.
+     ===================================================================== -->
+<xdb id="OPS/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/%TID%_OPS.log"
+     sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFF111111">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_OPS.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+		<tcon id="cls_RPC" sta_typ="0x1142" sta_fnc="[PRO.sta]"
+		      con_mod="CLIENT" con_rct="1" con_way="FULL" con_tmo="5" con_clr="1" con_rcvlen="32768"
+		      con_keeptmo="60.0" con_idletmo="0"
+		      pro_role="MASTER" pro_tmo="2" pro_rpc_down="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		      pro_pfx="+/+" pro_getsfx="" pro_setsfx="set"
+		      pro_subqos="0" pro_pubqos="0" pro_pubrtn="0" pro_retain="0"/>
+	</config>
+
+	<data>
+		<con id="CN_S01" xdb_cls="cls_RPC" xdb_fnc="[CON.tcp,PRO.rpc]" desc="the way to node S01"
+		     con_host="127.0.0.1" con_port="9221" pro_cid="OPS_S01" pro_nid="OPS_S01" sta="0x0303"/>
+		<con id="CN_S02" xdb_cls="cls_RPC" xdb_fnc="[CON.tcp,PRO.rpc]" desc="the way to node S02"
+		     con_host="127.0.0.1" con_port="9222" pro_cid="OPS_S02" pro_nid="OPS_S02" sta="0x0303"/>
+
+		<thr id="TH_CALL" xdb_fnc="[THR.cre]" thr_per="50" thr_wrk="1"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+		<var id="T_CALL" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_thr="TH_CALL" evt_per="0.2" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.tick]" desc="five times a second: ask, write, report"/>
+
+		<!-- the page -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the page"
+		     con_host="127.0.0.1" con_port="8123" con_mod="SERVER" con_ses="8" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="the page's live values"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="OPS_LIVE" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//var[@val]" pro_retain_atr="val"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- WHAT THE PAGE SEES: one JSON text, written by main.tick -->
+		<var id="VIEW" sta="0x0303" val="" val_typ="0x0401" desc="everything on the page"/>
+		<!-- WHAT THE PAGE MAY WRITE: a request. A Guest (role 0) may write this one.
+		     0x3401 = text, and its chain runs QUEUED on evt_thr: the connection
+		     that took the page's write goes on at once, and main.on_req runs on
+		     TH_CALL, the thread that may wait. val_que="multi": every write is a
+		     node of its own, two quick clicks are two requests. -->
+		<var id="REQ" sta="0x0303" val="" val_typ="0x3401" val_que="multi" evt_thr="TH_CALL"
+		     val_fnc="[main.on_req]" xdb_acl="0xFF111113" desc="{doc, id, val} from the page"/>
+	</data>
+</xdb>

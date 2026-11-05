@@ -58,9 +58,12 @@ every non-IP transport: serial, BLE, HID, SQL, a plug-in transport.
 
 So you can run two engines on one machine and try replication, a cluster
 fail-over, RPC or MCP end to end, with no licence, for as long as you like
-(`PRJEDU_rep`, `PRJEDU_cluster`).
+(`PRJEDU_rep`, `PRJEDU_cluster`, `PRJEDU_remote`).
 The same configuration is not a free plant: the moment the peer is on another
 machine the connection is refused, and the log says exactly that.
+
+A document on another node (`<doc rpc_con>`) takes no document slot on the engine that
+asks: the engine that has it counts it.
 
 ```
 CN_REP:PRO.rep(0).register_pro: NOT STARTED -- 'rep' is refused on a REMOTE

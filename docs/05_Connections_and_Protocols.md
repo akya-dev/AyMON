@@ -63,7 +63,7 @@ both at once.
 |---|---|
 | Field | `PRO.modbus` (TCP, RTU, ASCII; both roles), `PRO.snmp` (a manager, v1, v2c, v3), `PRO.opc` (an OPC UA client), `PRO.mqtt` (broker and client), `PRO.rfid`, `PRO.gpio`, `PRO.reg` |
 | Web | `PRO.http` (files and `.ayp` pages), `PRO.rest`, `PRO.soap`; `PRO.mqtt` over `CON.ws` for a browser's live values |
-| Engines | `PRO.rep`, `PRO.clt` (`10_Two_Engines`), `PRO.rpc`, `PRO.bridge` |
+| Engines | `PRO.rep`, `PRO.clt`, `PRO.rpc` (`10_Two_Engines`), `PRO.bridge` |
 | People and assistants | `PRO.telnet` (a maintenance shell), `PRO.mcp` (AI assistants, `PRJEDU_mcp`) |
 | Data | `PRO.sql` |
 | Mail and files | `PRO.smtp`, `PRO.ftp`, `PRO.sftp` (below) |

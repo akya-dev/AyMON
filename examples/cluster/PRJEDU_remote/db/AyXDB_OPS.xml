@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_remote - AyMON example: a document on another node.
+     Root file of the OPS engine: the one with the page, the one that asks.
+
+     THE THREE <doc> LINES BELOW ARE THE WHOLE POINT OF THIS EXAMPLE.
+
+       OPS/S00   a document of this engine, with a file: the page and the
+                 script that asks.
+       LINE/L2   a document of this engine too, a twin of the job on the other
+                 nodes, with the same scripts.
+       LINE/L1   NO FILE. rpc_con names the PRO.rpc connections (in
+                 db_OPS.xml) that lead to it. No document object, no thread,
+                 no log file here, and no licence slot: the far node counts it.
+
+     A script here writes doc('LINE/L1')/id('RATE')/@val and
+     doc('LINE/L2')/id('RATE')/@val with one function, and does not know which
+     one crosses a wire. Move L2 to another machine and this file is the only
+     thing that changes.
+
+     rpc_con is a list. Every call starts at the first connection and goes on
+     when the first says "no link" or "that document is parked here", so a
+     failover on S01 and S02 needs no change on this engine.
+
+     Run:  run_OPS.bat   then open http://127.0.0.1:8123/
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0"
+     log_lnk="%PRJ%/log/%TID%_XDB.log" sta="0x0300" tid="OPS">
+	<config>
+		<doc id="OPS/S00" sta="0x0300" src="%DB%/db_OPS.xml" desc="the page, and the script that asks"/>
+		<doc id="LINE/L2" sta="0x0300" src="%DB%/db_L2.xml" desc="a line that runs in this engine"/>
+		<doc id="LINE/L1" sta="0x0300" rpc_con="CN_S01,CN_S02" desc="a line that runs on S01 or S02"/>
+	</config>
+	<data>
+	</data>
+</xdb>

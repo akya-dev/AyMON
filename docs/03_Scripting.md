@@ -150,6 +150,12 @@ document with thousands of elements.
 > `doc('X')/count(data/var)` works; `count(doc('X')/data/var)` silently
 > answers `0`. The same order applies to `xml(...)` and `json(...)`.
 
+The document may live in another engine. The address stays the same: a
+`<doc id="X" rpc_con="CN_S01">` line says how to reach it, and the same script reads
+and writes it. Such a call waits on the thread that makes it, and inside a `try` a
+failed one throws with the reason in `e.message`. `10_Two_Engines` has the rest and
+`PRJEDU_remote` shows it.
+
 ## Eight places this is not JavaScript
 
 The language is close enough to JavaScript to be readable and different enough
