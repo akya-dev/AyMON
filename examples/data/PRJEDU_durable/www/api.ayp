@@ -1,0 +1,4 @@
+<%@ page type="application/json" %><%
+// PRJEDU_durable: the same values for a program (prove.py reads this).
+-%>
+<%- JSON.stringify(main.state(evt)) %>

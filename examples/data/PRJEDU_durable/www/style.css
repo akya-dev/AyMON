@@ -1,0 +1,18 @@
+body { font: 15px/1.4 system-ui, sans-serif; margin: 0; color: #222; background: #f6f7f9; }
+header { display: flex; gap: 1.5em; align-items: baseline; padding: .6em 1.2em; background: #2b3a55; color: #fff; }
+header span { color: #cfe0ff; font-size: 13px; }
+main { padding: 1em 1.2em; max-width: 52em; }
+footer { padding: 1em 1.2em; color: #777; font-size: 12px; }
+h2 { font-size: 1.05em; margin: 1.4em 0 .4em; }
+table { border-collapse: collapse; background: #fff; }
+th, td { padding: .35em .8em; border-bottom: 1px solid #e3e5ea; text-align: left; }
+table.kv th { font-weight: normal; color: #555; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+td.big { font-size: 1.5em; }
+.kept { color: #1a7f37; font-size: 12px; font-weight: normal; }
+.lost { color: #c0392b; font-size: 12px; }
+.h1 { background: #fff6d6; } .h2, .h3 { background: #ffe0dc; }
+form { margin: 1em 0; }
+.ok { color: #1a7f37; margin-left: 1em; } .err { color: #c0392b; margin-left: 1em; }
+.hint { color: #666; font-size: 13px; max-width: 46em; }
+code { background: #eceef2; padding: 0 .3em; }

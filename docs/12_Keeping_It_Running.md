@@ -28,6 +28,7 @@ own `sta`, so an operator's page sees "this thread is behind" as it sees any ala
 | timer firings skipped for 5 s | WARNING | |
 | a server `<con>`'s sessions at 90 % of `con_ses` | WARNING | |
 | a client `<con>`'s own link down | off unless declared | `thr_alm_lnk` (s) |
+| the root only: the durable log not written / free space low / a checkpoint failed | ALARM / WARNING / WARNING | [13_Durable_Documents](13_Durable_Documents.md) |
 
 **Events** hold until acknowledged: work refused at `que_max` (ALARM), session list full
 (ALARM), no memory for a session (EMERGENCY), and the document's own log lines: **FAIL →

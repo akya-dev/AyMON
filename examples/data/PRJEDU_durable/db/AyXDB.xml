@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_durable - values that come back after a crash, no database.
+
+     A mixer counts its batches. Some of its values carry xdb_dur in
+     db_MIX.xml: the engine keeps them on disk as they change, and puts
+     them back when it starts again - after CTRL-C, after kill.bat, after
+     a power cut. The XML file is never written.
+
+       rec_dir    where the durable log lives (and the record journal, if
+                  a document makes records). One directory per node.
+       rec_flush  ms: a change goes to the operating system this often.
+                  A KILLED process loses at most this much.
+       rec_sync   ms: and onto the disk this often (fsync). A machine that
+                  LOSES POWER loses at most this much, plus an fsync that
+                  was running.
+       rec_ckp    s: at most this often the engine writes a checkpoint of
+                  a document, so the log it reads back at a start stays
+                  short.
+
+     Run:   run.bat, then http://127.0.0.1:8124/
+     Kill:  kill.bat (from a second window), then run.bat again.
+     Prove: python prove.py   (starts, kills and starts it again by itself)
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="S01"
+     rec_dir="%PRJ%/log/rec" rec_flush="10" rec_sync="1000" rec_ckp="60">
+	<config>
+		<doc id="MIX/S00" sta="0x0300" src="%DB%/db_MIX.xml" desc="the mixer, its kept values and the page"/>
+	</config>
+	<data>
+	</data>
+</xdb>

@@ -6,6 +6,9 @@ Two jobs that keep something after the engine stops: **history** in a database a
 value history go through these sinks into SQLite, and a kill that shows the journal read
 back.
 
+A third way to keep something, with no database and no save: a value that comes back with
+its last state after a restart is [13_Durable_Documents](13_Durable_Documents.md).
+
 ---
 
 ## Records

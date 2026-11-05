@@ -7,6 +7,7 @@ Where the values go: a database the engine writes and queries, and the mail and 
 | [PRJEDU_sqlite](PRJEDU_sqlite/) | history in a database, nothing to install | nothing |
 | [PRJEDU_odbc](PRJEDU_odbc/) | the same history on SQLite, SQL Server or PostgreSQL, chosen by a connection string | nothing for SQLite |
 | [PRJEDU_records](PRJEDU_records/) | alarms, events and value history written by the engine, and a journal on disk that survives a kill | nothing |
+| [PRJEDU_durable](PRJEDU_durable/) | values that come back after a crash, no database: `xdb_dur`, a kill, `xdb.sync()` | nothing |
 | [PRJEDU_net](PRJEDU_net/) | an alarm that sends mail, a shift report zipped and uploaded by FTP | nothing |
 
 Every example starts with one command from its own folder:

@@ -1,0 +1,72 @@
+<%
+// PRJEDU_durable: the mixer, what is kept and what is not. Reloads every second.
+// The form changes the set point: checked on the server, then POST/redirect/GET.
+var err = "";
+if (req.method == "POST") {
+    err = main.set_point(evt, req.getForm("sp"));
+    if (err == "") {
+        res.redirect("/?saved=1", 303);
+        return;
+    }
+}
+var s = main.state(evt);
+var lv = ["normal", "warning", "ALARM", "EMERGENCY"];
+-%>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="1">
+<title>Mixer - PRJEDU_durable</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header><b>Mixer</b> <span>values that come back after a crash</span></header>
+<main>
+<table class="kv">
+  <tr><th>Batches since the machine was new</th><td class="num big"><%= s.batches %></td><td class="kept">kept</td></tr>
+  <tr><th>Batches since this start</th><td class="num big"><%= s.since %></td><td class="lost">not kept</td></tr>
+  <tr><th>Running hours</th><td class="num"><%= s.hours %></td><td class="kept">kept</td></tr>
+  <tr><th>Set point</th><td class="num"><%= s.sp %> kg</td><td class="kept">kept</td></tr>
+  <tr><th>Last batch</th><td><%= s.last %></td><td class="kept">kept</td></tr>
+  <tr><th>Shift closed last</th><td class="num"><%= s.shift %></td><td class="kept">kept, and waited for (xdb.sync)</td></tr>
+</table>
+
+<form method="post" action="/">
+  <label>New set point <input name="sp" size="5" value="<%= s.sp %>"> kg</label>
+  <button>Save</button>
+<% if (req.getForm("saved") == "1") { -%>
+  <span class="ok">Saved. Kill the engine and start it again: it is still there.</span>
+<% } -%>
+<% if (err != "") { -%>
+  <span class="err">Not saved: <%= err %>.</span>
+<% } -%>
+</form>
+
+<h2>The last ten batches <span class="kept">kept, rows made and removed at run time</span></h2>
+<table>
+  <tr><th>Batch</th><th>kg</th><th>s ago</th></tr>
+<% // newest first. Not 'for (i = length - 1; i >= 0; i--)': length is unsigned, so is i, and i >= 0 never ends
+   for (var k = 0; k < s.jobs.length; k++) { var j = s.jobs[s.jobs.length - 1 - k]; -%>
+  <tr><td class="num"><%= j.n %></td><td class="num"><%= j.kg %></td><td class="num"><%= j.ago %></td></tr>
+<% } -%>
+</table>
+
+<h2>The durable log</h2>
+<table class="kv">
+  <tr><th>Writes to the disk</th><td><%= s.log.writes == 1 ? "yes" : "NO - " + s.log.failed %></td></tr>
+  <tr><th>Health of the root</th><td class="h<%= s.log.health %>"><%= lv[s.log.health] %></td></tr>
+  <tr><th>Segments, their size on disk</th><td><%= s.log.segments %>, <%= s.log.log_kb %> KB</td></tr>
+  <tr><th>Commits, fsyncs</th><td><%= s.log.commits %>, <%= s.log.fsyncs %></td></tr>
+  <tr><th>Checkpoints in this run</th><td><%= s.log.checkpoints %><%= s.log.ckp_age_s >= 0 ? ", the last " + s.log.ckp_age_s + " s ago" : "" %></td></tr>
+  <tr><th>Longest fsync, longest wait of a change</th><td><%= s.log.fsync_max_ms %> ms, <%= s.log.wait_max_ms %> ms</td></tr>
+  <tr><th>Free on the log's disk</th><td><%= s.log.free_mb >= 0 ? s.log.free_mb + " MB" : "not asked yet" %></td></tr>
+</table>
+<p class="hint">Kill the engine (<code>kill.bat</code>, or close its window) and start it again
+(<code>run.bat</code>): the kept values go on from where they were, "since this start" begins at 0.
+A killed process loses at most the last 10 ms of changes (<code>rec_flush</code>).</p>
+</main>
+<footer>Written by the engine at <%= Time.GetTimeStr(0) %>. JSON: <a href="/api.ayp">/api.ayp</a></footer>
+</body>
+</html>

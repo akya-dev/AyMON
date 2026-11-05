@@ -145,6 +145,16 @@ drives only the documents on its list. One node can then be master of one docume
 and spare of another, so three servers can share the work. Write `pro_nid` on such
 rows: the row id's last part (`CN_S01K3` → `S01K3`) would match no `tid`.
 
+### Kept values and the newest copy
+
+A group whose documents keep values on disk ([13_Durable_Documents](13_Durable_Documents.md))
+is elected by the copy before the priority: each node keeps a generation with its copy, one
+more at every hand-over, and the newest copy wins. A node does not follow a master whose copy
+is older than its own. At a start every node of such a group waits until it has heard the
+others, at most `pro_clt_cold` seconds (60; `0` = no wait): an old copy that comes back first
+would otherwise be elected alone and send itself over the newer one. Nodes that start together
+wait for nothing.
+
 ## Replication
 
 ```xml

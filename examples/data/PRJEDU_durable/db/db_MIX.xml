@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_durable - MIX/S00: a mixer that makes a batch every second.
+
+       1  what is kept       xdb_dur="val" on a value, xdb_dur="*" on a list
+       2  what is not        the same counter without xdb_dur
+       3  the batch          a timer: main.batch
+       4  the log's state    xdb.dur() copied into DUR every second
+       5  the web listener   the page at http://127.0.0.1:8124/
+     ===================================================================== -->
+<xdb id="MIX/S00" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/MIX.log"
+     xdb_init="main.init(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="50">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_MIX.js" language="JScript" sta="0x0303" sta_typ="0x142"></script>
+	</config>
+	<data>
+		<!-- 1 - KEPT. xdb_dur names the attributes the engine keeps; "*" on a
+		     list keeps its own attributes AND its rows, made and removed at run
+		     time. An element needs an id of its own: it is found again by it. -->
+		<var id="BATCHES" val="0" val_typ="0x0108" xdb_dur="val" desc="batches since the machine was new"/>
+		<var id="HOURS"   val="0" val_typ="0x0308" xdb_dur="val" desc="running hours"/>
+		<var id="SP"      val="50" val_typ="0x0308" xdb_dur="val" desc="batch size an operator set, kg (the page changes it)"/>
+		<var id="LAST"    val="" val_typ="0x0401" xdb_dur="val" desc="the last batch, as text"/>
+		<var id="SHIFT"   val="0" val_typ="0x0108" xdb_dur="val" desc="the shift closed last"/>
+		<list id="JOBS" xdb_dur="*" desc="the last ten batches, a row each"></list>
+
+		<!-- 2 - NOT KEPT. The same counting, no xdb_dur: back to 0 at every start. -->
+		<var id="SINCE" val="0" val_typ="0x0108" desc="batches since this start"/>
+
+		<!-- 3 - THE BATCH. Every second; every 20th batch closes a shift and
+		     waits until it is on the disk (xdb.sync). -->
+		<var id="T_BATCH" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_per="1" evt_dly="0" evt_syn="0" evt_cfg="0x0002" evt_fnc="[main.batch]"/>
+
+		<!-- 4 - THE LOG'S STATE, for the page. xdb.dur() needs the Engineer role and
+		     a page runs with its visitor's (a Guest), so a timer - the engine's own
+		     role - copies what the page shows. Nothing here is kept: it is about the log. -->
+		<var id="DUR" writes="0" writes_typ="0x0104" failed="" segments="0" segments_typ="0x0104" log_kb="0" log_kb_typ="0x0208"
+		     commits="0" commits_typ="0x0208" fsyncs="0" fsyncs_typ="0x0208" checkpoints="0" checkpoints_typ="0x0208"
+		     ckp_age_s="-1" ckp_age_s_typ="0x0208" fsync_max_ms="0" fsync_max_ms_typ="0x0208" wait_max_ms="0" wait_max_ms_typ="0x0208"
+		     free_mb="-1" free_mb_typ="0x0208" health="0" health_typ="0x0104"/>
+		<var id="T_DUR" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x5201" evt_per="1" evt_dly="0.5" evt_syn="0" evt_cfg="0x0002" evt_fnc="[main.dur]"/>
+
+		<!-- 5 - THE WEB LISTENER. pro_http_index makes index.ayp the start page. -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the web listener"
+		     con_host="127.0.0.1" con_port="8124" con_mod="SERVER" con_ses="8"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.ayp"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>
