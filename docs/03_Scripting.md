@@ -1,4 +1,4 @@
-# 3 — Scripting
+# Scripting
 
 Run **PRJEDU_101** and **PRJEDU_sqlite** first. Between them they use most of
 what is here.
@@ -540,7 +540,7 @@ for the `catch`.
 4. Are you testing for a missing value with `x == null`, not `x == ""`?
 5. Is a run state tested with `(sta & 0x0003) == 3`, not by comparing a whole `sta`?
 6. Every `SQL.exec_direct` / `prepare` matched by a `SQL.close`?
-7. Is the `val_typ` of anything with a `val_fnc` carrying a run bit? (guide 2)
+7. Is the `val_typ` of anything with a `val_fnc` carrying a run bit? ([Timers and events](02_Timers_and_Events.md))
 8. Is everything you subtract signed - a time stamp in a `0x0208` attribute, an
    unsigned (`0x01..`) value read through `parseInt`? (item 7)
 9. Does a function that runs because a page wrote into ANOTHER document (the

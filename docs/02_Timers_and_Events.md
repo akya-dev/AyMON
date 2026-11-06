@@ -1,4 +1,4 @@
-# 2 — Timers, and what makes things happen
+# Timers, and what makes things happen
 
 Run **PRJEDU_101** first. Its `<thr>` and its `<var>` timer are the whole of
 this guide in practice.

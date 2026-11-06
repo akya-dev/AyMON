@@ -1,4 +1,4 @@
-# 4 — What is free, and what is not
+# What is free, and what is not
 
 Every example in this repository runs **with no licence at all**. This guide
 explains why, and where the line is.

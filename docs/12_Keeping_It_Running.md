@@ -139,12 +139,12 @@ A `tmr_skp` is cumulative: it counts since the start, so look at whether it move
 A document's log level is `xdb_log` (`0` PANIC … `4` WARN, `6` INFO, `7` DEBUG) and it can be
 changed on one `<con>` or `<thr>` while the engine runs. The console gets its own level with
 `AyXDB -console:N`. At the default level, successful traffic is not logged at all, so a device
-that works is quiet: `xdb_log="7"` on the `<con>` shows every `M-Q` and `M-R` (guide 1).
+that works is quiet: `xdb_log="7"` on the `<con>` shows every `M-Q` and `M-R` ([The element tree](01_The_Element_Tree.md)).
 
 | To learn | Look for |
 |---|---|
 | Which engine this is | the first lines: `Version: 4.3.4.646` |
-| What the licence decided | `XDB:LIC: enforced for this run:` (guide 4) |
+| What the licence decided | `XDB:LIC: enforced for this run:` ([What is free](04_Licensing.md)) |
 | Whether something was refused | `ALERT` (a write `xdb_acl` refused), `ERROR` lines naming an element |
 | A `<con>` that never came up | `NOT STARTED`, or `have pro_con="X" -- that <con> was not created` at the start of the document |
 | A function name that is wrong | `CallScopeFunction: ... function 'X' not found` (before 4.3.4.647, `fonksiyonu bulunamadı`). **It stops the rest of that `xdb_fnc` list**, so every connection after it is missing too: read the first such line, not the last |
@@ -164,7 +164,7 @@ CTRL-C stops the engine in order: documents, connections, safe levels on pins, a
 line. Killing the process does none of that (`09_Pins_and_Buses`). A document can be stopped on
 its own by writing its `<doc>`'s `sta`.
 
-Run one project per process: each has its own log, licence (`-lic:`, guide 4) and working
+Run one project per process: each has its own log, licence (`-lic:`, [What is free](04_Licensing.md)) and working
 directory. Before a machine is left to run unattended, see `06_Access_and_Safety` for what must
 not stay as an example leaves it.
 

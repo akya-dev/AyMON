@@ -1,4 +1,4 @@
-# 1 — The element tree, and talking to a device
+# The element tree, and talking to a device
 
 Run **PRJEDU_modbus** first. Everything below is in that example, twice: once
 as the device being polled and once as the device answering.
@@ -118,7 +118,7 @@ Read the two chains left to right and the whole point is in them:
   the bridge. Leave it out and the raw value arrives correctly, `val` stays at
   zero, and **nothing is logged**; the point simply never moves. The same is
   true if you write `pro_typ="0x0102"` instead of `0x1102`: without a run bit
-  the chain never runs at all — see guide 2.
+  the chain never runs at all — see [Timers and events](02_Timers_and_Events.md).
 * **`val_fnc="[VAL.cnv,ATR.rou,ATR.lmt,ALM.onlvl]"`** — scale it
   (`val_cnv_dlt="0.1"`, so a raw `724` becomes `72.4`), round it to `val_rou`,
   clamp it to `val_min`…`val_max`, then compare it with the four alarm limits
@@ -241,7 +241,7 @@ lines usually mean an addressing problem or two masters on one line.
 
 | Symptom | Look at |
 |---|---|
-| No request goes out at all | `dev/@sta` and `bi/@sta` — switched off? Is `pro_con` spelled right (an `ERROR` at start says)? Is the timer running? (guide 2) |
+| No request goes out at all | `dev/@sta` and `bi/@sta` — switched off? Is `pro_con` spelled right (an `ERROR` at start says)? Is the timer running? ([Timers and events](02_Timers_and_Events.md)) |
 | `pro_pol_snd` climbs, `pro_pol_rcv` does not | Timeout. `pro_tmo`, the address, is the device on |
 | Neither counter climbs | No poll reaches the wire: the timer, `sta`, or no link. A device that stopped answering is also asked less often for a while, up to `con_rct` |
 | Values arrive at the block but no point moves | `pro_fnc="[PRO.inp]"` is missing on the `<bi>`, or `pro_adr` is outside the block |
