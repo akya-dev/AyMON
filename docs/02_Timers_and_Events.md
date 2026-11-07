@@ -130,9 +130,24 @@ an older engine ignores the bit and waits the period.
 `evt_per`". That is what you want almost always. `evt_syn="86400"` with
 `evt_per="86400"` means "midnight, then daily" — use it when the *phase*
 matters, not the interval. The boundaries are **local time** (engine 4.3.4.618
-and later): that midnight is this machine's, and a daylight-saving change moves
-the timer with the clock. `evt_dly` is kept at every firing, so `evt_syn="60"
-evt_dly="15"` is quarter past every minute.
+and later), and a daylight-saving change moves the timer with the clock.
+`evt_dly` is kept at every firing, so `evt_syn="60" evt_dly="15"` is quarter
+past every minute.
+
+Whose local time? The examples leave it to the machine: that midnight is the
+machine's, and the first lines of the log name the zone
+(`XDB.xdb_init: Time zone : Europe/Istanbul (...)`). A project that must keep
+its own days wherever it runs names its zone on the root, once (engine
+4.4.1.682 and later):
+
+```xml
+<xdb id="XDB" xdb_tz="Europe/Istanbul" ...>
+```
+
+Every local time follows it: timers, `Time.*`, the log, offset-less text, SQL
+and Python. In a container that runs on UTC, either write `xdb_tz` or give the
+container its zone (`docker run -e TZ=Europe/Istanbul ...`; without `xdb_tz`
+the engine reads `TZ`).
 
 ### Spreading many timers out
 
