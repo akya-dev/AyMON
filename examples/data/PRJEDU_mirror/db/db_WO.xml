@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     WO/S00 - a maintenance board whose open orders are a table.
+
+       ORDERS      THE MIRROR. A list (<his his_wri="row">) that is the live
+                   window of table wo: the engine loads the rows into it,
+                   writes back what the list changes, and reads the table
+                   again every few seconds for what others wrote.
+       CN_SQL      the connection the mirror uses. Its thread does the work.
+       CN_READ     the page's view of the table, apart from the mirror.
+       CN_OTHER    another program that writes to the same table: a
+                   planner raising a priority, someone closing an order at
+                   the machine. It never talks to the engine.
+
+     A TABLE MUST EXIST BEFORE ITS FIRST ROW. main.start makes it (and the
+     first orders, once). A mirror never makes a table.
+     ===================================================================== -->
+<xdb id="WO/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/WO.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFFFFFFF1">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_WO.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+		<tcon id="cls_DB" con_host="%PRJ%/log/orders.db"
+		      con_mod="CLIENT" con_ses="0" con_clr="1" con_tmo="5" con_rct="2"
+		      con_keeptmo="0" con_idletmo="0"
+		      pro_role="MASTER" pro_tmo="10" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		      sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- A row's class: the types of its columns. Without it a number
+		     loaded from the table would be text. -->
+		<tio id="cls_WO" sta_typ="0x0142" wo_id_typ="0x0208" prio_typ="0x0204" status_typ="0x0204"/>
+	</config>
+
+	<data>
+		<thr id="TH_MAIN" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="1"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<con id="CN_SQL"   xdb_cls="cls_DB" xdb_fnc="[CON.sqlite,PRO.sql]" sta="0x0303" desc="the mirror's connection"/>
+		<con id="CN_READ"  xdb_cls="cls_DB" xdb_fnc="[CON.sqlite,PRO.sql]" sta="0x0303" desc="the page's view of the table"/>
+		<con id="CN_OTHER" xdb_cls="cls_DB" xdb_fnc="[CON.sqlite,PRO.sql]" sta="0x0303" desc="another program writing to the table"/>
+
+		<!-- THE MIRROR.
+		     his_wri="row"  a mirror list (without it a <his> is a history sink)
+		     his_tbl        the table
+		     his_col        the columns it reads and writes; ':dtm' = a time
+		     his_key        the table's key, named in his_col
+		     his_rid        a row's element id from its columns: WO17
+		     his_load       WHERE of the load: only the OPEN orders are in the
+		                    list. A finished one stays in the table.
+		     his_order      ORDER BY of the load
+		     his_cls        the class of a loaded row
+		     his_keygen     what HIS.key answers: max = the table's largest key + 1
+		     his_ref        seconds: load again (merged) to see others' writes
+		     his_del        a row that leaves the list: keep = it stays in the table
+		     new ..         ELM.new: a new order, made by main.new_wo -->
+		<his id="ORDERS" xdb_fnc="[HIS.cfg]" sta="0x0303" sta_typ="0x142" qry_con="CN_SQL"
+		     his_wri="row" his_tbl="wo" his_key="wo_id" his_rid="WO{wo_id}"
+		     his_col="wo_id,title,asset,prio,status,opened:dtm,started:dtm,done:dtm"
+		     his_load="status &lt; 2" his_order="wo_id" his_cls="cls_WO"
+		     his_keygen="max" his_ref="3" his_del="keep"
+		     new="" new_typ="0xD402" new_fnc="[ELM.new,ATR.nup]"
+		     new_elm_new="item" new_elm_new_idatr="lid" new_elm_new_pos="+1" new_elm_new_max="N9999"
+		     new_elm_new_eval="return (main.new_wo(evt));"/>
+
+		<!-- The table read back for the page, every row, finished ones too:
+		     SQL.qry over CN_READ, which the mirror never uses. -->
+		<list id="L_TABLE" qry="" qry_typ="0x1401" qry_fnc="[SQL.qry]" qry_max="12" qry_con="CN_READ" sta="0x0303" sta_typ="0x0142"/>
+
+		<var id="T_VIEW" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="TH_MAIN" evt_per="1" evt_dly="2" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.view]" desc="what the page shows, once a second"/>
+
+		<!-- ================================================================
+		     WHAT THE PAGE SHOWS, written by main.view: JSON, one var a panel.
+		     ================================================================ -->
+		<var id="LIST"  sta="0x0303" val="" val_typ="0x0401" desc="the open orders, as the list holds them"/>
+		<var id="TABLE" sta="0x0303" val="" val_typ="0x0401" desc="the table, as the database holds it"/>
+		<var id="STATS" sta="0x0303" val="" val_typ="0x0401" desc="HIS.stat and rows per status"/>
+		<var id="LAST"  sta="0x0303" val="" val_typ="0x0401" desc="what the last action did"/>
+
+		<!-- ================================================================
+		     WHAT THE PAGE MAY WRITE. xdb_acl="0xFFFFFFF1" on the document gives
+		     a Guest (a page that did not log in) read and nothing else; this
+		     one point adds the write. A val chain runs as the engine, so
+		     main.act may change the list for the page.
+		       {"cmd":"new"}                  a new order
+		       {"cmd":"start","id":"WO3"}     started
+		       {"cmd":"finish","id":"WO3"}    done: it leaves the list
+		       {"cmd":"prio"} / {"cmd":"close"}   CN_OTHER writes the table
+		     ================================================================ -->
+		<var id="ACT" sta="0x0303" val="" val_typ="0x1401" val_fnc="[main.act]" xdb_acl="0xFFFFFFF3"
+		     desc="an action from the page"/>
+
+		<!-- THE PAGE - http://127.0.0.1:8117/ (only from this computer) -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the page"
+		     con_host="127.0.0.1" con_port="8117" con_mod="SERVER" con_ses="8" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="the live values for the page"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_WOW" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//var" pro_retain_atr="val"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

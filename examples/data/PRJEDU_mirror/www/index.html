@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_mirror - the page. Served by WO/S00 on 127.0.0.1:8117; the
+     values come over MQTT inside a WebSocket on the same port (/mqtt).
+     The left side is the list the engine holds, the right side the table
+     the database holds. The page writes one thing: ACT, an action.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SQL Mirror List</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+    <style>
+        .pend { font-size: 11px; padding: 1px 6px; border-radius: 999px; border: 1px solid var(--wrn); color: var(--wrn); }
+        tr.off td { color: var(--muted); }
+        .last { margin-top: 12px; font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; min-height: 1.4em; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>A list that is a table <span class="doc">WO/S00 ORDERS &harr; log/orders.db, table wo</span></h1>
+    <div class="chips"><span id="c-live" class="chip">--</span></div>
+</header>
+
+<main>
+    <section class="card">
+        <div class="label">The list <span class="muted">id('ORDERS'): the open orders, as the engine holds them</span></div>
+        <div class="table-wrap"><table>
+            <thead><tr><th>no</th><th>order</th><th>prio</th><th>state</th><th></th></tr></thead>
+            <tbody id="list"></tbody>
+        </table></div>
+        <div class="ctl" style="margin-top:12px">
+            <button id="new">New order</button>
+            <span class="muted small">a script adds a row to the list; no SQL</span>
+        </div>
+        <div class="note"><span class="pend">not written yet</span> marks a row the list has changed and the mirror has not
+            written: it lasts under a second.</div>
+    </section>
+
+    <section class="card">
+        <div class="label">The table <span class="muted">wo, read by CN_READ: <span id="cnt">--</span></span></div>
+        <div class="table-wrap"><table>
+            <thead><tr><th>no</th><th>order</th><th>prio</th><th>state</th><th>opened</th><th>done</th></tr></thead>
+            <tbody id="table"></tbody>
+        </table></div>
+        <div class="note">A finished order stays here and leaves the list: the list loads <code>status &lt; 2</code> only.</div>
+    </section>
+
+    <section class="card">
+        <div class="label">Another program <span class="muted">CN_OTHER writes the table; nothing tells the engine</span></div>
+        <div class="ctl">
+            <button id="prio">Raise a priority</button>
+            <button id="close">Close an order at the machine</button>
+        </div>
+        <div class="note">The mirror loads the table again every 3 seconds (<code>his_ref="3"</code>): the list
+            follows within that.</div>
+        <div class="last" id="last">--</div>
+    </section>
+
+    <section class="card">
+        <div class="label">The mirror <span class="muted">HIS.stat(evt, "id('ORDERS')")</span></div>
+        <div class="tiles">
+            <div class="tile"><div class="t">rows in the list</div><div class="v" id="s-rows">--</div></div>
+            <div class="tile"><div class="t">rows written</div><div class="v" id="s-wri">--</div></div>
+            <div class="tile"><div class="t">statements</div><div class="v" id="s-stm">--</div></div>
+            <div class="tile"><div class="t">loads</div><div class="v" id="s-lds">--</div></div>
+            <div class="tile"><div class="t">waiting</div><div class="v" id="s-dirty">--</div></div>
+            <div class="tile"><div class="t">parked</div><div class="v" id="s-park">--</div></div>
+        </div>
+        <div class="note" id="s-err"></div>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="kit.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

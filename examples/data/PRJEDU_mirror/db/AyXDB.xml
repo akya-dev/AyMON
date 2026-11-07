@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_mirror - a list that is the live window of a SQL table.
+
+     A maintenance board: the open work orders are a list in WO/S00, and
+     the same rows are a table in log/orders.db. No script writes SQL for
+     them. The engine loads the table into the list, writes back every row
+     the list changes, and reads the table again to see what someone else
+     wrote to it.
+
+     xdb_lib names the SQLite driver: CON.sqlite does not exist without it.
+     Needs an engine of 4.4.1.680 or later (the line 'XDB.xdb_init: Version:'
+     in the log names yours).
+
+     Run:   run.bat, then http://127.0.0.1:8117/
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO, AyPRO_sqlite" xdb_log="4" log_cfg="0x39C0"
+     log_lnk="%PRJ%/log/XDB.log" sta="0x0300" tid="S01">
+	<config>
+		<doc id="WO/S00" sta="0x0300" src="%DB%/db_WO.xml" desc="the work orders: the list, the table, the page"/>
+	</config>
+	<data>
+	</data>
+</xdb>

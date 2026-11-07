@@ -4,7 +4,9 @@ Two jobs that keep something after the engine stops: **history** in a database a
 **configuration** in the document's own file. Both are done by the engine. Run
 [PRJEDU_records](../examples/data/PRJEDU_records/) first: a tank whose alarms, events and
 value history go through these sinks into SQLite, and a kill that shows the journal read
-back.
+back. A list kept as the live window of a table, written back by the engine, is
+[A list that is a table](#a-list-that-is-a-table), shown by
+[PRJEDU_mirror](../examples/data/PRJEDU_mirror/).
 
 A third way to keep something, with no database and no save: a value that comes back with
 its last state after a restart is [13_Durable_Documents](13_Durable_Documents.md).
@@ -162,10 +164,11 @@ still be lost, with no line (`PRJEDU_records` says how often).
 
 ### What it is not
 
-No row updates or deletes, no query path: `SQL.qry` still reads a table back into
-elements. At a start the engine does not reload the open items from SQL: a document's
-script does. The pipeline is part of the engine on Linux too, but its test rigs have run
-on Windows, against SQLite, SQL Server and PostgreSQL.
+A history sink only adds rows: no row updates or deletes, and no query path (`SQL.qry`
+reads a table back into elements). Rows that change, a list loaded from a table at a
+start, a table others write too: that is a mirror list, the next section. The pipeline is
+part of the engine on Linux too, but its test rigs have run on Windows, against SQLite,
+SQL Server and PostgreSQL.
 
 ### Reading the log
 
@@ -179,6 +182,78 @@ on Windows, against SQLite, SQL Server and PostgreSQL.
 | `REC: record ids carry node 1 (rec_nid), tid 'S01'` | at start; "derived from tid" means write `rec_nid` |
 | `REC: journal N (oldest S s) \| journalled .. sent .. answered ..` | every 10 s when it moved |
 | per `PRO.rep` link: `records out put= answered= \| in written= repeats= not ours= refused=` | that link's share |
+
+---
+
+## A list that is a table
+
+From 4.4.1.680. Run [PRJEDU_mirror](../examples/data/PRJEDU_mirror/) first: a maintenance
+board whose open work orders are a list, and the same rows a table in SQLite.
+
+Many projects keep a list as the window of a table: work orders, jobs, locations. A
+**mirror list** does the SQL for it. Once the document runs as master the engine loads
+the table into the list, writes back every row the list changes within about a second
+(many rows in one statement), and, with `his_ref`, loads the table again to see what
+someone else wrote. Scripts change rows as they change any element; none writes an
+`UPDATE` or an `INSERT`.
+
+```xml
+<tio id="cls_WO" wo_id_typ="0x0208" prio_typ="0x0204" status_typ="0x0204"/>
+
+<his id="ORDERS" xdb_fnc="[HIS.cfg]" sta="0x0303" sta_typ="0x142" qry_con="CN_SQL"
+     his_wri="row" his_tbl="wo" his_key="wo_id" his_rid="WO{wo_id}"
+     his_col="wo_id,title,asset,prio,status,opened:dtm,started:dtm,done:dtm"
+     his_load="status &lt; 2" his_order="wo_id" his_cls="cls_WO"
+     his_keygen="max" his_ref="3" his_del="keep"/>
+```
+
+| Attribute | Meaning |
+|---|---|
+| `his_wri` | `row`: a mirror list. Without it the `<his>` is a history sink |
+| `qry_con` | the `CON.sql` (or `CON.sqlite`) that reads and writes; its thread does the work |
+| `his_tbl` | the table. It must exist: a mirror never makes one |
+| `his_col` | the columns, `column` or `column=attribute`, `,` between them. Kinds: `:dtm` a time, `:txt` text, `:num` a number kept as text (empty = NULL), `:jsn` JSON (empty = NULL), `:ins` written only when the row is new |
+| `his_key` | the key column(s), named in `his_col` |
+| `his_rid` | a row's element id from its columns: `{col}`, `{col:x}` hex, `{col:016X}` padded |
+| `his_load` | the `WHERE` of the load: which rows are in the list at all |
+| `his_order` | the `ORDER BY` of the load |
+| `his_cls` | the class of a loaded row: the types of its columns |
+| `his_keygen` | what `HIS.key` answers: `max` (the table's largest key + 1) or `uid` (a 53-bit id) |
+| `his_ref` | seconds: load the table again, merged. `0` = only at the start |
+| `his_del` | a row that leaves the list: `keep` it in the table (its last state written), `delete` it, or `col=val` |
+
+**A load is a merge, not a rebuild.** A row the list already has keeps its element and
+takes the table's values; a row the table no longer returns leaves the list; a new one is
+made with `his_cls`. A row with a change not yet written wins: it stays, and the mirror
+writes it. `SQL.qry` is the other way: it deletes the list's rows and makes them again.
+
+**A new row** is an element the script adds, usually by `ELM.new`. Its key comes from
+`HIS.key(evt, "id('ORDERS')")` and its id must be the one `his_rid` makes of it, or the
+next load would make a second element for the same row.
+
+**Someone else writes the table.** `his_ref` sees it: on PostgreSQL and SQL Server a
+signature of the table is read first and nothing is loaded when it has not moved; SQLite
+has no signature and loads every time. `max` keys assume that new rows come only through
+the engine: a row another program adds between two loads takes a key the next `HIS.key`
+also gives. When others add rows, use `uid` or the database's own keys.
+
+**A row the database refuses.** A refused statement is tried row by row: a row refused
+alone is parked with one ERROR line and the others go in. When every row is refused it is
+the database, and the mirror waits, 1 s, then 2, 4 .. 30 s.
+
+From script: `HIS.flush(evt, list[, ms])` (1 = every change made before it is in the
+table; not on a connection's own thread), `HIS.dirty(evt, list[, id])`, `HIS.key`,
+`HIS.del(evt, list, id)` (the row leaves the table, even with `keep`),
+`HIS.refresh(evt, list)`, `HIS.stat(evt, list)`. In a cluster only the master loads and
+writes; a promoted spare writes the rows it holds once and loads the table again.
+
+| Line | Meaning |
+|---|---|
+| `HIS(ORDERS): SQL mirror of table wo over CN_SQL, 8 column(s) written, ..` | the mirror was made |
+| `HIS(ORDERS): table wo loaded -- 3 row(s), 3 new, 0 kept .., 0 removed, 24 ms` | the first load |
+| `HIS(ORDERS): table wo loaded again -- ..` | a later load that changed the list; one that changed nothing writes no line |
+| `HIS(ORDERS): table wo not loaded -- <why> (tried again every 10 s)` | once per outage |
+| `HIS(ORDERS): row 'R' PARKED -- table wo refused it alone: <why>` | one bad row |
 
 ---
 
