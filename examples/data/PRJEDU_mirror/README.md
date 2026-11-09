@@ -124,7 +124,8 @@ A load that changed nothing writes no line.
 * A row the database refuses. A statement refused is tried row by row: a row refused alone
   is **parked** with one ERROR line and the others go in; when every row is refused it is
   the database, and the mirror waits.
-* Read-only columns (`his_ro`), other dialects (`his_load_pg`, ...), several key columns.
+* Read-only columns (`his_ro`), a dialect's own text (`his_load_pgsql`, `his_ro_mssql`, ...;
+  before 4.4.1.685 `his_load_pg`, `his_ro_ms`, ...), several key columns.
 * A mirror that takes records (`his_rec`): an event list whose record is answered only once
   its row is in the table.
 * A durable mirror (`xdb_dur="*"`, [PRJEDU_durable](../PRJEDU_durable/)): changes not yet
