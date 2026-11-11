@@ -188,9 +188,9 @@ change, the direction changes with them.
 A mirror pulls the whole document once when it subscribes, then takes changes. An
 element without an `id` of its own cannot be addressed and is not replicated.
 
-**A blob is not replicated**, and an element added with `evt.AddElement` lives in
-this engine only: use `ELM.new` for a list that must reach the spare
-(`03_Scripting`).
+**A blob is not replicated.** An element added with `evt.AddElement` reaches the
+spare like one made by `ELM.new` (engine 4.4.1.673 and later; older engines kept it
+in this engine only, see `03_Scripting`).
 
 ### Writes into a spare
 

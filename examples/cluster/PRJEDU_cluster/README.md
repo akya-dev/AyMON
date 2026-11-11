@@ -123,9 +123,11 @@ without an id is not replicated). `main.keep_nine` — deleting the lowest batch
 number before writing `@new` — dates from those older engines; it does no
 harm now and shows that `evt.DelElement` is replicated.
 
-And: an element a script adds with `evt.AddElement` is *not* replicated at
-all — the spare never sees it. `ELM.new` (writing the list's `@new`) and
-`evt.DelElement` are: see `db_APP.xml`.
+And: an element a script adds with `evt.AddElement` is replicated too, from
+engine 4.4.1.673 — the spare gets it at once, as with `ELM.new` (writing the
+list's `@new`) and `evt.DelElement`. Older engines kept it on the master only.
+The example stays with `ELM.new`: it keeps the list at ten and gives each item
+its id in the same write (see `db_APP.xml`).
 
 **In the log:** when a node is promoted, or rejoins, one `ERROR` line from
 `PRO.rep.in` ("takes no replication") — a message that arrived while the

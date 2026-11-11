@@ -115,12 +115,13 @@ evt.AddElement("id('SKY')", ac);           // 1 = added
 evt.DelElement("id('AC_4B1805')");          // and gone again
 ```
 
-An element added this way lives in **this engine only**: replication does not
-carry it, so a mirror or a spare never sees it. When the list is part of a
-replicated document, let the list make its own elements with `ELM.new` —
-write what the new element should hold into the list's `@new`, and a script
-of yours (`new_elm_new_eval`) fills it in. `PRJEDU_cluster` keeps its batch
-list that way:
+An element added this way is replicated like any other new element: a mirror
+or a spare gets it at once, as long as it has an `id` of its own (engine
+4.4.1.673 and later; older engines kept it in this engine only). A list that
+must keep a fixed number of items and give each one an id is still simpler
+with `ELM.new` — write what the new element should hold into the list's
+`@new`, and a script of yours (`new_elm_new_eval`) fills it in.
+`PRJEDU_cluster` keeps its batch list that way:
 
 ```xml
 <list id="LOG" new="" new_typ="0x1401" new_fnc="[ELM.new]"

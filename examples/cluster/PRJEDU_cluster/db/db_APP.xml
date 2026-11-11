@@ -58,11 +58,11 @@
 		     so the new item always gets an id); main.step also deletes the
 		     oldest batch before it writes @new - needed on older engines,
 		     harmless now (see db_APP.js).
-		     WHY NOT evt.AddElement? Because an element has to be ANNOUNCED
-		     to reach a mirror. ELM.new creates and deletes through the
-		     engine's one path that publishes (the spare gets an 'ins', and a
-		     'del' for the one cut off); a script's AddElement puts the node
-		     in this document only - the spare would never see it. -->
+		     WHY ELM.new AND NOT evt.AddElement? ELM.new keeps the list at ten
+		     and gives the new item its id in the same write; the spare gets
+		     an 'ins', and a 'del' for the one cut off. A script's AddElement
+		     reaches the spare too on engine 4.4.1.673 and later (older
+		     engines kept it in this document only). -->
 		<list id="LOG" sta="0x0303" desc="finished batches"
 		      new="" new_typ="0x1401" new_fnc="[ELM.new]"
 		      new_elm_new="item" new_elm_new_pos="0" new_elm_new_idatr="id" new_elm_new_max="B10"
