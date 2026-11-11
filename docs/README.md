@@ -19,6 +19,7 @@ seen working.
 | [11_Records_and_Saving.md](11_Records_and_Saving.md) | You want something kept. Alarm, event and value history written by the engine, a journal that survives a node going down, and saving a document without losing its comments. |
 | [12_Keeping_It_Running.md](12_Keeping_It_Running.md) | You are running it for real. Health in `sta`, why a device is in alarm, reading the `stats` line, the log, and getting in while it runs. |
 | [13_Durable_Documents.md](13_Durable_Documents.md) | You want a value to survive a restart without a database. `xdb_dur`, what a crash and a power cut cost, waiting for the disk, an SD card's wear, the newest copy in a cluster. |
+| [reference/](reference/README.md) | You need the exact call. Every built-in scope, object and function, every chain function and every connection type and protocol — arguments, results, measured examples — and how to ask the engine itself with `help`. |
 
 ## Suggested order
 
@@ -114,11 +115,15 @@ replicated, logged and licensed.
 
 ## Where the full reference is
 
-These guides are deliberately small. The complete field notes — SNMP, OPC UA,
-MQTT, cluster and replication, the record pipeline, saving documents, access
-control, authentication, security hardening, the plug-in SDK, the Python module,
-telnet, RPC, raw protocols, load metrics, mail (SMTP), file transfer (FTP, SFTP)
-and file functions, camera capture and image functions, GPIO and I²C / SPI, blob,
-decimal and time values, installation as a service — come with the licensed
-product. If you are doing something the examples do not cover, that is where to
-look.
+These guides are deliberately small. **[The reference](reference/README.md)**
+is the other half: every built-in scope, object and function of the script
+language, every function you put in an XML chain, and every connection type
+and protocol with the fields it reads — each with its arguments, what it
+gives back and a measured example. It also says how to ask the running engine
+itself (`help` in the console or a telnet shell).
+
+The longer field notes — SNMP, OPC UA, MQTT, cluster and replication, the
+record pipeline, saving documents, access control, authentication, security
+hardening, the plug-in SDK, the Python module, telnet, RPC, raw protocols,
+load metrics, mail (SMTP), file transfer (FTP, SFTP), camera capture, GPIO and
+I²C / SPI, installation as a service — come with the licensed product.

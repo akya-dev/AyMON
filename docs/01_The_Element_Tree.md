@@ -121,8 +121,9 @@ Read the two chains left to right and the whole point is in them:
   the chain never runs at all — see [Timers and events](02_Timers_and_Events.md).
 * **`val_fnc="[VAL.cnv,ATR.rou,ATR.lmt,ALM.onlvl]"`** — scale it
   (`val_cnv_dlt="0.1"`, so a raw `724` becomes `72.4`), round it to `val_rou`,
-  clamp it to `val_min`…`val_max`, then compare it with the four alarm limits
-  and set the alarm bits in `sta`. No script anywhere.
+  clamp it to `val_min`…`val_max`, then compare it with the alarm limits —
+  warning, alarm and emergency, each low and high — and set the alarm bits in
+  `sta`. No script anywhere.
 
 Scaling, limits and alarms are **configuration**, not code. That is worth
 noticing before you reach for a script.
@@ -220,8 +221,10 @@ what someone asked for.
 ## Reading the log
 
 Every protocol logs traffic in the same shape. Successful traffic is written at
-level DEBUG, so a device that works is quiet: put `xdb_log="7"` on the `<con>` to
-see it.
+level DEBUG, so a device that works is quiet. To see it, raise the level of the
+elements the traffic belongs to: `xdb_log="7"` on the `<bi>` and its `<dev>`,
+and on the document, whose level caps what reaches the file. Measured on a
+Modbus master: the `<con>` and the document at `7` alone show nothing.
 
 ```
 N03_BL:PRO.modbus(0).M-Q[03|0C|INF_OKY]: 00 02 00 00 00 06 03 03 00 00 00 02

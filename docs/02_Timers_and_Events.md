@@ -186,8 +186,15 @@ sta_fnc="[EVT.sta,main.on_alarm]"
 
 The names run left to right when that attribute is written. They can be engine
 functions (`ATR.rou`, `ALM.onlvl`, `PRO.pol`) or your own script
-(`main.read`) — mixed freely, in any order. An `IF.*` function that returns
-"stop" cuts the rest of the chain.
+(`main.read`) — mixed freely, in any order. An `IF.*` whose condition fails
+skips what follows it up to its `IF.else` or `IF.end` — one `IF.end` per `IF` —
+and the chain goes on after that; the value itself is still stored
+([IF](reference/05_Alarms_Conditions_and_Protocol_Chains.md)).
+
+**`val_fnc`, `pro_fnc` and `sta_fnc` hold at most 63 characters.** A longer
+chain is cut, loses its closing `]`, and **none of it runs** — no log line. If a
+chain grows long, move part of it into one script function. Other `*_fnc`
+attributes (`evt_fnc`, `qry_fnc` ..) are not limited this way.
 
 **A chain is declared on the attribute it reacts to.** `val_fnc` runs when
 `val` is written, `sta_fnc` when `sta` is written, `evt_fnc` when the timer

@@ -351,7 +351,14 @@ guide:
 | [10_Two_Engines.md](docs/10_Two_Engines.md) | replication, the election, what a failover changes, a majority, groups, a field node, a document on another node |
 | [11_Records_and_Saving.md](docs/11_Records_and_Saving.md) | alarm, event and value history written by the engine, and saving a document without losing its comments |
 | [12_Keeping_It_Running.md](docs/12_Keeping_It_Running.md) | health in `sta`, why a device is in alarm, reading the load, the log |
+| [13_Durable_Documents.md](docs/13_Durable_Documents.md) | values that survive a restart without a database, what a crash and a power cut cost |
 
-The complete field notes — SNMP, OPC UA, MQTT, cluster and replication, the record
+[docs/reference/](docs/reference/README.md) is the other half: **every built-in
+scope, object and function** of the script language, every function you put in
+an XML chain, and every connection type and protocol with the fields it reads —
+each with its arguments, what it gives back and a measured example — and how
+to ask the running engine itself with `help`, in the console or a telnet shell.
+
+The longer field notes — SNMP, OPC UA, MQTT, cluster and replication, the record
 pipeline, access control, the plug-in SDK, the Python module, telnet, GPIO and buses,
 load metrics — come with the licensed product.

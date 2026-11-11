@@ -108,6 +108,13 @@ def pages():
     for name in sorted(os.listdir(os.path.join(ROOT, "docs"))):
         if name.endswith(".md") and name != "README.md":
             out.append(("docs/" + name, "docs/" + name, "Guides"))
+    # the script reference: every built-in scope and function, one page per family
+    ref = os.path.join(ROOT, "docs", "reference")
+    if os.path.isfile(os.path.join(ref, "README.md")):
+        out.append(("docs/reference/README.md", "docs/reference/index.md", "Reference"))
+        for name in sorted(os.listdir(ref)):
+            if name.endswith(".md") and name != "README.md":
+                out.append(("docs/reference/" + name, "docs/reference/" + name, "Reference"))
     out.append(("examples/README.md", "examples/index.md", "Examples"))
     for folder, title in groups():
         base = "examples/" + folder
@@ -186,7 +193,7 @@ def stage():
         write(os.path.join(SRC, site), body)
         full.append((title, site, text))
         label = title
-        if site in ("docs/index.md", "examples/index.md"):
+        if site in ("docs/index.md", "docs/reference/index.md", "examples/index.md"):
             label = "Overview"
         elif os.path.basename(os.path.dirname(repo)).startswith("PRJ"):  # the folder name; the full title is on the page
             label = os.path.basename(os.path.dirname(repo))

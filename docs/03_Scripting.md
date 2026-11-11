@@ -27,7 +27,7 @@ The file must be **UTF-8**. A small helper does not need a file at all:
 
 ```xml
 <script id="util" xdb_fnc="[SCR.prs]"><![CDATA[
-function kw(v) { return Number.toFixed(v / 1000.0, 2) + " kW"; }
+function kw(v) { return Number.toFixed((0.0 + v) / 1000, 2) + " kW"; }
 ]]></script>
 ```
 
@@ -54,7 +54,14 @@ expression — a call, not just a name:
 configuration such as a connection string); `xdb_wait` when its connections are
 about to come up; `xdb_start` once everything is up. On a cluster's spare
 `xdb_init` and `xdb_wait` run and `xdb_start` waits until it is master. A syntax
-error is found when a function is first called, not when the file loads.
+error inside a function is found when that function is first called, not when
+the file loads.
+
+A value written from `xdb_init` or `xdb_start` — or queued from there — counts
+as an **update**, not a command: a `PRO.out` in its chain does not send it, and
+several chain functions do nothing with it. An output that must go to a device
+at start is written from a timer (an `evt_*` with a short delay), not from the
+life-cycle hook.
 
 **3 — Inside an address**, which is how a web front end reaches your code:
 
@@ -101,9 +108,9 @@ Every function called through a chain receives one argument, `evt`:
 | `evt.QueValue(adr, v, pri, delay_ms, syn, thr)` | Do it later, or on another thread |
 | `evt.Log(level, str)` | `0` PANIC · `3` ERROR · `4` WARN · `6` INFO · `7` DEBUG |
 
-Adding an element built from text takes three steps, and the first two are
-easy to miss: parse it with `-1` (the XDB fields on — without it `id()`
-never finds the new element), then take it out of the little document it
+Adding an element built from text takes three steps, and the second is
+easy to miss: parse it (`-1` turns the XDB fields on; older engines did not
+index the new element without it), then take it out of the little document it
 was parsed into, because `AddElement` only takes a node that belongs to no
 document (it returns 0 otherwise). `PRJPER_adsb` does it once per aircraft:
 
@@ -149,7 +156,9 @@ document with thousands of elements.
 
 > **`doc()` comes first, the function after it.**
 > `doc('X')/count(data/var)` works; `count(doc('X')/data/var)` silently
-> answers `0`. The same order applies to `xml(...)` and `json(...)`.
+> answers a wrong number (it counted 2 where there were 4). The same order
+> applies to `xml(...)` and `json(...)`. Every address function is in
+> [the reference](reference/03_Events_Documents_and_Addresses.md).
 
 The document may live in another engine. The address stays the same: a
 `<doc id="X" rpc_con="CN_S01">` line says how to reach it, and the same script reads
@@ -165,17 +174,25 @@ to bite. These eight are the ones that actually cost people an afternoon.
 **1 — Arithmetic is typed, and the LEFT operand decides.**
 
 ```js
-c / 12        // integer division if c is an integer
-c / 12.0      // what you meant
-20 + 0.22     // 20
-Math.round(x) / 100.0   // still an integer — Math.round returned one
+var c = 1234;               // an integer
+c / 12                      // 102
+c / 12.0                    // 102 as well: the left operand is still an integer
+(0.0 + c) / 12              // 102.833333333333: what you meant
+c.toFLT() / 12              // the same
+20 + 0.22                   // 20
+Math.round(x) / 100.0       // still an integer: Math.round returned one
 ```
 
-There is no error and no log line. Write the decimal point.
+There is no error and no log line. A decimal point on the **right** changes
+nothing: make the **left** operand a float, with `0.0 + c` or `c.toFLT()`. A
+value read from a `0x0308` attribute is a float already.
 
-**2 — `x == ""` does not catch a missing value.** A missing attribute, a
-missing JSON key, an element that is not there and an SQL NULL all arrive as
-`undefined`. Use `!x` for "missing or empty", `x == null` for "missing".
+**2 — `x == ""` does not catch a missing value.** A missing JSON key, an
+element that is not there, an attribute read as a member (`elm.nope`) and an
+SQL NULL all arrive as `undefined`. One case does not: `evt.GetValue` of an
+attribute that an existing element does not have answers an empty text `""`,
+so `x == null` is false there. Use `!x` for "missing or empty" — it is true
+for all of them — and `x == null` only where the value cannot be an empty text.
 
 **3 — Ordering operators with `undefined` are not JS.** `undefined < 1` is
 true. Do not rely on them; test for the missing value first.
@@ -197,7 +214,10 @@ spread and real regular expressions do not exist.** `var`/`let`/`const`,
 `if`/`for`/`while`, `for (x in obj)`, `try`/`catch`/`finally`, `throw`,
 `?:`, `??`, `?.`, arrow functions with their parentheses (`(x) => x + 1`, not
 `x => x + 1`) and object/array literals all do. A `do` or a bare `x =>` is a
-syntax error, and it takes the whole module with it. A regex
+syntax error. Inside a function it is reported when that function is first
+called, and only that function fails; at the top of the file, outside every
+function, it takes the whole module with it (every call answers
+`object.function not found`). A regex
 literal is accepted only for plain text and is turned into a string at compile
 time; a metacharacter in one is a **compile error** with a line and column,
 not a silent wrong answer.
@@ -261,30 +281,38 @@ instant, whatever their offset. Text with no offset means **local** time. A valu
 that is not one of these, written to an attribute declared as one, is **refused** with
 one `ERROR` line, and the attribute keeps its value.
 
-SQL decimal columns answer decimals. Date-and-time columns answer time values when the
+SQL decimal columns answer decimals through ODBC (SQL Server, PostgreSQL); the
+built-in SQLite driver answers a `DECIMAL` column as a float (`12.50` comes back
+as `12.5`). Date-and-time columns answer time values when the
 `<con>` says `con_dtm="1"`. In Python they arrive as `decimal.Decimal`, `datetime`,
 `date` and `timedelta`, and go back the same way.
 
 ## What is built in
 
-| Scope | |
-|---|---|
-| `Math` | `abs floor ceil round trunc sign min max pow sqrt log exp sin cos tan atan2 random` |
-| `String` | search, slice, case, trim, split, replace, pad, `fromCharCode` |
-| `Array` `Number` `Object` `JSON` `Buffer` | the usual, with the differences above |
-| `Time` | `now` `GetTimeStr` `FmtTimeStr` `GetTimeMs` `ParseTimeMs` `AddDurationMs` `SleepMs` |
-| `File` | `open close read gets write puts seek size tell remove rename` |
-| `CODEC` | `B64_enc/dec` `Z64_enc/dec` `HEX_enc/dec` `JWT_sign/verify/dec` |
-| `RES` | the result codes a hook returns: `RES.OKY`, `RES.INF_SUB_CONTINUE` … |
-| `Blob` | `from`, `live`: large binary values, below |
-| `BYTES` | read and make bytes: `i16be`, `u32le`, `text`, `hex`, `make`, `crc8` … (`09_Pins_and_Buses`) |
-| `SQL` | see below |
-| `HIS` | records and history (`11_Records_and_Saving`) |
-| `CLT` `REP` | the cluster's state, replication (`10_Two_Engines`) |
-| `AUTH` `LIC` | logins and tokens; the licence's own list, `LIC.list()` |
-| `FILE` | `list exists mkdir rmdir move zip` — directories and ZIP archives, from the module `AyLIB_net` (`PRJEDU_net`) |
-| `IMG` `CAM` | image functions on blobs and the camera list, from the module `AyLIB_vision` (`PRJEDU_gauge`, `PRJEDU_vision`) |
-| `GPIO` `I2C` `SPI` | the board's lines and buses, from the module `AyLIB_hw` (`09_Pins_and_Buses`) |
+Every name below has a full entry — arguments, what comes back, an example
+with its measured result — in the [Reference](reference/README.md). This
+table is the map.
+
+| Scope | | Reference |
+|---|---|---|
+| `Math` | `abs floor ceil round trunc sign min max pow sqrt log exp sin cos tan atan2 random` | [01_Language](reference/01_Language.md) |
+| `String` | search, slice, case, trim, split, replace, pad, `fromCharCode` | [01_Language](reference/01_Language.md) |
+| `Array` `Number` `Object` `JSON` `Buffer` | the usual, with the differences above | [01_Language](reference/01_Language.md) |
+| `Time` | `now` `GetTimeStr` `FmtTimeStr` `GetTimeMs` `ParseTimeMs` `AddDurationMs` `SleepMs` | [02_Time_Text_and_Codecs](reference/02_Time_Text_and_Codecs.md) |
+| `CODEC` | `B64_enc/dec` `Z64_enc/dec` `HEX_enc/dec` `JWT_sign/verify/dec` | [02_Time_Text_and_Codecs](reference/02_Time_Text_and_Codecs.md) |
+| `RES` | the result codes a hook returns: `RES.OKY`, `RES.INF_SUB_CONTINUE` … | [02_Time_Text_and_Codecs](reference/02_Time_Text_and_Codecs.md) |
+| `Blob` | `from`, `live`: large binary values, below | [02_Time_Text_and_Codecs](reference/02_Time_Text_and_Codecs.md) |
+| `BYTES` | read and make bytes: `i16be`, `u32le`, `text`, `hex`, `make`, `crc8` … (`09_Pins_and_Buses`) | [02_Time_Text_and_Codecs](reference/02_Time_Text_and_Codecs.md) |
+| `evt` `xdb` | the event and the document: `GetValue`, `SetValue`, `QueValue`, `ForEach`, `Log` … | [03_Events_Documents_and_Addresses](reference/03_Events_Documents_and_Addresses.md) |
+| `File` | `open close read gets write puts seek size tell remove rename` | [07_SQL_History_Files_and_Cluster](reference/07_SQL_History_Files_and_Cluster.md) |
+| `SQL` | see below | [07_SQL_History_Files_and_Cluster](reference/07_SQL_History_Files_and_Cluster.md) |
+| `HIS` | records and history (`11_Records_and_Saving`) | [07_SQL_History_Files_and_Cluster](reference/07_SQL_History_Files_and_Cluster.md) |
+| `CLT` `REP` | the cluster's state, replication (`10_Two_Engines`) | [07_SQL_History_Files_and_Cluster](reference/07_SQL_History_Files_and_Cluster.md) |
+| `AUTH` `MQTT` `TOPIC` | logins and tokens; publishing and subscribing from script | [06_Sessions_and_Protocol_Scripts](reference/06_Sessions_and_Protocol_Scripts.md) |
+| `LIC` | the licence's own list, `LIC.list()` | [07_SQL_History_Files_and_Cluster](reference/07_SQL_History_Files_and_Cluster.md) |
+| `FILE` | `list exists mkdir rmdir move zip` — directories and ZIP archives, from the module `AyLIB_net` (`PRJEDU_net`) | [08_Engine_Modules](reference/08_Engine_Modules.md) |
+| `IMG` `CAM` | image functions on blobs and the camera list, from the module `AyLIB_vision` (`PRJEDU_gauge`, `PRJEDU_vision`) | [08_Engine_Modules](reference/08_Engine_Modules.md) |
+| `GPIO` `I2C` `SPI` | the board's lines and buses, from the module `AyLIB_hw` (`09_Pins_and_Buses`) | [08_Engine_Modules](reference/08_Engine_Modules.md) |
 
 `FILE`, `IMG`, `CAM`, `GPIO`, `I2C` and `SPI` live in engine modules beside the
 engine in `bin`; the first call attaches the module, no `xdb_lib` needed.
@@ -303,7 +331,9 @@ as a time value, with all the precision the clock has
 (`2026-11-04T00:21:26.602876500-07:00`), and `t2 - t1` is milliseconds. The text
 stamp most examples log is `Time.GetTimeStr(0)` → `2026-09-20 22:31:04`.
 
-**Every scope documents itself**, and the key is always lower-case `help`:
+**Every scope documents itself**, and the key is always lower-case `help`
+(the engine modules' scopes — `FILE`, `IMG`, `GPIO` … — keep theirs under a
+function's name: `FILE.help_list`, `IMG.help_decode`):
 
 ```js
 evt.Log(4, Math.help);
@@ -313,22 +343,28 @@ evt.Log(4, Object.keys(Math));
 ```
 
 That is the live list. If anything here disagrees with it, believe the engine.
+The same texts answer in the console (CTRL-X, then `help` or `help Math`) and
+in a telnet shell; [Ask the engine](reference/README.md#ask-the-engine) says
+what to type for what, and which scopes the list leaves out.
 
 ## The engine functions you put in chains
 
 These are normally written in **XML**, not called from script. The names you
-will meet in the examples:
+will meet in the examples are below; every one of them, with the attributes it
+reads, is in [04_Attribute_and_Element_Functions](reference/04_Attribute_and_Element_Functions.md),
+[05_Alarms_Conditions_and_Protocol_Chains](reference/05_Alarms_Conditions_and_Protocol_Chains.md)
+and, for `SQL.qry` and `HIS`, [07_SQL_History_Files_and_Cluster](reference/07_SQL_History_Files_and_Cluster.md).
 
 | Scope | What it does | Seen in |
 |---|---|---|
 | `ATR.rou` `ATR.lmt` | round to `val_rou`, clamp to `val_min`/`val_max` | 101, modbus |
 | `VAL.put` `VAL.cnv` | `pro` → `val`, and scale it | modbus |
-| `ALM.onlvl` | compare with the four limits, set the alarm bits in `sta` | 101, modbus, rep |
+| `ALM.onlvl` | compare with the six limits (warning, alarm, emergency; each low and high), set the alarm bits in `sta` | 101, modbus, rep |
 | `PRO.pol` `PRO.sta` `PRO.inp` | poll, state, distribute a block | modbus |
 | `EVT.sta` `THR.sta` | let `sta` start and stop a timer or thread | all |
 | `XDB.evt` `THR.cre` `SCR.prs` | create the timer / thread / script object | all |
 | `SQL.qry` | run the SQL in `@qry` and turn the rows into elements | sqlite |
-| `IF.*` | cut the rest of the chain on a condition; `IF.chg` goes on only when the value changed | — |
+| `IF.*` | when the condition fails, skip what follows up to its `IF.else` or `IF.end` (the value is still stored); `IF.chg` goes on only when the value changed | — |
 | `HIS.val` `HIS.evt` | a value's history, an event record (`11_Records_and_Saving`) | — |
 | `HIS.cfg` `HIS.new` | make a history sink, take a record into it | — |
 | `REP.cfg` | work out this node's end of a replication link | rep, cluster |
@@ -367,8 +403,12 @@ Three things catch everyone:
 * **Advance `pos`.** A hook that returns `RES.OKY` without moving it is called
   again with the same bytes; the engine stops after 200 turns with
   `on_parse2 cnt>200`.
-* **On TCP what is left over is not kept for the next arrival.** Keep it yourself:
-  `exc.ses.mem` is an object per session that survives between calls.
+* **A frame cut in two is kept if you ask for the rest.** Return
+  `RES.INF_SUB_CONTINUE` with `exc.buf_recv.nxt` set and the bytes from `pos` on stay
+  with the session: the next call sees them in front of what arrives next, on TCP
+  too (`PI`, then `NG\n` 400 ms later, arrives as one `PING\n`). Two frames in one
+  read are two calls. Anything else you need between calls — a counter, a state —
+  goes in `exc.ses.mem`, an object per session that survives between calls.
 * **A script error is not a return value.** It is logged and the engine falls back
   to its built-in behaviour for that exchange.
 
@@ -537,8 +577,8 @@ for the `catch`.
 1. Does the `<script>` element have `xdb_fnc="[SCR.prs]"`? Without it nothing
    loads and nothing is logged.
 2. Are the functions the outside world may call in a module called `api`?
-3. Are your divisions written with a decimal point where you meant a decimal?
-4. Are you testing for a missing value with `x == null`, not `x == ""`?
+3. Where you meant a decimal, is the LEFT operand a float (`(0.0 + c) / 12`)? A point on the right is not enough.
+4. Are you testing for a missing value with `!x` (or `x == null` where it cannot be `""`), not `x == ""`?
 5. Is a run state tested with `(sta & 0x0003) == 3`, not by comparing a whole `sta`?
 6. Every `SQL.exec_direct` / `prepare` matched by a `SQL.close`?
 7. Is the `val_typ` of anything with a `val_fnc` carrying a run bit? ([Timers and events](02_Timers_and_Events.md))
@@ -549,3 +589,6 @@ for the `catch`.
    write a local attribute (`val_typ` `0x4...`)? Local attributes refuse
    writes that come from outside their document - silently.
    (`PRJEDU_robotarm`, `PSTOP_MS`)
+10. Is every `val_fnc`, `pro_fnc` and `sta_fnc` at most 63 characters long? A
+    longer one is cut and none of it runs, with no log line
+    ([Timers and events](02_Timers_and_Events.md)).
