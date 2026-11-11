@@ -69,23 +69,20 @@ format or a text for your own (below). The ready formats, measured with `ms`:
 | | | | |
 |---|---|---|---|
 | `%Y` `%m` `%d` | `2026` `01` `01` | `%H` `%M` `%S` | `03` `00` `00` |
-| `%f` | `123` (milliseconds) | `%z` | `+0300`, or `+03:00` when it ends the text |
+| `%f` | `123` (milliseconds) | `%z` | `+03:00` |
 | `%j` | `001` day of the year | `%U` `%V` `%G` | `00` `01` `2026` (week numbers, ISO year) |
 | `%a` `%A` | `Thu` `Thursday` | `%b` `%B` | `Jan` `January` |
 | `%F` `%T` `%R` `%D` | `2026-01-01` `03:00:00` `03:00` `01/01/26` | `%e` `%C` | ` 1` `20` |
 | `%p` `%I` | `AM` `03` | `%c` `%x` `%X` | `Thu Jan  1 03:00:00 2026` `01/01/26` `03:00:00` |
-| `%Z` | the **machine's** zone name, not the project's | `%%` | `%` |
+| `%Z` | the project's zone name, as [`Time.tz()`](#timetz) | `%%` | `%` |
 
-Three traps, measured:
+A specifier not in this table is refused: one ERROR line `Time: refused -- the format
+'..' holds '%s', which is no format code`, inside `try` an exception with that message.
+Text after `%f` is kept: `"%H:%M:%S.%f h"` gives `03:00:00.123 h`.
 
-* **A specifier not in this table ends the engine process** (`%s`, `%k` measured:
-  the process exits with 0xC0000409, no log line). Check every format text before
-  it reaches a running plant.
-* **Whatever follows `%f` is dropped**: `"%H:%M:%S.%f h"` gives `03:00:00.123`.
-  Put `%f` last, or last before `%z`.
-* `%Z` names the machine's zone, spelt as the system spells it: an Istanbul project on a
-  machine set to another zone printed that machine's zone. Use `Time.tz()` for the
-  project's.
+Before 4.4.2.703, three traps: a specifier not in this table **ended the engine process**
+(`%s`, `%k`: 0xC0000409, no log line); whatever followed `%f` was dropped; `%z` was
+`+0300` unless it ended the text; `%Z` named the machine's zone, not the project's.
 
 ### Time.GetTimeStr
 
@@ -206,8 +203,8 @@ Time.ParseTimeMs("2026-01-01 03:00:00 x")  // 0
 Traps:
 
 * `0` is also a real instant (1970). Test what you parse before you trust a `0`.
-* **A year alone is wrong**: `"2026"` gives 1764536400000, which is 1 **December 2025**.
-  Write `"2026-01-01"`.
+* A year alone is 1 January of that year (`"2026"` = `"2026-01-01"`). Before 4.4.2.703
+  it was **1 December of the year before**.
 * Ranges are not checked: `"2026-13-45 99:99:99"` gives a date in February 2027.
 
 ### Time.GetTimeZoneMs
@@ -393,8 +390,8 @@ Traps:
 * **Decoding stops at the first character outside the alphabet**: a line break in
   the text cuts it. `CODEC.B64_dec("aGVs\nbG8=", 0x0401)` is `"hel"`. Remove line
   breaks first.
-* **An empty text ends the engine process** (`CODEC.B64_dec("")`, measured: access
-  violation). Test `!s` before decoding.
+* An empty text decodes to nothing (an empty buffer, or `""` with `0x0401`). Before
+  4.4.2.703 **it ended the engine process** (access violation): test `!s` first there.
 * Without `0x0401` the result is a buffer, and `JSON.parse` of a buffer is `undefined`.
 
 ### CODEC.HEX_enc
@@ -433,8 +430,10 @@ CODEC.HEX_dec("4142", 0x0401)             // "AB"
 exc.buf_send.append(CODEC.HEX_dec("300b0201 00"));   // in a pro_onparse hook: an answer
 ```
 
-Refused (returns `undefined`): any other character, a half byte left over, a `0x`
-prefix, a number. `CODEC.HEX_dec("414")`, `("41zz")`, `("0x41")` are all `undefined`.
+Refused: any other character, a half byte left over, a `0x` prefix, a number. The
+result is `undefined` and one ERROR line says why (`'z' at 2 is no hex digit`, `an odd
+number of hex digits`); inside `try` it throws with that message. Before 4.4.2.703 the
+refusal was silent.
 `CODEC.HEX_dec("")` is an empty buffer. [BYTES.hex](#byteshex) is the lenient one.
 
 ### CODEC.Z64_enc
@@ -451,7 +450,7 @@ z            // "A9YP9YJmYADYDNYGTY": 18 characters; B64_enc gives 72
 ```
 
 Text that does not repeat grows: three characters per byte (1300 bytes became 3900
-characters). Mind the limits of `Z64_dec` below before you send one.
+characters).
 
 ### CODEC.Z64_dec
 
@@ -463,15 +462,13 @@ Back from `Z64_enc`.
 CODEC.Z64_dec(z, 0x0401)     // "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabcabcabcabc"
 ```
 
-**Outside its limits it ends the engine process** (access violation, measured each time):
+Any size comes back (1400 bytes that do not repeat, 60000 `a`: measured). A text that
+is not what `Z64_enc` made, or is cut, is refused: `undefined`, one ERROR line `the
+text is no Z64 (damaged, cut, or not made by Z64_enc)`, an exception inside `try`.
 
-* the text must be whole, as `Z64_enc` made it: `"A"`, or a text missing its last
-  character, crash;
-* the text may be at most 4094 characters: `Z64_enc` of 1400 bytes that do not repeat
-  (4200 characters) crashes it, 1300 bytes (3900) come back;
-* the result may be at most 16 KB: 5000 `a` come back, 20000 `a` crash.
-
-Use `B64_enc` / `B64_dec` for anything larger or anything that came from outside.
+Before 4.4.2.703 `Z64_dec` **ended the engine process** (access violation) for a
+damaged or cut text, for more than 4094 characters and for a result over 16 KB; use
+`B64_enc` / `B64_dec` with an engine older than that.
 
 ### CODEC.JWT_sign
 
@@ -481,9 +478,9 @@ A signed JSON Web Token: `header.payload.signature`, Base64url without padding.
 
 | Argument | Meaning |
 |---|---|
-| `payload` | the claims as **JSON text**: `JSON.stringify(obj)` |
-| `key` | the shared secret; **only its first 63 characters are used** |
-| `alg` | `"HS256"` (default), `"HS384"`, `"HS512"`. Anything else is refused: `undefined` |
+| `payload` | the claims as JSON text, or an object (written as JSON for you) |
+| `key` | the shared secret, any length |
+| `alg` | `"HS256"` (default), `"HS384"`, `"HS512"`. Anything else is refused: `undefined` and one ERROR line |
 
 ```js
 var tok = CODEC.JWT_sign('{"sub":"1234567890","name":"John Doe","iat":1516239022}',
@@ -494,15 +491,13 @@ var tok = CODEC.JWT_sign('{"sub":"1234567890","name":"John Doe","iat":1516239022
 That is the token every JWT library makes from that payload and secret. The header is
 always `{"alg":"HS256","typ":"JWT"}` (with its algorithm).
 
-Traps, measured:
+A token of any length is signed whole.
 
-* **An object is not stringified for you**: `CODEC.JWT_sign({a: 1}, "k")` signs the
-  text `<OHASH>`.
-* **The whole token must fit in 1023 characters.** A payload up to 705 bytes is signed
-  with HS256, 690 with HS384, 672 with HS512. Longer, the engine returns a token
-  **without a signature** (and from 739 bytes without a payload), with no error.
-  `JWT_verify` refuses those, so you find out late. Keep claims short.
-* A key longer than 63 characters signs with its first 63.
+Before 4.4.2.703, three traps: an object was **not** stringified (`JWT_sign({a: 1}, "k")`
+signed the text `<OHASH>`); a token over 1023 characters came back **without a
+signature** (a payload over 705 bytes with HS256), with no error; a key longer than 63
+characters signed with its first 63 — a token made there does not verify with the whole
+key on 4.4.2.703 or later.
 
 ### CODEC.JWT_verify
 
@@ -517,9 +512,11 @@ CODEC.JWT_verify(tok, "other")                  // 0
 CODEC.JWT_verify("abc", "k")                    // 0
 ```
 
-**It checks the signature only.** An `exp` in the past still answers `1`
-(`{"exp":1000}` measured). Read the claims with `JWT_dec` and compare `exp` with
-`Time.GetTimeMs() / 1000` yourself. A header with `"alg":"none"` answers `0`.
+A numeric `exp` (seconds since 1970) at or before now answers `0`; a payload without
+`exp` is judged by its signature alone. The signature is compared in constant time. A
+header with `"alg":"none"` answers `0`.
+
+Before 4.4.2.703 it checked the signature only: an `exp` in the past still answered `1`.
 
 ### CODEC.JWT_dec
 
@@ -804,7 +801,8 @@ Two names meant to turn a SOAP envelope into an object and back. Neither does an
 
 `SOAP.parse(text)` → undefined
 
-**Not implemented.** It returns `undefined` for every input. Read a SOAP envelope with
+**Not implemented.** It is refused: `undefined` and one ERROR line naming what to use
+(before 4.4.2.703 a silent `undefined`). Read a SOAP envelope with
 [`new XML(text)`](03_Events_Documents_and_Addresses.md#new-xml),
 or let [PRO.soap](09_Connection_and_Protocol_Types.md#prosoap) do it.
 
@@ -812,7 +810,7 @@ or let [PRO.soap](09_Connection_and_Protocol_Types.md#prosoap) do it.
 
 `SOAP.stringify(obj)` → undefined
 
-**Not implemented.** It returns `undefined`. Build the envelope as text.
+**Not implemented.** Refused as `SOAP.parse`. Build the envelope as text.
 
 ---
 

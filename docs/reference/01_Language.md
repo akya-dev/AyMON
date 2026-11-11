@@ -525,14 +525,18 @@ Number.toString(sta, 16)      // "303" for sta = 0x0303
 ```
 
 **The method form is not this function.** A number has a `toString` of its own (the
-same as [`toSTR`](#valuetostr)): it knows base 16 only, writes upper case, and ignores
-any other base.
+same as [`toSTR`](#valuetostr)): it writes letters in **upper** case, and base 16 of a
+negative number is its 64-bit two's complement.
 
 ```js
 (255).toString(16)            // "FF"
-(255).toString(2)             // "255": the base is ignored
-(0).toString(16)              // "": zero writes nothing
+(255).toString(2)             // "11111111"
+(-255).toString(36)           // "-73"
+(0).toString(16)              // "0"
 ```
+
+Before 4.4.2.703 the method form knew base 16 only (`(255).toString(2)` was `"255"`)
+and zero wrote nothing (`(0).toString(16)` was `""`).
 
 ### Number.isInteger
 
@@ -739,15 +743,18 @@ negative `from` is 0. A number to find is read as its text. Searching for `""` g
 
 ### String.lastIndexOf
 
-`String.lastIndexOf(s, find)` / `s.lastIndexOf(find)` → signed integer
+`String.lastIndexOf(s, find [, from])` / `s.lastIndexOf(find [, from])` → signed integer
 
-The character position of the last `find`; -1 when absent. **It takes no starting
-position**: with a third argument it answers -1 whatever the text.
+The character position of the last `find`; -1 when absent. `from` is the last
+position a match may start at (below 0 counts as 0), as in JavaScript.
 
 ```js
 "Hello, World".lastIndexOf("o")   // 8
-"a.b.c".lastIndexOf(".", 2)       // -1: the extra argument
+"a.b.c".lastIndexOf(".", 2)       // 1
+"a.b.c".lastIndexOf(".", 0)       // -1
 ```
+
+Before 4.4.2.703 a third argument made it answer -1 whatever the text.
 
 ### String.includes
 
@@ -832,10 +839,11 @@ stay.
 "hello".padStart(5, "0")   // "hello"
 ```
 
-Two traps: **`len` counts bytes**, not characters (`"ş".padStart(3, "0")` is `"0ş"`),
-and **when `s` is already longer than `len` the result is the fill**, not `s`
-(`"hello".padStart(3, "0")` is `"0"`). Test the length first, or build it with
-`"000".slice(..)`.
+`len` counts characters (`"ş".padStart(3, "0")` is `"00ş"`), a longer `s` comes back
+unchanged, and an empty `fill` leaves `s` alone.
+
+Before 4.4.2.703 two traps: `len` counted **bytes** (`"0ş"`), and when `s` was already
+longer than `len` the result was the **fill** (`"hello".padStart(3, "0")` was `"0"`).
 
 ### String.padEnd
 
@@ -1236,13 +1244,14 @@ Object.toUNS(0xAB, 1)       // one byte, for Buffer.put
 
 `v` as a signed integer of 8, 16, 32 or 64 bits (`cfg` 1, 2, 4, 8; 64 bits when absent).
 Too large a value wraps; text is read as its leading integer (`"abc"` gives 0). A float
-is rounded the way [`toINT`](#valuetoint) rounds, which is wrong for negative numbers.
+is rounded the way [`toINT`](#valuetoint) rounds: to the nearest integer, a half away
+from zero.
 
 ```js
 Object.toINT(200, 1)        // -56
 Object.toINT("12px")        // 12
 Object.toINT(2.7)           // 3
-Object.toINT(-2.2)          // -1, not -2
+Object.toINT(-2.2)          // -2 (before 4.4.2.703: -1)
 ```
 
 ### Object.toFLT
@@ -1332,11 +1341,15 @@ if (log == null) log = [];    // an empty or broken attribute
 
 ### JSON.stringify
 
-`JSON.stringify(v)` → text, or undefined
+`JSON.stringify(v [, null [, indent]])` → text
 
-`v` as JSON text, keys in their order, no spaces. **One argument only**: a second one
-(`JSON.stringify(o, null, 2)`) gives undefined. Only an object, an array or `null` can
-be the argument; a number or a text gives undefined.
+`v` as JSON text, keys in their order, no spaces. A second argument of `null` and an
+`indent` are accepted, but **the text stays compact**; a real replacer (a function or
+an array) is refused with one ERROR line. A number, a text or a boolean gives its own
+JSON text.
+
+Before 4.4.2.703 only one argument was taken (`JSON.stringify(o, null, 2)` gave
+undefined) and a number or a text gave undefined.
 
 | Value inside | Written as |
 |---|---|
@@ -1356,7 +1369,9 @@ JSON.stringify({a: 1, b: 2.5, c: "x", d: true, e: null, f: [1, "y"]})
                   // {"a":1,"b":2.5,"c":"x","d":true,"e":null,"f":[1,"y"]}
 JSON.stringify({n: Math.sqrt(-1)})         // {"n":null}
 JSON.stringify({s: "q\"b\tş"})             // {"s":"q\"b\tş"}
-JSON.stringify(5)                          // undefined
+JSON.stringify(5)                          // 5
+JSON.stringify("x")                        // "x" (quoted)
+JSON.stringify({a: 1}, null, 2)            // {"a":1}
 ```
 
 An element object writes its own attributes, the tag in `xdb_elm`, typed attributes
@@ -1469,10 +1484,11 @@ c = Buffer.put(c, 0, 4, Object.toUNS(0xFF, 1));     // f00f0000: from bit 4
 c = Buffer.put(c, 0, 0, Object.toFLT(2.5, 4));      // 00002040: a 32-bit float
 ```
 
-**A value narrower than a byte, written at a bit that starts a byte (`bit` 0, 8, 16 ..),
-overwrites the whole byte**: `Buffer.put(CODEC.HEX_dec("FF"), 0, 0, true)` gives `01`.
-At any other bit only its own bits change (`false` at bit 3 of `FF` gives `f7`). To set
-bit 0, read the byte, change it, and write it back as a byte.
+A value narrower than a byte changes only its own bits, at any bit: `false` at bit 0 of
+`FF` gives `fe`, at bit 3 `f7`.
+
+Before 4.4.2.703 a value narrower than a byte written at a bit that starts a byte
+(`bit` 0, 8, 16 ..) **overwrote the whole byte** (`false` at bit 0 of `FF` gave `00`).
 
 ### Buffer.get
 
@@ -1531,9 +1547,9 @@ too large for the size wraps.
 
 `v.toINT([size])` → signed integer (64-bit by default)
 
-From text: the leading integer, `0` when there is none. From a float: **it adds 0.5 and
-cuts the fraction**, which rounds a positive number and gets a negative one wrong. From
-a time: epoch milliseconds. From undefined: 0.
+From text: the leading integer, `0` when there is none. From a float: the nearest
+integer, a half away from zero (`2.5` → 3, `-2.5` → −3). From a time: epoch
+milliseconds. From undefined: 0.
 
 ```js
 "12px".toINT()       // 12
@@ -1541,14 +1557,17 @@ a time: epoch milliseconds. From undefined: 0.
 "3.7".toINT()        // 3: text is cut
 "abc".toINT()        // 0
 (2.7).toINT()        // 3
-(-2.2).toINT()       // -1, not -2
+(-2.2).toINT()       // -2
 (300).toINT(1)       // 44
 u.toINT() - 5        // -2 for an unsigned u = 3
 ```
 
-The same rule applies when a float is written into an integer attribute: writing
-`-2.2` into a `0x0204` attribute stores `-1`. Round first with `Math.round` /
-`Math.trunc`, which are right on both sides of zero.
+The same rule applies when a float is written into an integer attribute: `-2.2` into a
+`0x0204` attribute stores `-2`.
+
+Before 4.4.2.703 a float **added 0.5 and cut the fraction**, which got every negative
+number wrong: `(-2.2).toINT()` was −1, and `-2.2` written into a `0x0204` attribute
+stored −1.
 
 ### value.toUNS
 
@@ -1593,7 +1612,8 @@ undefined: 0, so a missing SQL cell or JSON key becomes 0.
 
 The value as text; a hex value keeps its `0x`. With `16`, an integer is written in hex
 digits, upper case, without `0x` or leading zeros; a negative one as its 64-bit two's
-complement. Any other base is ignored.
+complement. Any other base from 2 to 36 writes the integer part, a minus sign for a
+negative number, letters in upper case; 10 or a base out of range is the plain text.
 
 ```js
 (5).toSTR()          // "5"
@@ -1601,9 +1621,11 @@ sta.toSTR()          // "0x0303"
 (255).toSTR(16)      // "FF"
 (4096).toSTR(16)     // "1000"
 (-255).toSTR(16)     // "FFFFFFFFFFFFFF01"
-(0).toSTR(16)        // "": zero writes nothing
-(255).toSTR(2)       // "255"
+(0).toSTR(16)        // "0"
+(255).toSTR(2)       // "11111111"
 ```
+
+Before 4.4.2.703 zero in base 16 wrote nothing and any other base was ignored.
 
 For a lower-case hex or another base use [`Number.toString`](#numbertostring).
 

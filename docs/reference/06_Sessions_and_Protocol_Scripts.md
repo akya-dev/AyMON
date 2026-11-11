@@ -285,18 +285,17 @@ with `new CON_EXC`.
 | `exc.evt` | the event the exchange runs under; its `user_role` is the role reads and writes through it get | read |
 | `exc.buf_recv` | what arrived ([CON_BUF](#con_buf-a-byte-buffer)) | read |
 | `exc.buf_send` | what goes out | read |
-| `exc.buf_data` | a third buffer, for a parsed payload: **usable only in an exchange you made with `new CON_EXC`**, see the trap below | read |
+| `exc.buf_data` | a third buffer, for a parsed payload; empty until something is appended, freed with the exchange | read |
 | `exc.step` | 0 before the first read, 1 after; in a server's `pro_onparse` the first call already sees 1 | read / write |
 | `exc.typ` | 0 receive, 1 query-response | read |
 | `exc.unit` | in `pro_onpol` / `pro_onout`: the `<dev>`'s `pro_adr` as a number (`0x50` → `80`) | read / write |
 | `exc.flag` | flags; `0x00000004` in a poll | read |
 | `exc.err` | on a bus: the first failure of this hook, below | read / write |
 
-> **`exc.buf_data` in a hook does not work.** In every exchange the engine makes
-> (`pro_onparse`, `pro_onaccept`, `pro_onclose`, `pro_onpol`, `pro_onout`) it has no
-> buffer behind it: `exc.buf_data.len` is empty and `exc.buf_data.append(..)` fails with
-> `object.function not found`. Keep a parsed frame in `exc.ses.mem` instead, or leave it
-> in `buf_recv` and read it after `exchange()` returns.
+> Before 4.4.2.703 **`exc.buf_data` did not work in a hook**: in every exchange the
+> engine makes (`pro_onparse`, `pro_onaccept`, `pro_onclose`, `pro_onpol`, `pro_onout`)
+> it had no buffer behind it, and `exc.buf_data.append(..)` failed with
+> `object.function not found`. There, keep a parsed frame in `exc.ses.mem`.
 
 ### new CON_EXC
 
@@ -521,9 +520,19 @@ b.find("QQ")                       // -1
 
 ### buf.split
 
-`buf.split(sep)` → `[]`
+`buf.split(sep)` → array of texts
 
-Listed in the help, not implemented: it always answers an empty array.
+The bytes from 0 to `len` cut at every `sep` (a text or a buffer), each piece a text;
+two separators side by side give `""`, no separator (or `""`) gives the whole buffer.
+
+```js
+var b = new CON_BUF(32);
+b.append("a,b,,c");
+b.split(",")                       // ["a","b","","c"]
+b.split(CODEC.HEX_dec("2c2c"))     // ["a,b","c"]
+```
+
+Before 4.4.2.703 it was not implemented and always answered an empty array.
 
 ---
 
@@ -571,9 +580,11 @@ The attribute is an expression, run with **only** the names of the table above d
   passes `undefined`. Use `exc.evt`.
 * **Trap: inside a module function a free `evt` still means something.** A function that
   uses `evt` without having it as a parameter gets the document's own root event
-  (`evt.id` is the root's id) with the engine's role. Measured in a `pro_onreq` handler:
-  `evt.GetValue("id('SECRET')/@val")` read an Admin-only value that
-  `exc.evt.GetValue(..)` was refused. Always name what you use as a parameter.
+  (`evt.id` is the root's id, `evt.user_role` says 9). What it reads and writes is
+  judged by the role the hook runs with: in a `pro_onreq` handler on 4.4.2.703 an
+  Admin-only value read through it answered `null`, as through `exc.evt`. **Before
+  4.4.2.703 it read that value** — the handler ran as the engine. Always name what you
+  use as a parameter.
 * A script error is not a return value: it is logged (`Code error ...`) and the engine
   does what it does without the hook (for `pro_onparse`: nothing is answered for that
   arrival; for `pro_oncon`: CONNACK 3; for `pro_onlogin`: refused).
@@ -811,25 +822,29 @@ function api(exc, msg)
 
 **Roles.** Two roles meet in a handler, measured with a value only Admin may read:
 
-| | `exc.evt` (reads and writes through it) | the handler's own context (`AUTH.list`, `File.open`, scope gates) |
+| | `exc.evt` (reads and writes through it) | the handler's own context (`xdb`, a free `evt`, `AUTH.list`, `File.open`, scope gates) |
 |---|---|---|
-| no `con_auth` | the visitor: `con_role`, 0 by default | the engine (9) |
-| `con_auth` | the logged-in visitor's role | the visitor's role |
+| default (no `pro_onreq_ses`) | the visitor: `con_role`, 0 by default, or the login's role | the visitor's role |
 | `pro_onreq_ses="1"` | the visitor | the visitor |
-| `pro_onreq_ses="0"` | the visitor | the engine |
+| `pro_onreq_ses="0"` | the visitor | the engine (9) |
 
-So `exc.evt.GetValue(..)` always meets `xdb_acl` with the visitor's role. Do the work
-through `exc.evt`; a free `evt` in the module is the trap described under
-[How a hook is written](#how-a-hook-is-written). With `con_auth` an unsafe request whose
+So `exc.evt.GetValue(..)` always meets `xdb_acl` with the visitor's role, and since
+4.4.2.703 so does the rest of the handler unless the connection says
+`pro_onreq_ses="0"` — for a handler that checks its callers itself and must act as the
+engine. Measured: an Admin-only value read with `xdb.GetValue` answered `null` to an
+anonymous POST, `42` with `pro_onreq_ses="0"`. **Before 4.4.2.703, without `con_auth`
+the handler's own context was the engine (9)**: `xdb.GetValue` and a free `evt` read
+that value for anyone. With `con_auth` an unsafe request whose
 login came from the cookie needs the CSRF token, or it is answered 403 before the hook
 runs ([Access and safety](../06_Access_and_Safety.md)).
 [PRJEDU_web](../../examples/web/PRJEDU_web/) answers a REST call this way.
 
 ### pro_oninp
 
-**On:** a `PRO.http` CLIENT `<con>`. **Called with:** `exc`, `msg` (the answer;
-`msg.isResponse` is 1). Without it the answer's bytes go to the exchange's data. (From
-the source; not run for this page.)
+**On:** a `PRO.http` CLIENT `<con>` — which **sends nothing** (PRO.http is a server only;
+4.4.2.703 says so in one ERROR line at start). Kept for the record: it would be called
+with `exc`, `msg` (the answer). For an HTTP client use `PRO.raw` with a `pro_onpol` /
+`pro_onout` hook.
 
 ### pro_oncon
 
@@ -1152,15 +1167,16 @@ MQTT.publish("CN_BRK", "zz/c", "c", 0)                   // 0: retain missing
 
 `MQTT.subscribe(con_id, filter, handler[, qos])` → `1` / `0`
 
-Adds a subscription with a handler of its own on a CLIENT connection: the engine sends
-SUBSCRIBE and, for every message that matches, runs `handler` with the names `exc`, `cid`,
-`topic`, `msg`.
+Adds a subscription with a handler of its own. On a CLIENT connection the engine sends
+SUBSCRIBE; on a SERVER connection (the engine is the broker) it is registered locally.
+For every message that matches it runs `handler` with the names `exc`, `cid`, `topic`,
+`msg`.
 
 | Argument | Meaning |
 |---|---|
-| `con_id` | a `PRO.mqtt` CLIENT connection |
+| `con_id` | a `PRO.mqtt` connection |
 | `filter` | a topic filter (`+`, `#`), up to 127 bytes; `$share/<name>/<filter>` = a shared subscription, the handler gets `<filter>`'s messages |
-| `handler` | **an expression, as a hook is written**: `"main.h(exc, cid, topic, msg);"` |
+| `handler` | an expression, as a hook is written, `"main.h(exc, cid, topic, msg);"`, or a function's name, `"main.h"` (called with the four). At most 63 characters |
 | `qos` | 0 (default), 1, 2 |
 
 In the handler `msg` is the payload as text, `topic` the message's topic, `cid` **this
@@ -1176,24 +1192,27 @@ function h(exc, cid, topic, msg)
 }
 ```
 
-* A bare function name (`"main.h"`) is accepted and **never called**.
-* The payload reaches the handler cut to **511 bytes** (a 700-byte message arrived as
-  511). Put large data in an attribute, or publish it as several messages.
-* The handler text is cut at **64 characters**: a longer one fails with a `Syntax error`
-  at every message. Keep it a short call.
+* The handler gets the whole payload (a 700-byte message arrives as 700).
+* A handler text over 63 characters is refused: `0` and one ERROR line. Keep it a call
+  of a function with short argument names, or give the function's name alone.
 * Subscribing the same filter again replaces the earlier handler.
-* On a SERVER connection the call answers `0` and writes two ERROR lines (there is no
-  broker to send SUBSCRIBE to), but the handler is registered: it then runs for every
-  matching PUBLISH the broker's clients send (`exc.ses` = the publishing client's
-  session, `cid` = the broker's own `pro_cid`).
+* On a SERVER connection it answers `1`; the handler runs for every matching PUBLISH
+  the broker's clients send (`exc.ses` = the publishing client's session, `cid` = the
+  broker's own `pro_cid`).
 * A connection that does not exist answers `0`, with no line.
+
+Before 4.4.2.703: a bare function name was accepted and **never called**; the payload
+reached the handler cut to **511 bytes**; a handler over 63 characters was cut and failed
+with a `Syntax error` at every message; on a SERVER connection the call answered `0`
+and wrote two ERROR lines (the handler was registered and ran all the same).
 
 ### MQTT.unsubscribe
 
 `MQTT.unsubscribe(con_id, filter)` → `1` sent, `0` nothing to remove
 
-Removes a subscription `MQTT.subscribe` made (the same filter text) and sends
-UNSUBSCRIBE: `MQTT.unsubscribe("CN_CLI", "zz/#")` → 1, a filter never subscribed → 0.
+Removes a subscription `MQTT.subscribe` made (the same filter text) and, on a CLIENT
+connection, sends UNSUBSCRIBE: `MQTT.unsubscribe("CN_CLI", "zz/#")` → 1, a filter never
+subscribed → 0. On a SERVER connection it removes the local registration (→ 1).
 
 ### MQTT.sessions
 

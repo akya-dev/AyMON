@@ -666,11 +666,12 @@ xdb.newID('WR9999')       // "WR0001"
 xdb.newID('WR9999')       // "WR0002"
 xdb.newID('WR9999', 50)   // "WR0050"
 xdb.newID('WR9999')       // "WR0051"
-xdb.newID('K9999')        // "N0001": a one-letter prefix is lost
+xdb.newID('K9999')        // "K0001"
+xdb.newID('ABC')          // "ABC0001": no digits = four after the name
 ```
 
-Give the pattern at least two characters before the digits: a single letter is replaced
-by `N`.
+Before 4.4.2.703 a one-letter prefix was replaced by `N` (`'K9999'` gave `"N0001"`) and a
+pattern without digits gave `"ABC0"` every time.
 
 ### xdb.newUUID
 
@@ -680,11 +681,22 @@ A random (version 4) UUID: `"9b141070-9198-435c-87c1-7a82ac369793"`.
 
 ### xdb.lockID
 
-`xdb.lockID(name, ms)` → `0`
+`xdb.lockID(name, ms)` → `0` when the name was taken, else a code
 
-Meant to take a named lock, waiting up to `ms` ms. **It does not lock**: measured, a
-second `lockID` of a name already taken returned at once (0 ms, with `ms` = 300), and
-every call returns `0`. Use [`xdb.lock`](#xdblock).
+Takes a named lock of the document, waiting up to `ms` ms while another holds it. `0`
+= taken (give it back with `unlockID`); not taken in time = a non-zero code (`24`) and
+one `ALERT` line. Measured: a second `lockID` of a taken name with `ms` = 300 came back
+after 301 ms with `24`.
+
+```js
+if (xdb.lockID("STOCK", 500) == 0) {
+    // .. one thread at a time here ..
+    xdb.unlockID("STOCK");
+}
+```
+
+Before 4.4.2.703 **it did not lock**: a second `lockID` of a taken name returned at
+once with `0`. Use [`xdb.lock`](#xdblock) with an older engine.
 
 ### xdb.unlockID
 
@@ -1233,8 +1245,8 @@ match and an element is kept when it returns non-zero. Measured, it is not usabl
 
 * like `xdb()`, the filter's `evt` is the caller's, so it cannot see the element;
 * without a parameter after the function it gives `undefined`;
-* **without a filter function (`jsn(//item, 'id')`) it never returns: the document's
-  thread and the threads that wait on it stop**.
+* without a filter function (`jsn(//item, 'id')`) every match is kept. Before 4.4.2.703
+  **it never returned: the document's thread and the threads that wait on it stopped**.
 
 Use `json()`, and filter with a predicate (`json(//item[@val>5])`).
 

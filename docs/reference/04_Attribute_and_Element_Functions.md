@@ -91,7 +91,7 @@ function dbl(evt) { evt.valn = evt.valn * 2; return 0; }
 |---|---|---|
 | A function does its work | runs | stored, as `evt.valn` ends |
 | A function lacks an attribute it needs (`ATR.and` without `val_and`) | runs | stored; one `NOTICE` line `function 'ATR.and' returned an error [...]` |
-| A function **stops** the chain (`ATR.hrec`, `ATR.tmr` refusing, `ELM.del`, `PRO.out` ...) | does not run | **not stored** |
+| A function **stops** the chain (`ATR.tmr` refusing, `ELM.del`, `PRO.out` ...) | does not run | **not stored** |
 | An unknown name (`[ATR.foo,ATR.set]`) | does not run | stored as written; `ALERT function 'ATR.foo' not found` (an unknown scope: `PANIC ... function [XYZ.foo] not found`) |
 | `IF.*` answers no | skipped up to `IF.else` / `IF.end` | stored ([page 05](05_Alarms_Conditions_and_Protocol_Chains.md)) |
 | A script function returns anything | runs: the return value is ignored | stored |
@@ -204,9 +204,10 @@ both times. 2.5 on a float → 3.5. To count, use [ELM.inc](#elminc) or
 
 ### ATR.hrec
 
-Not implemented. It **stops the chain and the value is not stored**: measured, a
-`<var>` with `val_fnc="[ATR.hrec,main.seen]"` kept 0 and `main.seen` never ran. Do
-not use it.
+Removed in 4.4.2.703: a chain naming it logs `function 'ATR.hrec' not found` and stops
+there. Before, it was registered but did nothing, and it **stopped the chain without
+storing the value** (`val_fnc="[ATR.hrec,main.seen]"` kept 0, `main.seen` never ran).
+Value history is [HIS.val](07_SQL_History_Files_and_Cluster.md#hisval).
 
 ### ATR.vrec
 
@@ -262,21 +263,26 @@ float types (`0x1204` with min −10, max 10: 20 → 10, −20 → −10).
 <var id="T1" val="0" val_typ="0x1308" val_rou="0.1" val_fnc="[ATR.rou]" sta="0x0303" sta_typ="0x142"/>
 ```
 
-21.47 written stores 21.5. The rounding is not the school one; measured:
+21.47 written stores 21.5. To the nearest multiple of the step, a half **away from
+zero**, on every type; measured:
 
-| Type, step | Written → stored | |
-|---|---|---|
-| float, 0.1 | 21.47 → 21.5, 21.45 → **21.4**, 2.45 → **2.4** | a half goes **down** |
-| float, 1 | 2.5 → **2**, 2.51 → 3, 3.5 → **3** | |
-| float, 5 | 12.4 → 10, 12.6 → 15, 12.5 → **10** | |
-| float, 0.1 | −2.47 → **−2.4**, −2.44 → **−2.3**, −0.04 → 0 | a negative value ends one step too high |
-| integer (`0x1204`), 5 | 17 → 15, 19 → **15**, −7 → **−11** | integers are cut, not rounded; a negative one is wrong |
-| unsigned, 5 | 19 → 15 | cut |
-| decimal (`0x130C`), 0.05 | 12.37 → 12.35, 12.375 → 12.40, −12.375 → −12.40 | exact, half away from zero |
-| float 32 (`0x1304`), 0.1 | 21.47 → 21.5 | |
+| Type, step | Written → stored |
+|---|---|
+| float, 0.1 | 21.47 → 21.5, 21.45 → 21.5, 2.45 → 2.5, −2.47 → −2.5, −2.44 → −2.4, −0.04 → 0 |
+| float, 1 | 2.5 → 3, 2.51 → 3, 3.5 → 4, −2.5 → −3 |
+| float, 5 | 12.4 → 10, 12.6 → 15, 12.5 → 15, −12.5 → −15 |
+| integer (`0x1204`), 5 | 17 → 15, 19 → 20, −7 → −5, −8 → −10, 13 → 15 |
+| unsigned, 5 | 19 → 20, 12 → 10, 13 → 15 |
+| decimal (`0x130C`), 0.05 | 12.37 → 12.35, 12.375 → 12.40, −12.375 → −12.40 |
+| float 32 (`0x1304`), 0.1 | 21.47 → 21.5, 21.45 → 21.5 |
 
-For exact rounding, and for negative values, declare the attribute a decimal
-(`0x130C`). Without `<atr>_rou` the value is stored as written and the chain goes on.
+A half of a float step is judged with a small tolerance, so `21.45` (stored a little
+below) still goes up. Without `<atr>_rou` the value is stored as written and the chain
+goes on.
+
+Before 4.4.2.703 a half of a float went **down** (21.45 → 21.4, 2.5 → 2), a negative
+value ended one step too high (−2.47 → −2.4), and an integer was cut, a negative one
+wrongly (19 → 15, −7 → −11); only a decimal rounded right there.
 NaN and the infinities pass unchanged. In `pro_fnc` it reads `pro_rou`: `pro_rou="5"`,
 12.4 → 10.
 
@@ -526,11 +532,13 @@ The common form:
 
 ### VAL.upd
 
-Meant for `sta_fnc`: re-run `val_fnc` when `sta` changes. **Do not use it**: it carries
-the `sta` event's marks into the `val` write, and `val` is then treated as a `sta`.
-Measured, `sta_fnc="[ELM.sta,VAL.upd]"`, `val` 7, `sta` written 0x0103: **`val` became
-4**. A `<var>` re-runs its `val_fnc` by itself when it comes back to RUNNING
-([ELM.sta](#elmsta)).
+For `sta_fnc`: re-runs `val_fnc` with the stored `val` when `sta` changes. Measured,
+`sta_fnc="[ELM.sta,VAL.upd]"`, `val` 7, `sta` written 0x0103: `val_fnc` ran with 7 and
+`val` stayed 7. A `<var>` also re-runs its `val_fnc` by itself when it comes back to
+RUNNING ([ELM.sta](#elmsta)).
+
+Before 4.4.2.703 **do not use it**: it carried the `sta` event's marks into the `val`
+write, and `val` was treated as a `sta` (7 became 4).
 
 ---
 
@@ -667,10 +675,13 @@ It does not read `08:30`, whatever its help says.
 **Reads:** `<atr>_elm_eval_atr` (target), `<atr>_elm_eval` (a script expression, else the
 value written is the script). **Writes:** the result to the target.
 
-**Do not use it.** The `evt` it hands to the expression is not set up: measured,
-`1+2` wrote 3 once, and the next call (`evt.valn * 10`, and another time the plain
-`6*7` as written value) stopped the engine — every thread went silent. Use
-[ATR.eval](#atreval) and [ELM.put](#elmput), or a script function in the chain.
+The expression gets the writing event as `evt` (as [ATR.eval](#atreval)): `evt.valn` is
+the value written, `evt.obj` the element. `val_elm_eval_atr="res" val_elm_eval="1+2"`
+writes 3 into `res` at every write.
+
+Before 4.4.2.703 **do not use it**: the `evt` it handed over was not set up; `1+2` wrote
+3 once and the next call stopped the engine (every thread went silent). Use
+[ATR.eval](#atreval) and [ELM.put](#elmput) there.
 
 ### ELM.new
 
@@ -872,7 +883,7 @@ evt.SetValue("id('QL')/@qry", "//var[@grp='A']");
 | `<atr>_id` | the name the source's `id` gets (default `rid`) |
 | `<atr>_cls` | `xdb_cls` of every item; `*` keeps the source's own |
 | `<atr>_out` | when present, gets the JSON of all items |
-| `<atr>_row` | when present, every item gets the JSON of the items made so far |
+| `<atr>_row` | when present, every item gets its own JSON (`{"xdb_elm":"item",..,"rid":"A1",..}`). Before 4.4.2.703 it got the JSON of every item made so far, each nesting the earlier ones' `_row` |
 | writes `<atr>_cnt` | how many items were made |
 
 Every item also gets `<atr>_idx` (1, 2 …), `<atr>_elm` (the source's tag) and `<atr>_doc`.

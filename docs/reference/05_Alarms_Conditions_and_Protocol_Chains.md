@@ -31,13 +31,11 @@ An alarm function does not write `sta` itself. It changes the level in the event
 chain is over, and that write runs the element's `sta_fnc` — which is where `ALM.put`,
 `ALM.msk`, `ALM.lnk` and `ALM.tim` sit.
 
-!!! warning "A chain is at most 63 characters"
-    `val_fnc`, `pro_fnc` and `sta_fnc` keep 63 characters. A longer list is cut, loses its
-    closing `]`, and **nothing in it runs** — no error, no line. Measured:
-    `[main.x,ATR.rou,ATR.rou,ATR.rou,ATR.rou,ATR.rou,ATR.rou,IF.any]` (63) runs,
-    the same with `ATR.rou` at the end (64) does not, and reading the attribute back gives
-    the first 63 characters. Other `*_fnc` attributes are not cut: a 79-character
-    `evt_fnc` ran whole. Put a long tail into one script function.
+!!! warning "Before 4.4.2.703 a chain was at most 63 characters"
+    Since 4.4.2.703 a chain may be as long as it needs (an 88-character `val_fnc` runs
+    whole). Before it, `val_fnc`, `pro_fnc`, `sta_fnc` and `xdb_fnc` kept 63 characters:
+    a longer list was cut, lost its closing `]`, and **nothing in it ran** — no error, no
+    line. With an older engine put a long tail into one script function.
 
 ## ALM: alarms
 
@@ -427,9 +425,11 @@ every such write, not only a change (add `IF.chg` for that).
 
 ### IF.neq
 
-**Does not exist.** The help lists it, but the name is not registered: a chain with it
-writes `CallScopeFunction: #XDB.NEQ: function 'IF.neq' not found` and skips it. Use
-`[IF.equ,IF.else,..]`.
+**Reads:** `<atr>_if_neq`. Goes on when the value differs from it. `val_if_neq="5"`
+`val_fnc="[IF.neq,main.f]"`: writes of 3, 5, 6 ran `main.f` for 3 and 6.
+
+Before 4.4.2.703 the name was not registered: a chain with it wrote `function 'IF.neq'
+not found` and skipped it; use `[IF.equ,IF.else,..]` there.
 
 ### IF.grt
 
@@ -591,10 +591,12 @@ A thermostat-style controller on one element. Its fields:
 Without `rmt` or `mod` it writes `ctl.inpOOC : rmt not defined` (NOTICE) and does nothing.
 
 * **`rmt="1"`**: `val` is copied from `val_ctl_lnk`. `run="0"` sets `out` 0 and writes 0 to
-  the output link; `run="1"` sets `out` 1 and writes 1. **`run="2"` (automatic) switches
-  nothing on 4.4.2.702:** measured with `set="21"` and the temperature at 20.8, 21.0, 21.2
-  and, reversed, at 24.5 with `set="24"` — `out` stayed 0 every time. Decide in a script
-  until this works.
+  the output link; `run="1"` sets `out` 1 and writes 1. `run="2"` (automatic): with
+  `mod` 0 or 1 `out` is 1 (written to `out_ctl1_lnk`) while `val` is at or below `set`
+  (`ooc_his` = hysteresis); with `mod="2"` `out` is 2 (1 written to `out_ctl2_lnk`) while
+  `val` is at or above `set`. Measured: `set="21"`, 20.8 → `out` 1 and the heater on;
+  reversed, `set="24"`, 25 → `out` 2 and the cooler on. **Before 4.4.2.703 automatic
+  switched nothing** (`out` stayed 0): decide in a script with an older engine.
 * **`rmt="0"`**: `set` from `set_ctl_lnk`, `run` from `run_ctl_lnk` (0, 1 or 2 by matching
   `run_ctl_off`/`_man`/`_aut`, anything else 0), `out` from the output links (`mod="0"`: 1,
   2 or 3 for both).

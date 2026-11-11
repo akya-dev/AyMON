@@ -6,6 +6,11 @@ and every connection type and protocol — what to write, what it reads, what
 comes back, and the trap. Every example on these pages was run on engine
 4.4.2.702 and its result is written beside it.
 
+Engine 4.4.2.703 fixed the bugs these pages found (crashes in custom time formats and
+CODEC, hangs in `ELM.eval` and `jsn()`, the role of a `pro_onreq` handler, chains over 63
+characters, rounding, and more). Where a function changed, its page says what it does
+now and, in a sentence starting "Before 4.4.2.703", what an older engine does.
+
 Read a guide first. [03_Scripting](../03_Scripting.md) explains where script
 lives and how the XML calls it; [02_Timers_and_Events](../02_Timers_and_Events.md)
 why a write runs a chain. This reference assumes both.

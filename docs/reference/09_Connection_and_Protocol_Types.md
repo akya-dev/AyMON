@@ -565,8 +565,8 @@ serial line is not available.
 | `pro_adr` | `<io>` | | `element.bit` inside the block |
 
 The help text also lists functions 20 and 21 (file records). A master refuses them as a
-configuration error (from the source); a slave does not answer them (measured: no reply to
-function 20).
+configuration error (from the source); a slave answers them with exception 1 (illegal
+function). Before 4.4.2.703 the slave did not answer them at all.
 
 ```xml
 <!-- the slave: answers unit 1, four holding registers from 0 -->
@@ -598,9 +598,12 @@ function 20).
 *Measured:* `M0` = 1234; writing `M1.pro = 77` set the slave's `R1` to 77 and `M1` read 77 one
 poll later. The slave, asked from outside: function 3 answered `04 d2 00 4d 00 00 00 00`;
 function 4 answered from the **same** block; function 1 answered the bits of register 0
-(`d2 04`); function 6 to register 2 was echoed and stored. A request outside the block or for
-a unit no `<dev>` answers got **no reply** (no exception frame); a TCP listener full of
-sessions refused the next connection. Examples:
+(`d2 04`); function 6 to register 2 was echoed and stored. A request outside the block got
+exception 2 (`83 02`, `86 02`), an unknown function exception 1; a unit no `<dev>` answers
+gets **no reply** (as a gateway with no such device); a TCP listener full of sessions
+refused the next connection. Before 4.4.2.703 a request outside the block got no reply
+either. A Modbus TCP request shorter than 12 bytes (function 7, 11, 12, 17) is dropped
+without a reply. Examples:
 [PRJEDU_modbus](../../examples/protocols/PRJEDU_modbus/) (both ends),
 [PRJEDU_plc](../../examples/labs/PRJEDU_plc/), [PRJEDU_oee](../../examples/labs/PRJEDU_oee/).
 
@@ -609,7 +612,8 @@ sessions refused the next connection. Examples:
 The web listener: files, server pages (`.ayp`), a mount for blob values, logins. SLAVE only —
 **the client half does not send**: a `[CON.tcp,PRO.http]` MASTER polling `GET /index.html`
 connected, counted the request and failed every poll with `Error(ERR_CONNECT_0000)` (measured).
-To call a web service from AyMON, write the request with [PRO.raw](#proraw).
+Since 4.4.2.703 such a `<con>` writes one ERROR line at start saying so. To call a web
+service from AyMON, write the request with [PRO.raw](#proraw).
 
 | Field | Default | Meaning |
 |---|---|---|
@@ -619,7 +623,7 @@ To call a web service from AyMON, write the request with [PRO.raw](#proraw).
 | `pro_http_max` | 16 MiB | bytes of a request body; above it 413 before the body is read |
 | `pro_http_hdr` | | extra answer headers, `Name: value` lines separated by a vertical bar |
 | `pro_onreq` | | `main.f(exc,msg);` — called for a request **with a body** (a POST); a GET or HEAD is always a file |
-| `pro_onreq_ses` | 0 | `1` = `pro_onreq` runs with the visitor's role instead of the connection's (with `con_auth` the visitor's is the default, `0` turns it off) |
+| `pro_onreq_ses` | | `0` = `pro_onreq` runs with the engine's role (a handler that checks its callers itself); absent or `1` = the visitor's role. Before 4.4.2.703 absent meant the engine's role unless `con_auth` was set |
 | `pro_blob` | | a path (`/blob`) under which blob values are served, `?stream=1` as MJPEG |
 | `con_auth` | | an `<auth>`: `/auth/login` … and a role per request |
 | `pro_http_auth`, `pro_http_auth_pfx`, `pro_http_pub`, `pro_http_cookie`, `pro_http_csrf`, `pro_http_rate` | | the login's rules — [AUTH](06_Sessions_and_Protocol_Scripts.md) and [Access and safety](../06_Access_and_Safety.md) |

@@ -260,7 +260,7 @@ VPN only:  telnet shell, PRO.mcp, replication and cluster links
 |---|---|---|---|
 | Files from script | `xdb_file_role` | 3 | the lowest role that may call `File.open`, `remove`, `rename`. Engine scripts pass; a page runs with its visitor's role |
 | | `xdb_file_dirs` | anywhere | `;` list of directories, holding **every** script, the engine's too. `..` is refused |
-| A request handler | `pro_onreq_ses` | as below | `pro_onreq` on `PRO.http`, `rest`, `soap`: reads and writes through `exc.evt` always carry the **visitor's** role (`con_role`, 0 by default, or the login). The handler's own context — `File.open`, `AUTH.list`, a free `evt` in the module — is the **engine** with no `con_auth` and the **visitor** with one; `"1"` or `"0"` says which. Do the work through `exc.evt` ([pro_onreq](reference/06_Sessions_and_Protocol_Scripts.md#pro_onreq)) |
+| A request handler | `pro_onreq_ses` | as below | `pro_onreq` on `PRO.http`, `rest`, `soap`: reads and writes through `exc.evt` always carry the **visitor's** role (`con_role`, 0 by default, or the login). Since 4.4.2.703 the handler's own context — `xdb`, `File.open`, `AUTH.list`, a free `evt` in the module — is the **visitor** too; `"0"` makes it the **engine**, for a handler that checks its callers itself. Before 4.4.2.703 it was the engine with no `con_auth`. Do the work through `exc.evt` ([pro_onreq](reference/06_Sessions_and_Protocol_Scripts.md#pro_onreq)) |
 | HTTP size | `pro_http_max` | 16 MiB | larger is 413 before a body byte is read |
 | HTTP listing | `pro_http_list` | off | `"1"` lists a directory with no index |
 | HTTP headers | `pro_http_hdr` | none | extra lines, `\|` between them: `Strict-Transport-Security: max-age=31536000\|X-Frame-Options: SAMEORIGIN` |
