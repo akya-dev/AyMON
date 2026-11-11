@@ -609,11 +609,13 @@ without a reply. Examples:
 
 ### PRO.http
 
-The web listener: files, server pages (`.ayp`), a mount for blob values, logins. SLAVE only —
-**the client half does not send**: a `[CON.tcp,PRO.http]` MASTER polling `GET /index.html`
-connected, counted the request and failed every poll with `Error(ERR_CONNECT_0000)` (measured).
-Since 4.4.2.703 such a `<con>` writes one ERROR line at start saying so. To call a web
-service from AyMON, write the request with [PRO.raw](#proraw).
+The web listener: files, server pages (`.ayp`), a mount for blob values, logins. As a
+client (MASTER) **its XML polls and writes do not send**: a `[CON.tcp,PRO.http]` MASTER
+polling `GET /index.html` connected, counted the request and failed every poll with
+`Error(ERR_CONNECT_0000)` (measured). Since 4.4.2.703 one ERROR line says so at the first
+such poll or write. A script that drives the connection itself (`new CON_EXC` +
+`exc.exchange()`, see [pro_oninp](06_Sessions_and_Protocol_Scripts.md#pro_oninp)) works;
+otherwise write the request with [PRO.raw](#proraw).
 
 | Field | Default | Meaning |
 |---|---|---|

@@ -841,10 +841,13 @@ runs ([Access and safety](../06_Access_and_Safety.md)).
 
 ### pro_oninp
 
-**On:** a `PRO.http` CLIENT `<con>` — which **sends nothing** (PRO.http is a server only;
-4.4.2.703 says so in one ERROR line at start). Kept for the record: it would be called
-with `exc`, `msg` (the answer). For an HTTP client use `PRO.raw` with a `pro_onpol` /
-`pro_onout` hook.
+**On:** a `PRO.http` CLIENT `<con>` — whose `<bi>` / `<io>` polls and writes **send
+nothing** (since 4.4.2.703 one ERROR line says so at the first one). Kept for the
+record: it would be called with `exc`, `msg` (the answer). A script can still use such a
+connection as an HTTP client: `new CON_EXC(evt, ses)`, the request in `exc.buf_send`,
+`exc.exchange()`, the answer read with `new HTTP_MSG(exc.buf_data)` (DCIM's SMS and ERP
+calls do this; from their code, not run for this page). Or use `PRO.raw` with a
+`pro_onpol` / `pro_onout` hook.
 
 ### pro_oncon
 
