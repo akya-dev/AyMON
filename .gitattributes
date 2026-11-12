@@ -3,3 +3,8 @@
 *.py    text eol=lf
 # The engines are binaries, whatever their names
 bin/**  binary
+# GitHub's language bar counts source files and skips examples/ as documentation. Here the
+# examples ARE the source a user writes (configuration in XML, logic in JavaScript-like
+# script), so they count, and XML is shown although GitHub treats it as data by default.
+examples/** linguist-documentation=false
+*.xml linguist-detectable=true
