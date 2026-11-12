@@ -81,6 +81,27 @@ The header goes through `AUTH_HEADER` because Windows splits an argument at
 the space in `Bearer demo-read-key`. Quit Claude Desktop from the tray and
 start it again after editing the file.
 
+**Without Node.js** — [`tools/mcp/aymon_mcp_stdio.py`](../../../tools/mcp/aymon_mcp_stdio.py)
+is the same bridge in Python's standard library: one JSON-RPC message per
+line on stdin, the answer on stdout. Given `--start` with this example's
+`run.sh`, it starts the engine first and stops it when the client goes:
+
+```json
+"aymon-demo": {
+  "command": "python3",
+  "args": ["/path/to/AyMON/tools/mcp/aymon_mcp_stdio.py",
+           "--url", "http://127.0.0.1:8095/mcp", "--key", "demo-read-key"]
+}
+```
+
+**In a container** — [`tools/mcp/Dockerfile.glama`](../../../tools/mcp/Dockerfile.glama)
+runs this example and the bridge behind `mcp-proxy` (the image the
+[Glama](https://glama.ai/mcp/servers) directory uses to check a server):
+`docker build -f tools/mcp/Dockerfile.glama -t aymon-mcp .` from the
+repository's top, then `docker run --rm -p 8080:8080 aymon-mcp` and point a
+client at `http://localhost:8080/mcp`. Measured: 22 tools, and a clean stop
+on `docker stop`.
+
 Then ask, for example:
 
 * *"What AyMON documents can you see, and what is in them?"*
