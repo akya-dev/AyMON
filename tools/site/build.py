@@ -234,6 +234,12 @@ def stage():
     cfg["nav"] = nav
     write(os.path.join(OUT, "mkdocs.yml"), yaml.safe_dump(cfg, sort_keys=False, allow_unicode=True))
 
+    # robots.txt at the site's root: crawlers that do not get the sitemap by hand (Bing, DuckDuckGo,
+    # AI search) find it here; everything may be crawled
+    if site_url:
+        write(os.path.join(SRC, "robots.txt"),
+              f"User-agent: *\nAllow: /\n\nSitemap: {site_url.rstrip('/')}/sitemap.xml\n")
+
     # for AI assistants (https://llmstxt.org/)
     url = lambda p: site_url.rstrip("/") + "/" + (p[:-len("index.md")] if p.endswith("index.md") else p[:-3] + "/")
     idx = ["# AyMON", "",
