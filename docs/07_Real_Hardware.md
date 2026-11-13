@@ -12,7 +12,7 @@ to get to replace it, and where its README tells how to connect it**.
     - **Most of it is not tested.** The examples have been run against
       their simulators, and only some against real devices; each README's
       *Real hardware* section says what was and was not tried. The engine
-      itself runs production systems with thousands of devices — see
+      itself runs systems in the field with thousands of devices — see
       [In the field](08_In_the_Field.md).
     - **Costs are rough** (2026, US dollars, new) and vary by country and
       seller. The brands are examples of a kind of device, not

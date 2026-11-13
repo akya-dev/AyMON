@@ -3,7 +3,7 @@
 The examples run against simulators, and their *Real hardware* sections say
 honestly that most of those paths have not been tried with the device on a
 desk. That is about the **examples**. The **engine** itself is not new: it
-is the same engine that runs production systems today, and it is tested
+is the same engine that runs large systems in the field today, and it is tested
 the same way every time it changes.
 
 ## Data-centre monitoring (DCIM)
@@ -14,11 +14,11 @@ unit, generator, sensor and meter of the site is a device of the engine; it
 polls them, keeps their alarms, writes their history and serves the
 operators' web application.
 
-One of them, as configured today:
+One of them, now being commissioned, as configured today:
 
 | | |
 |---|---|
-| devices | **1 837** — 1 510 over SNMP, 325 over Modbus TCP |
+| devices | **1 835** — 1 510 over SNMP, 325 over Modbus TCP |
 | points (`<io>`) | **272 042**, in 7 517 blocks |
 | documents | 14 per node: the field (one document per floor), alarms, events, history, assets, work orders, the web back end |
 | connections (`<con>`) | **85**: 26 SNMP, 14 SQL, Modbus TCP, HTTP / REST / SOAP, MQTT over WebSocket for the browsers, cluster and replication links, SMTP, SFTP, an MCP endpoint and a telnet maintenance shell |
