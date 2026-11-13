@@ -996,8 +996,11 @@ A `|` between two paths joins their sets: `count(//var|//item)` → 10.
 
 Traps, measured:
 
-* **An unquoted hex number never matches.** `count(//var[@val_typ=0x1308])` → `0`;
-  write `[@val_typ='0x1308']` or the decimal `[@val_typ=4872]`.
+* **An unquoted hex number is a number since 4.4.2.706.** `count(//var[@val_typ=0x1308])`
+  → `2`, the same as `[@val_typ='0x1308']` and the decimal `[@val_typ=4872]`;
+  `[@sta=0x0303]` and `[@val<0x10]` compare as numbers. Before 706 an unquoted hex was
+  read as `0`: that count gave `0`, `[@sta=0x0303]` matched nothing and `[@val=0x10]`
+  picked the `<var>`s whose `val` is 0. On an older engine quote it or write it in decimal.
 * **An unknown function matches nothing**: `[translate(@name,'a','b')='x']` → 0. There
   is no error. `translate`, `local-name`, `boolean`, `lang`, `id()` inside a predicate
   and `$variables` do not exist.
