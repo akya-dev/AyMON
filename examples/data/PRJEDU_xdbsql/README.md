@@ -68,7 +68,7 @@ Nothing to install: the history table is one file, `log\plant.db` (SQLite).
   script would, through the role check and the point's own chain. From 15432 it changes the limit; from the page it
   writes 0 rows and the log names the refused value; 15433 refuses the statement.
 * **any PostgreSQL client.** psql, Python (psycopg, or `pg_try.py` here, standard library only), Excel and Power BI
-  through psqlODBC (the navigator lists the tables), Grafana. The database name is a document.
+  through psqlODBC (the navigator lists the tables), Grafana, pgAdmin 4. The database name is a document.
 
 ## Try it
 
@@ -95,6 +95,11 @@ Nothing to install: the history table is one file, `log\plant.db` (SQLite).
    limit — run *Both lines* on the page and see it — the fourth is refused (15433 is read only), the fifth reads a
    table without naming its document: `--db` chose it. Write the limit back from 15432 (`SET hi = 68`).
 8. With psql: `\dt` lists the tables of the database (document) you connected to, `\dn` the documents.
+9. With pgAdmin 4: *Register > Server*, host `127.0.0.1`, port `15432`, maintenance database `postgres`, any user
+   name, no password, SSL mode `prefer`. *Schemas* are the documents, *Tables* the element names; right-click `io` >
+   *View/Edit Data* reads the points, the Query Tool takes any of the statements above. On this port an alias written
+   without quotes comes back in lower case and `SELECT *` gives the table's columns as the catalog lists them, as
+   PostgreSQL does.
 
 The limits you write are in memory: a restart brings the file's values back. The history is the record: it survives a
 restart; delete `log\plant.db` to begin again.

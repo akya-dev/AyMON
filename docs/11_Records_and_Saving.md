@@ -348,7 +348,7 @@ same path a script's write takes (the role check, the point's chain).
 
 **Three ways in.** A `SQL.qry` list over a connection `con_host="xdb:doc=LINE/*;max=5000"`
 (what a page writes to `@qry` runs with the page's role); a `PRO.pgwire` port that any
-PostgreSQL client opens (psql, psycopg, psqlODBC for Excel and Power BI, Grafana), the
+PostgreSQL client opens (psql, psycopg, psqlODBC for Excel and Power BI, Grafana, pgAdmin 4), the
 database name being a document and the port's `con_role` or login the role; and the
 `sql` command of the telnet shell or the MCP tool `xdb_sql`.
 
@@ -371,6 +371,9 @@ What it does not do:
   gives a case-insensitive order. `=` is case-sensitive.
 
 The field note `XDB_SQL.md` (in the engine's documents) has the whole language.
+
+See also [14_SQL_Both_Ways](14_SQL_Both_Ways.md): `sql()`, named queries and `xdb()` side by side, with their gates,
+limits and log lines.
 
 ---
 

@@ -19,6 +19,7 @@ seen working.
 | [11_Records_and_Saving.md](11_Records_and_Saving.md) | You want something kept. Alarm, event and value history written by the engine, a journal that survives a node going down, a list that is a table, a history query that takes each point's name from the tree, and saving a document without losing its comments. |
 | [12_Keeping_It_Running.md](12_Keeping_It_Running.md) | You are running it for real. Health in `sta`, why a device is in alarm, reading the `stats` line, the log, and getting in while it runs. |
 | [13_Durable_Documents.md](13_Durable_Documents.md) | You want a value to survive a restart without a database. `xdb_dur`, what a crash and a power cut cost, waiting for the disk, an SD card's wear, the newest copy in a cluster. |
+| [14_SQL_Both_Ways.md](14_SQL_Both_Ways.md) | You want the tree and a database in one query. A database table in XDB SQL (`sql()`, named queries `<sqlq>`), a table of the tree in the database's own SQL (`xdb()`), who may do which, the limits, and which bridge to choose. |
 | [reference/](reference/README.md) | You need the exact call. Every built-in scope, object and function, every chain function and every connection type and protocol — arguments, results, measured examples — and how to ask the engine itself with `help`. |
 
 ## Suggested order
