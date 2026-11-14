@@ -350,7 +350,9 @@ same path a script's write takes (the role check, the point's chain).
 (what a page writes to `@qry` runs with the page's role); a `PRO.pgwire` port that any
 PostgreSQL client opens (psql, psycopg, psqlODBC for Excel and Power BI, Grafana, pgAdmin 4), the
 database name being a document and the port's `con_role` or login the role; and the
-`sql` command of the telnet shell or the MCP tool `xdb_sql`.
+`sql` command of the telnet shell or the MCP tool `xdb_sql`. On the PostgreSQL port and through
+MCP an attribute that holds a password, a key or a token reads NULL and a password inside a
+text (`PWD=x;`) reads `***`; a `WHERE` cannot test one either.
 
 **Another database in the same query.** `sql('CN', 'SELECT ..') AS h` is a table read
 from a SQL connection once, before the walk — for an Engineer, from a connection with

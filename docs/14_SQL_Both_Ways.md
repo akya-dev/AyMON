@@ -220,6 +220,12 @@ On a PostgreSQL port the engine follows PostgreSQL's rules: an alias written wit
 (`AS Total` gives `total`, `AS "Total"` keeps it), `SELECT *` gives a table's columns as the catalog lists them, and
 every integer column is plain digits (`sta` `0x0300` is `768`).
 
+Secrets stay in the engine: an attribute whose name says it is a password, a key or a token (`pro_pwd`, `pro_pass`,
+`pro_priv_key`, `api_token` ..) reads NULL and is not in the catalog, and a password inside a text (a connection string's
+`PWD=x;`) reads `***`. A `WHERE` or a join cannot test such a value. `qty_okey` or `his_keygen` are plain data and stay.
+The MCP tool `xdb_sql` hides by the rule of the other MCP tools: any name holding `pwd`, `pass`, `key`, `secret` or
+`token`.
+
 With `con_auth` the login is a real one and its password goes over TLS only: give the port `con_ssl_cert` (STARTTLS) or
 make it `CON.tls`, and set SSL mode `require` in pgAdmin / `sslmode=require` for psql.
 
