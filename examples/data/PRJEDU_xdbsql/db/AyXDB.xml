@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_xdbsql - SQL on the tree.
+
+     The documents ARE the tables. An element name is a table (io), an
+     element is a row (a point), an attribute is a column (val, desc, hi),
+     the document is the schema ("LINE/L1"; "LINE/*" = both lines).
+     XDB SQL reads them with the role of whoever asks, and the same query
+     can take in a table of a real database: sql('CN', 'SELECT ..') for an
+     engineer, sqlq('NAME', values) - a query the engineer wrote - for
+     everybody else. The other way round, a database's own SQL can take a
+     table of the tree: xdb('SELECT .. FROM "LINE/*".io') AS x.
+
+     Three ways in:
+       the page            http://127.0.0.1:8119/   as a Guest (no login)
+       a PostgreSQL port   127.0.0.1:15432          as an Engineer
+                           127.0.0.1:15433          as a Monitor, read only
+     (psql, Excel or Power BI through psqlODBC, Grafana, Python, or the
+     example's own pg_try.py)
+
+     xdb_lib names the SQLite driver: the history table is log/plant.db.
+     Needs an engine of 4.4.3 or later (the line 'XDB.xdb_init: Version:'
+     in the log names yours).
+
+     Run:   run.bat, then http://127.0.0.1:8119/
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO, AyPRO_sqlite" xdb_log="4" log_cfg="0x39C0"
+     log_lnk="%PRJ%/log/XDB.log" sta="0x0300" tid="S01">
+	<config>
+		<doc id="LINE/L1" sta="0x0300" src="%DB%/db_L1.xml" desc="line 1: filling"/>
+		<doc id="LINE/L2" sta="0x0300" src="%DB%/db_L2.xml" desc="line 2: packing"/>
+		<doc id="SQL/S00" sta="0x0300" src="%DB%/db_SQL.xml" desc="the history table, the SQL connections, the page"/>
+	</config>
+	<data>
+	</data>
+</xdb>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_xdbsql - the page. Served by SQL/S00 on 127.0.0.1:8119; it
+     talks to the engine over MQTT inside a WebSocket on the same port
+     (/mqtt). It writes XDB SQL to SQL/S00/Q/qry and reads the rows from
+     Q/qry_out: the engine runs the text with the page's role, a Guest.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SQL on the Tree</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+    <style>
+        textarea { width: 100%; box-sizing: border-box; min-height: 92px; padding: 8px 10px; border: 1px solid var(--line);
+                   border-radius: 6px; background: var(--bg); color: inherit;
+                   font: 12.5px/1.45 ui-monospace, Consolas, monospace; resize: vertical; }
+        pre { margin: 6px 0 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg);
+              font: 12px/1.45 ui-monospace, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+        .presets button.on { border-color: var(--c3); background: var(--btn-h); }
+        .why { min-height: 2.8em; margin: 6px 0 8px; font-size: 13px; }
+        .err { color: var(--alm); font-size: 12.5px; margin-top: 6px; white-space: pre-wrap; }
+        .ok { color: var(--muted); font-size: 12.5px; margin-top: 6px; }
+        td.null { color: var(--muted); font-style: italic; }
+        th.tree, td.tree { color: var(--c3); }
+    </style>
+</head>
+<body>
+<header>
+    <h1>SQL on the tree <span class="doc">SQL/S00 &rarr; "LINE/*".io + log/plant.db</span></h1>
+    <div class="chips"><span id="c-live" class="chip">--</span></div>
+</header>
+
+<main>
+    <section class="card wide">
+        <div class="label">Ask the tree <span class="muted">XDB SQL, run by the engine with this page's role
+            (a Guest: it may read the lines, write nothing, and take in the database only through a named query)</span></div>
+        <div class="presets" id="presets"></div>
+        <div class="why muted" id="why"></div>
+        <form id="f-run">
+            <textarea id="sql" spellcheck="false"></textarea>
+            <div class="ctl" style="margin-top:8px"><button>Run</button>
+                <span class="muted small">a table is an element name, a row an element, a column an attribute;
+                    <code>"LINE/*".io</code> = the points of both lines, <code>_doc</code> = which line</span></div>
+        </form>
+        <div id="state" class="ok"></div>
+        <div class="table-wrap" style="margin-top:8px"><table>
+            <thead id="head"></thead>
+            <tbody id="rows"></tbody>
+        </table></div>
+    </section>
+
+    <section class="card wide">
+        <div class="label">The other way round <span class="muted">SQLite's own query, every 5 s: the table
+            <span class="key">x</span> is the tree's, built by the engine from <code>xdb('..')</code></span></div>
+        <div class="table-wrap"><table>
+            <thead><tr><th class="tree">line</th><th class="tree">name</th><th class="tree">unit</th>
+                <th class="n">readings</th><th class="n">mean</th><th class="n">top</th></tr></thead>
+            <tbody id="xin"></tbody>
+        </table></div>
+        <div class="note">The table <code>his</code> holds a time, a point's id and a value. The names, the lines and
+            the units come from the tree at the moment of the query: rename a point and the next result says so.</div>
+        <pre id="xsql"></pre>
+    </section>
+
+    <section class="card wide">
+        <div class="label">From any PostgreSQL client <span class="muted">the same queries, as a database</span></div>
+        <pre>psql "host=127.0.0.1 port=15432 user=eng dbname=SQL/S00"      <span class="muted">-- role Engineer</span>
+psql "host=127.0.0.1 port=15433 user=mon dbname=SQL/S00"      <span class="muted">-- role Monitor, read only</span>
+python pg_try.py "SELECT id, desc, val FROM \"LINE/*\".io"     <span class="muted">-- no psql? this folder's own client</span></pre>
+        <div class="note">On 15432 a query may also take in the database raw, <code>sql('CN_HIS', 'SELECT ..')</code>,
+            and write the tree, <code>UPDATE "LINE/L1".io SET hi = 70 WHERE id = 'L1_LT1'</code>. The page may do
+            neither: try the last two buttons above.</div>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="kit.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

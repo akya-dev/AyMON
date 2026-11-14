@@ -6,7 +6,7 @@ Every example runs with one command and needs no licence, no hardware and no dat
 |---|---|
 | [First steps](start/) | [PRJEDU_101](start/PRJEDU_101/) |
 | [Field protocols](protocols/) | [PRJEDU_modbus](protocols/PRJEDU_modbus/), [PRJEDU_mqtt](protocols/PRJEDU_mqtt/), [PRJEDU_snmp](protocols/PRJEDU_snmp/), [PRJEDU_opcua](protocols/PRJEDU_opcua/) |
-| [Data, history, mail and files](data/) | [PRJEDU_sqlite](data/PRJEDU_sqlite/), [PRJEDU_odbc](data/PRJEDU_odbc/), [PRJEDU_records](data/PRJEDU_records/), [PRJEDU_mirror](data/PRJEDU_mirror/), [PRJEDU_durable](data/PRJEDU_durable/), [PRJEDU_net](data/PRJEDU_net/) |
+| [Data, history, mail and files](data/) | [PRJEDU_sqlite](data/PRJEDU_sqlite/), [PRJEDU_odbc](data/PRJEDU_odbc/), [PRJEDU_records](data/PRJEDU_records/), [PRJEDU_mirror](data/PRJEDU_mirror/), [PRJEDU_sqlxdb](data/PRJEDU_sqlxdb/), [PRJEDU_xdbsql](data/PRJEDU_xdbsql/), [PRJEDU_durable](data/PRJEDU_durable/), [PRJEDU_net](data/PRJEDU_net/) |
 | [Web pages, access and security](web/) | [PRJEDU_web](web/PRJEDU_web/), [PRJEDU_pages](web/PRJEDU_pages/), [PRJEDU_telnet](web/PRJEDU_telnet/), [PRJEDU_hardening](web/PRJEDU_hardening/) |
 | [Two engines](cluster/) | [PRJEDU_rep](cluster/PRJEDU_rep/), [PRJEDU_cluster](cluster/PRJEDU_cluster/), [PRJEDU_remote](cluster/PRJEDU_remote/) |
 | [Course labs](labs/) | [PRJEDU_plc](labs/PRJEDU_plc/), [PRJEDU_pid](labs/PRJEDU_pid/), [PRJEDU_oee](labs/PRJEDU_oee/), [PRJEDU_robotarm](labs/PRJEDU_robotarm/) |

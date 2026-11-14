@@ -6,7 +6,10 @@ Two jobs that keep something after the engine stops: **history** in a database a
 value history go through these sinks into SQLite, and a kill that shows the journal read
 back. A list kept as the live window of a table, written back by the engine, is
 [A list that is a table](#a-list-that-is-a-table), shown by
-[PRJEDU_mirror](../examples/data/PRJEDU_mirror/).
+[PRJEDU_mirror](../examples/data/PRJEDU_mirror/). A history query that takes each point's name and
+unit from the tree instead of from a column is
+[Names from the tree in a query](#names-from-the-tree-in-a-query), shown by
+[PRJEDU_sqlxdb](../examples/data/PRJEDU_sqlxdb/).
 
 A third way to keep something, with no database and no save: a value that comes back with
 its last state after a restart is [13_Durable_Documents](13_Durable_Documents.md).
@@ -254,6 +257,120 @@ writes; a promoted spare writes the rows it holds once and loads the table again
 | `HIS(ORDERS): table wo loaded again -- ..` | a later load that changed the list; one that changed nothing writes no line |
 | `HIS(ORDERS): table wo not loaded -- <why> (tried again every 10 s)` | once per outage |
 | `HIS(ORDERS): row 'R' PARKED -- table wo refused it alone: <why>` | one bad row |
+
+---
+
+## Names from the tree in a query
+
+From 4.4.2.704; the id templates from 4.4.2.705. Run
+[PRJEDU_sqlxdb](../examples/data/PRJEDU_sqlxdb/) first: two production lines' history in
+SQLite, with no name in it, and a page that shows every query's text.
+
+A history table says when a point had which value. What the point *is* — its name, its
+unit, its class — is in the document. Writing it into every row too is a second copy:
+it grows with the table, and it is wrong for every old row the day the point is
+renamed. A `SQL.qry` text may instead carry two SQL comments the engine reads and takes
+out before the database sees the text:
+
+```sql
+SELECT tim, doc, rid, val FROM his
+ WHERE rid IN (/*xdb-in: doc('LINE/*')//io[contains-ci(@desc, 'pressure')]/@id */)
+ ORDER BY tim DESC LIMIT 20
+/*xdb: name = doc('{doc}')/id('{rid}')/@desc ;
+       unit = doc('{doc}')/id('{rid}')/@val_unt */
+```
+
+**`/*xdb: col = address */` fills a column of every row.** `{column}` in the address is
+that row's cell, so each row reads its own point; the address is any address
+`evt.GetValue` takes, the class chain included. A column the result has is filled in
+place, any other is added after the SQL's columns. `col ?= address` fills only a NULL
+cell: rows that carry a value of their own keep it, which is how a table that used to
+store names moves off them. An address that reads nothing gives NULL, and the log counts
+it once per query. Each address is read once per query, however many rows name it
+(about 2 µs a read on a document of 110 000 points).
+
+**`/*xdb-in: address/@attr */` becomes a SQL list** of the values the address selects:
+`'L1_PT1','L2_PT1'`, written in the connection's dialect (`'` doubled, `N'..'` on SQL
+Server). None is `NULL`, so `IN (NULL)` selects no row. More than `qry_xin_max` values
+(1000 if the element or its class does not say) refuses the query: a list is never
+cut. `contains-ci` is `contains` with upper and lower case alike, Turkish `İ ı` too.
+
+**A placeholder can make an id of a number.** `{col:010X}` is the cell in 10 hex digits,
+`{col>>32:d}` its top 32 bits in decimal; `&mask`, `/n` and `%n` too, left to right,
+`0` + width pads. A list reads such ids back: `/*xdb-in: ..//order/@id ~ WO{:010X} */`
+gives the keys as numbers without quotes, so an integer column is compared as one.
+
+```sql
+SELECT wo_wid, title, made FROM wo
+ WHERE wo_wid IN (/*xdb-in: doc('LINE/*')//order[@state='open']/@id ~ WO{wo_wid:010X} */)
+/*xdb: title ?= doc('LINE/L{wo_wid>>32:d}')/id('WO{wo_wid:010X}')/@title ;
+       state  = doc('LINE/L{wo_wid>>32:d}')/id('WO{wo_wid:010X}')/@state */
+```
+
+What it does not do:
+
+* **The database never sees an embedded value.** It cannot be in `WHERE`, `ORDER BY` or
+  `GROUP BY`: filter by a name with a list, sort by the key or the time.
+* **The reads have the role of the query's event.** A timer's query reads as the
+  engine; a query a logged-in user's page writes reads what that user may read, and a
+  point `xdb_acl` hides from them is NULL.
+* **Only `SQL.qry`.** `SQL.exec_direct` and `SQL.prepare` send their text as it is.
+* **An older engine** sends the comments to the database as comments: the rows come
+  without the filled columns, and a list becomes `IN ()` — a syntax error on PostgreSQL
+  and SQL Server, an empty list on SQLite. 4.4.2.704 refuses a template visibly.
+
+| Line | Meaning |
+|---|---|
+| `SQL.qry: 'Q.qry' xdb: 2 of 16 addresses gave no value (..) -- first: doc('LINE/L1')/id('L1_FT9')/@desc (14 rows)` | some rows name what the tree does not have: their cells are NULL |
+| `SQL.qry: 'Q.qry' xdb: N reads took T ms (R rows)` | the reads of one query took over a second |
+| `<atr>_err`: `xdb-in: '..' -- list too long (more than 1000 values, qry_xin_max); a list is never cut` | the query was not sent; the old rows stay |
+
+## SQL on the tree
+
+From 4.4.3. Run [PRJEDU_xdbsql](../examples/data/PRJEDU_xdbsql/) first: two lines' points
+as one table, a page that sends XDB SQL as a Guest, and two PostgreSQL ports.
+
+The documents are tables already: an element name is a table, an element a row, an
+attribute a column, the document the schema. **XDB SQL** reads them where they are,
+with the role of whoever asks:
+
+```sql
+SELECT _doc AS line, id, desc, val, val_unt AS unit
+  FROM "LINE/*".io
+ WHERE val > hi
+```
+
+`"LINE/*".io` is every `<io>` of the documents the pattern names, `_doc` the document a
+row came from; a column the row inherits (`val_unt` from the class) is a column like its
+own. `WHERE`, `GROUP BY` / `HAVING`, `ORDER BY`, aggregates, `CASE`, joins and
+sub-queries work as in PostgreSQL; `UPDATE`, `INSERT` and `DELETE` write through the
+same path a script's write takes (the role check, the point's chain).
+
+**Three ways in.** A `SQL.qry` list over a connection `con_host="xdb:doc=LINE/*;max=5000"`
+(what a page writes to `@qry` runs with the page's role); a `PRO.pgwire` port that any
+PostgreSQL client opens (psql, psycopg, psqlODBC for Excel and Power BI, Grafana), the
+database name being a document and the port's `con_role` or login the role; and the
+`sql` command of the telnet shell or the MCP tool `xdb_sql`.
+
+**Another database in the same query.** `sql('CN', 'SELECT ..') AS h` is a table read
+from a SQL connection once, before the walk — for an Engineer, from a connection with
+`pro_sql_xql="1"` that the way in lists (`sql=` / `pro_pg_sql`). Anybody else uses a
+**named query**: `sqlq('HIS_LAST', 'L1_PT1', 5) AS h` runs a `<sqlq>` the engineer wrote,
+the values bound to its `?`, its `xdb_acl` deciding who may run it. The other way round,
+a database's own SQL (`SQL.qry` on that connection) may hold
+`xdb('SELECT .. FROM "LINE/*".io') AS x`: the engine runs it first and hands the rows to
+the database as an inline table.
+
+What it does not do:
+
+* **Cut a result.** A connection's `max=`, a list's `qry_max` and a named query's
+  `sqlq_max` refuse a result over them; they never give the first rows of it.
+* **Keep a transaction.** Every value of an `UPDATE` is written on its own; a refused one
+  is left and the log names it.
+* **Compare text the database's way.** `ORDER BY` on text is by code point; `lower()`
+  gives a case-insensitive order. `=` is case-sensitive.
+
+The field note `XDB_SQL.md` (in the engine's documents) has the whole language.
 
 ---
 

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     LINE/L2 - line 2, packing. The same table io as LINE/L1, other rows:
+     "LINE/*".io reads both documents as one table, and the pseudo column
+     _doc says which document a row came from.
+     ===================================================================== -->
+<xdb id="LINE/L2" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/L2.log"
+     sta="0x0300" sta_typ="0x142" xdb_acl="0xFFFFFFF1" desc="Line 2 - packing">
+	<config>
+		<tio id="cls_T" sta_typ="0x0142" val_typ="0x0308" hi_typ="0x0308" val_unt="°C"/>
+		<tio id="cls_P" sta_typ="0x0142" val_typ="0x0308" hi_typ="0x0308" val_unt="bar"/>
+		<tio id="cls_S" sta_typ="0x0142" val_typ="0x0308" hi_typ="0x0308" val_unt="1/min"/>
+	</config>
+
+	<data>
+		<io id="L2_TT1" xdb_cls="cls_T" sta="0x0303" val="0" hi="186" desc="Shrink tunnel temperature, inlet"/>
+		<io id="L2_TT2" xdb_cls="cls_T" sta="0x0303" val="0" hi="167" desc="Shrink tunnel temperature, outlet"/>
+		<io id="L2_PT1" xdb_cls="cls_P" sta="0x0303" val="0" hi="6.3" desc="Compressed air pressure"/>
+		<io id="L2_ST1" xdb_cls="cls_S" sta="0x0303" val="0" hi="27"  desc="Conveyor speed"/>
+	</data>
+</xdb>

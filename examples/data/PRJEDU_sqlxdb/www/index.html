@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_sqlxdb - the page. Served by REP/S00 on 127.0.0.1:8118; the
+     values come over MQTT inside a WebSocket on the same port (/mqtt).
+     Every table here is one SQL.qry. The columns marked "tree" are not in
+     the database: the engine filled them from LINE/L1 and LINE/L2 while
+     it built the result. The page writes one thing: ACT, an action.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Names From the Tree</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+    <style>
+        th.tree, td.tree { color: var(--c3); }
+        td.null { color: var(--muted); font-style: italic; }
+        .key { font-size: 11px; padding: 1px 6px; border-radius: 999px; border: 1px solid var(--c3); color: var(--c3);
+               text-transform: none; letter-spacing: 0; }
+        pre { margin: 6px 0 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg);
+              font: 12px/1.45 ui-monospace, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+        pre .x { color: var(--c3); }
+        .err { color: var(--alm); font-size: 12.5px; margin-top: 4px; }
+        .last { margin-top: 12px; font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; min-height: 1.4em; }
+        .seg button.on { background: var(--btn-h); border-color: var(--c3); }
+        tr.off td { color: var(--muted); }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Names from the tree <span class="doc">REP/S00 &larr; log/plant.db + LINE/L1, LINE/L2</span></h1>
+    <div class="chips"><span id="c-live" class="chip">--</span></div>
+</header>
+
+<main>
+    <section class="card wide">
+        <div class="label">The latest readings
+            <span class="muted">table his holds a time, a document, a point's id and a value
+            &mdash; <span class="key">tree</span> columns come from the point</span></div>
+        <div class="table-wrap"><table>
+            <thead><tr><th>time</th><th>doc</th><th>rid</th><th class="tree">name</th>
+                <th class="n">val</th><th class="tree">unit</th></tr></thead>
+            <tbody id="his"></tbody>
+        </table></div>
+        <div class="ctl" style="margin-top:12px">
+            <button id="rename">Rename L1_PT1</button>
+            <button id="gone">A row for a point the tree does not have</button>
+        </div>
+        <div class="note">A rename is one write in the tree: every row of the point shows the new name at the next
+            query, old rows too. The table was never told.</div>
+        <div class="last" id="last">--</div>
+    </section>
+
+    <section class="card">
+        <div class="label">Search the names <span class="muted">the table has no name to search</span></div>
+        <form class="ctl" id="f-find">
+            <input id="find" placeholder="pressure, TEMP, speed .." size="18">
+            <button>Search</button>
+            <span class="muted small" id="find-now"></span>
+        </form>
+        <div class="table-wrap" style="margin-top:8px"><table>
+            <thead><tr><th>time</th><th>rid</th><th class="tree">name</th><th class="n">val</th><th class="tree">unit</th></tr></thead>
+            <tbody id="hits"></tbody>
+        </table></div>
+        <div class="note">The engine finds the points whose <code>desc</code> holds the text (upper or lower case
+            alike, <code>contains-ci</code>) and writes their ids into the SQL: <code>rid IN ('L1_PT1','L2_PT1')</code>.
+            No point matches: <code>IN (NULL)</code>, no row.</div>
+    </section>
+
+    <section class="card">
+        <div class="label">Work orders
+            <span class="seg"><button id="m-all" class="on">all</button> <button id="m-open">open in the tree</button></span></div>
+        <div class="table-wrap"><table>
+            <thead><tr><th class="n">wo_wid</th><th class="tree">wo</th><th>title</th><th class="n">made</th>
+                <th class="tree">state</th><th></th></tr></thead>
+            <tbody id="wo"></tbody>
+        </table></div>
+        <div class="note">The table knows an order by a number. <code>{wo_wid:010X}</code> makes its id in the tree,
+            <code>{wo_wid&gt;&gt;32:d}</code> its line. A title the row has of its own stays
+            (<code>title ?=</code>); the others come from the tree. <b>open in the tree</b> reads the ids back into
+            numbers: <code>~ WO{:010X}</code>.</div>
+    </section>
+
+    <section class="card wide">
+        <div class="label">The SQL <span class="muted">what main.view writes to @qry every second; the
+            <span class="key">/*xdb</span> comments never reach the database</span></div>
+        <div id="sql"></div>
+    </section>
+</main>
+
+<script src="mqtt-lite.js"></script>
+<script src="kit.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

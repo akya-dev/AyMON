@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     LINE/L1 - line 1, filling. What its points ARE: a name (desc), a
+     unit, a class. The history table in REP/S00 holds none of that, only
+     the document, the point's id and the value.
+
+     Its work orders are elements too: the order book of the line. The
+     table wo holds their counts. A row finds its order here by an id the
+     query makes from the row's key:
+
+       wo_wid = line number x 2^32 + order number     4294967298
+       id     = 'WO' + wo_wid in 10 hex digits        WO0100000002
+       line   = wo_wid >> 32                          1, so LINE/L1
+
+     No script and no thread: REP/S00 writes the values.
+     ===================================================================== -->
+<xdb id="LINE/L1" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/L1.log"
+     sta="0x0300" sta_typ="0x142" xdb_acl="0xFFFFFFF1" desc="Line 1 - filling">
+	<config>
+		<!-- A point's class: its type and its unit. A query reads @val_unt
+		     through the class chain: no point carries a unit of its own. -->
+		<tio id="cls_L" sta_typ="0x0142" val_typ="0x0308" val_unt="%"/>
+		<tio id="cls_P" sta_typ="0x0142" val_typ="0x0308" val_unt="bar"/>
+		<tio id="cls_S" sta_typ="0x0142" val_typ="0x0308" val_unt="1/min"/>
+	</config>
+
+	<data>
+		<io id="L1_LT1" xdb_cls="cls_L" sta="0x0303" val="0" desc="Filler bowl level"/>
+		<io id="L1_PT1" xdb_cls="cls_P" sta="0x0303" val="0" desc="Filler pressure"/>
+		<io id="L1_ST1" xdb_cls="cls_S" sta="0x0303" val="0" desc="Capper motor speed"/>
+
+		<!-- The order book. state = open | closed: the page closes and
+		     reopens an order here, and the table is never told. -->
+		<list id="ORDERS" sta="0x0303" sta_typ="0x142">
+			<order id="WO0100000001" title="Water 0.5 l, export" product="W050" state="closed"/>
+			<order id="WO0100000002" title="Water 1.5 l" product="W150" state="open"/>
+			<order id="WO0100000003" title="Sparkling 0.33 l" product="S033" state="open"/>
+		</list>
+	</data>
+</xdb>

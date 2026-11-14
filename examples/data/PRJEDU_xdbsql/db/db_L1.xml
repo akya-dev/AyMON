@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     LINE/L1 - line 1, filling. To XDB SQL this document is the schema
+     "LINE/L1" and its <io> elements are the rows of the table io:
+
+       SELECT id, desc, val, hi FROM "LINE/L1".io WHERE val > hi
+
+     A column is an attribute. val_unt is no point's own: it comes from the
+     class, and a query reads it like any other column. hi is the point's
+     upper limit, typed as a number by the class (hi_typ), so val > hi
+     compares numbers.
+
+     xdb_acl="0xFFFFFFF1": a Guest (the page) may read and nothing else;
+     every other role (the PostgreSQL ports give theirs) may also write.
+     No script and no thread: SQL/S00 writes the values.
+     ===================================================================== -->
+<xdb id="LINE/L1" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/L1.log"
+     sta="0x0300" sta_typ="0x142" xdb_acl="0xFFFFFFF1" desc="Line 1 - filling">
+	<config>
+		<tio id="cls_L" sta_typ="0x0142" val_typ="0x0308" hi_typ="0x0308" val_unt="%"/>
+		<tio id="cls_P" sta_typ="0x0142" val_typ="0x0308" hi_typ="0x0308" val_unt="bar"/>
+		<tio id="cls_S" sta_typ="0x0142" val_typ="0x0308" hi_typ="0x0308" val_unt="1/min"/>
+	</config>
+
+	<data>
+		<io id="L1_LT1" xdb_cls="cls_L" sta="0x0303" val="0" hi="68"  desc="Filler bowl level"/>
+		<io id="L1_PT1" xdb_cls="cls_P" sta="0x0303" val="0" hi="3.5" desc="Filler pressure"/>
+		<io id="L1_ST1" xdb_cls="cls_S" sta="0x0303" val="0" hi="510" desc="Capper motor speed"/>
+	</data>
+</xdb>

@@ -16,7 +16,7 @@ seen working.
 | [08_In_the_Field.md](08_In_the_Field.md) | You want to know whether it holds up. A production DCIM system's size, the engine's measured throughput, and the regression rigs every change goes through. |
 | [09_Pins_and_Buses.md](09_Pins_and_Buses.md) | You want a board's own pins. GPIO, interrupts, counters, encoders, PWM, servos, HC-SR04, DHT, key matrices, I²C and SPI chips in XML or in script — and what has not been tried with real parts. |
 | [10_Two_Engines.md](10_Two_Engines.md) | You want a second engine. Replication, the election, what a failover changes and what it leaves, a majority, a master per document group, a field node, a document on another node. |
-| [11_Records_and_Saving.md](11_Records_and_Saving.md) | You want something kept. Alarm, event and value history written by the engine, a journal that survives a node going down, and saving a document without losing its comments. |
+| [11_Records_and_Saving.md](11_Records_and_Saving.md) | You want something kept. Alarm, event and value history written by the engine, a journal that survives a node going down, a list that is a table, a history query that takes each point's name from the tree, and saving a document without losing its comments. |
 | [12_Keeping_It_Running.md](12_Keeping_It_Running.md) | You are running it for real. Health in `sta`, why a device is in alarm, reading the `stats` line, the log, and getting in while it runs. |
 | [13_Durable_Documents.md](13_Durable_Documents.md) | You want a value to survive a restart without a database. `xdb_dur`, what a crash and a power cut cost, waiting for the disk, an SD card's wear, the newest copy in a cluster. |
 | [reference/](reference/README.md) | You need the exact call. Every built-in scope, object and function, every chain function and every connection type and protocol — arguments, results, measured examples — and how to ask the engine itself with `help`. |
@@ -33,6 +33,8 @@ PRJEDU_sqlite   →  03_Scripting  (the SQL section)
 PRJEDU_odbc     →  03_Scripting
 PRJEDU_records  →  11_Records_and_Saving
 PRJEDU_mirror   →  11_Records_and_Saving  (A list that is a table)
+PRJEDU_sqlxdb   →  11_Records_and_Saving  (Names from the tree in a query)
+PRJEDU_xdbsql   →  11_Records_and_Saving  (SQL on the tree)
 PRJEDU_durable  →  13_Durable_Documents  →  11_Records_and_Saving
 PRJEDU_mqtt     →  05_Connections_and_Protocols
 PRJEDU_snmp     →  05_Connections_and_Protocols
@@ -70,7 +72,7 @@ If you are here because of one particular job, start at the example that does
 it: a device to poll (`PRJEDU_modbus`, `PRJEDU_snmp`), a machine with an OPC
 UA server (`PRJEDU_opcua`), values to publish or
 subscribe (`PRJEDU_mqtt`), a page to put them on (`PRJEDU_web`), history to
-keep (`PRJEDU_sqlite`, `PRJEDU_odbc`), history the engine writes and a journal that survives a crash (`PRJEDU_records`), a list kept as the window of a table (`PRJEDU_mirror`), values that come back after a restart without a database (`PRJEDU_durable`), a second engine to feed (`PRJEDU_rep`),
+keep (`PRJEDU_sqlite`, `PRJEDU_odbc`), history the engine writes and a journal that survives a crash (`PRJEDU_records`), a list kept as the window of a table (`PRJEDU_mirror`), the documents asked with SQL, from a page or any PostgreSQL client (`PRJEDU_xdbsql`), values that come back after a restart without a database (`PRJEDU_durable`), a second engine to feed (`PRJEDU_rep`),
 a second engine to take over (`PRJEDU_cluster`), a document to read and write on another node (`PRJEDU_remote`),
 a way in while it runs (`PRJEDU_telnet`), a plant's access to harden (`PRJEDU_hardening`), an AI assistant to let in
 (`PRJEDU_mcp`), Python and image processing next to the engine

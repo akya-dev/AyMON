@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_sqlxdb - a history table that holds keys only, and queries
+     that take what a point IS from the tree while their result is built.
+
+     Two production lines are two documents: their points (names, units,
+     classes) and their work orders. A third document keeps the history
+     table and the work order counts in SQLite, and asks them with
+     SQL.qry. Two SQL comments the database never sees do the joining:
+
+       /*xdb: name = doc('{doc}')/id('{rid}')/@desc */   a column from the tree
+       /*xdb-in: doc('LINE/*')//io[..]/@id */            a list from the tree
+
+     xdb_lib names the SQLite driver: CON.sqlite does not exist without it.
+     Needs an engine of 4.4.2.705 or later (the line 'XDB.xdb_init:
+     Version:' in the log names yours).
+
+     Run:   run.bat, then http://127.0.0.1:8118/
+     ===================================================================== -->
+<xdb id="XDB" xdb_lib="AyPRO, AyPRO_sqlite" xdb_log="4" log_cfg="0x39C0"
+     log_lnk="%PRJ%/log/XDB.log" sta="0x0300" tid="S01">
+	<config>
+		<doc id="LINE/L1" sta="0x0300" src="%DB%/db_L1.xml" desc="line 1: its points and its work orders"/>
+		<doc id="LINE/L2" sta="0x0300" src="%DB%/db_L2.xml" desc="line 2: its points and its work orders"/>
+		<doc id="REP/S00" sta="0x0300" src="%DB%/db_REP.xml" desc="the tables, the queries, the page"/>
+	</config>
+	<data>
+	</data>
+</xdb>

@@ -338,6 +338,7 @@ there when `SetValue` returns.
 | `<atr>_jsn` | with `<atr>_out`: no `<item>` is made, the JSON is built directly (a NULL is `null`). Refused, with a `WARN` line, without `<atr>_out` or with `<atr>_row` |
 | `<atr>_row` | when present: each item gets `<atr>_row`, the JSON of **the items made so far**, itself included — not its own row alone |
 | `<atr>_err` | when present: `""` after a success, the reason after a failure |
+| `<atr>_xin_max` | at most this many values in one `/*xdb-in: */` list ([below](#xdb-values-in-the-result)). Absent: 1000 |
 
 An item carries one attribute per column, as text (a class can type them), an SQL NULL as an
 empty text, `<atr>_doc` = the document's name and `<atr>_idx` = its row number from 1:
@@ -367,7 +368,8 @@ and the list stays empty.
 
 **A failed query leaves the old rows**: `<atr>_out` becomes `[]`, `<atr>_cnt` `0`, `<atr>_err`
 the driver's text, and the log says `SQL.qry: 'L_R.qry' failed -- near "SELEC": syntax error`.
-A text over 2047 bytes is refused the same way (`query text too long`).
+Before 4.4.2.704 a text over 2047 bytes was refused the same way (`query text too long`);
+there is no limit since.
 
 A column called **`id` becomes the item's id** and enters the document's id index:
 `SELECT 'A2' AS id, 6 AS v` makes `id('A2')/@v` readable as `"6"`. Two rows with one id fight;
@@ -375,6 +377,55 @@ alias a key column that is not meant as one (`SELECT rowid AS rid ..`).
 
 Every write of `<atr>` runs the query again. A list that is the live window of a table and
 written back is a [mirror list](#a-mirror-list) instead; `SQL.qry` deletes and remakes its rows.
+
+#### XDB values in the result
+
+From 4.4.2.704, the id templates from 4.4.2.705; measured on 4.4.2.705 with
+[PRJEDU_sqlxdb](../../examples/data/PRJEDU_sqlxdb/). Two SQL comments in the text are read by
+the engine and taken out before the database gets it (`SQL.qry` only; `exec_direct` and
+`prepare` send their text as it is):
+
+| Comment | Does |
+|---|---|
+| `/*xdb: col = address ; col2 ?= address2 */` | fills column `col` of every row with what the address reads; `{column}` = that row's cell. A column the result has is filled in place, others are added after the SQL's columns. `?=` fills only a NULL cell. Nothing read = NULL |
+| `/*xdb-in: address/@attr */` | becomes the SQL list of the values: `'a','b'` in the connection's dialect, `NULL` when there is none. More than `<atr>_xin_max` refuses the query |
+| `/*xdb-in: address/@attr ~ WO{:010X} */` | reads each value through the template back into a number, written without quotes; a value that does not fit is left out |
+
+A placeholder reads `{column[>>n][&mask][/n][%n][:[0][width](d|x|X)]}`: operations left to right,
+then decimal or hex. `{wo_wid:010X}` of `4294967298` is `0100000002`, `{wo_wid>>32:d}` is `1`.
+
+```sql
+SELECT tim, doc, rid, val FROM his ORDER BY tim DESC, rid LIMIT 14
+/*xdb: name = doc('{doc}')/id('{rid}')/@desc ;
+       unit = doc('{doc}')/id('{rid}')/@val_unt */
+```
+
+With `qry_jsn="1"` the first row in `qry_out`, the two last columns from the tree (`@val_unt`
+from the point's class):
+
+```
+{"qry_doc":"REP/S00","tim":"2026-11-13 14:47:41","doc":"LINE/L1","rid":"L1_LT1","val":"54.5702831473003","name":"Filler bowl level","unit":"%","qry_idx":1}
+```
+
+```sql
+SELECT wo_wid, title, qty, made FROM wo
+ WHERE wo_wid IN (/*xdb-in: doc('LINE/*')//order[@state='open']/@id ~ WO{wo_wid:010X} */)
+/*xdb: wo     = doc('LINE/L{wo_wid>>32:d}')/id('WO{wo_wid:010X}')/@id ;
+       title ?= doc('LINE/L{wo_wid>>32:d}')/id('WO{wo_wid:010X}')/@title */
+```
+
+The database got `WHERE wo_wid IN (4294967298,4294967299,8589934593)`; the first row:
+
+```
+{"qry_doc":"REP/S00","wo_wid":"4294967298","title":"Water 1.5 l","qty":"8000","made":"2283","wo":"WO0100000002", ..}
+```
+
+A row whose addresses read nothing gets NULL cells and one `WARN` line per query:
+`SQL.qry: 'Q_HIS.qry' xdb: 2 of 16 addresses gave no value (..) -- first:
+doc('LINE/L1')/id('L1_FT9')/@desc (14 rows)`. The reads run with the role of the query's event:
+a value `xdb_acl` hides from it is NULL. An embedded column cannot be used in `WHERE` or
+`ORDER BY`: the database never sees it. A refused command (an unknown `{column}`, a list
+without `/@attr`, too many values) sends nothing and says why in `<atr>_err`.
 
 ---
 

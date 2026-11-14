@@ -551,7 +551,10 @@ A `<dev pro_con>` under a SQL connection is a database of its own: `SQL.attach("
   every row becomes an `<item>` whose attributes are named after the columns.
   After that the rows are addressable: `id('L_RECENT')/item[1]/@val`. The old rows
   go only after the query has run: a failed query leaves them, and `<atr>_err` and
-  the log say why.
+  the log say why. Its text may carry two comments the engine reads first:
+  `/*xdb: */` fills a column of every row from the tree, `/*xdb-in: */` turns tree
+  values into a SQL list ([Names from the tree in a query](11_Records_and_Saving.md#names-from-the-tree-in-a-query),
+  `PRJEDU_sqlxdb`).
 * History does not need any of this: the engine writes it (`11_Records_and_Saving`).
 
 ## Debugging

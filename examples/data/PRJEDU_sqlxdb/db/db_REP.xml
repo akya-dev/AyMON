@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     REP/S00 - the tables and the queries.
+
+       his         the value history, in log/plant.db. A row is a time,
+                   a document, a point's id (rid) and a value. NO NAME,
+                   NO UNIT: those are in LINE/L1 and LINE/L2.
+       wo          the work order counts: wo_wid (the key), title (only
+                   the old orders have one), qty, made.
+
+       Q_HIS       the latest readings; name and unit from the tree
+       Q_FIND      the readings of the points whose NAME contains a text
+       Q_WO        every order; its line, title and state from the tree
+       Q_OPEN      the orders the tree says are open
+
+     A query is SQL.qry on a <list>: write the text to @qry and the rows
+     come back as JSON in @qry_out (qry_jsn: no <item> is made). The
+     embedding is in the text, as two kinds of SQL comment. main.view
+     writes the four texts every second; the page shows them.
+     ===================================================================== -->
+<xdb id="REP/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/REP.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     xdb_acl="0xFFFFFFF1">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_REP.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+
+		<!-- A query element: synchronous (0x1401: the rows are there when
+		     SetValue returns), the answer as JSON in qry_out, the reason of a
+		     refusal in qry_err, the row count in qry_cnt. -->
+		<tlst id="cls_Q" qry="" qry_typ="0x1401" qry_fnc="[SQL.qry]" qry_con="CN_SQL"
+		      qry_out="" qry_jsn="1" qry_err="" qry_err_typ="0x0401" qry_cnt=""
+		      sta_typ="0x0142"/>
+	</config>
+
+	<data>
+		<thr id="TH_MAIN" xdb_fnc="[THR.cre]" thr_per="100" thr_wrk="1"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<con id="CN_SQL" xdb_fnc="[CON.sqlite,PRO.sql]" desc="the plant's tables"
+		     con_host="%PRJ%/log/plant.db"
+		     con_mod="CLIENT" con_ses="0" con_clr="1" con_tmo="5" con_rct="2"
+		     con_keeptmo="0" con_idletmo="0"
+		     pro_role="MASTER" pro_tmo="10" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<list id="Q_HIS"  xdb_cls="cls_Q" sta="0x0303" desc="the latest readings, named by the tree"/>
+		<list id="Q_FIND" xdb_cls="cls_Q" sta="0x0303" desc="the readings of the points whose name holds a text"/>
+		<list id="Q_WO"   xdb_cls="cls_Q" sta="0x0303" desc="every work order, with what the tree says of it"/>
+		<list id="Q_OPEN" xdb_cls="cls_Q" sta="0x0303" desc="the work orders the tree says are open"/>
+
+		<!-- every 5 s: a value for every point, into the tree and into the table -->
+		<var id="T_SAMPLE" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="TH_MAIN" evt_per="5" evt_dly="1" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.sample]" desc="the readings"/>
+
+		<!-- every second: the four queries, for the page -->
+		<var id="T_VIEW" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="TH_MAIN" evt_per="1" evt_dly="2" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.view]" desc="what the page shows"/>
+
+		<!-- ================================================================
+		     WHAT THE PAGE SHOWS, written by main.view: JSON, one var a panel.
+		     ================================================================ -->
+		<var id="HIS"  sta="0x0303" val="" val_typ="0x0401" desc="Q_HIS's rows"/>
+		<var id="HITS" sta="0x0303" val="" val_typ="0x0401" desc="Q_FIND's rows"/>
+		<var id="WO"   sta="0x0303" val="" val_typ="0x0401" desc="Q_WO's rows"/>
+		<var id="OPEN" sta="0x0303" val="" val_typ="0x0401" desc="Q_OPEN's rows"/>
+		<var id="SQL"  sta="0x0303" val="" val_typ="0x0401" desc="the four query texts and their errors"/>
+		<var id="FIND" sta="0x0303" val="pressure" val_typ="0x0401" desc="the text Q_FIND looks for in the names"/>
+		<var id="LAST" sta="0x0303" val="" val_typ="0x0401" desc="what the last action did"/>
+
+		<!-- ================================================================
+		     WHAT THE PAGE MAY WRITE. xdb_acl="0xFFFFFFF1" on the document gives
+		     a Guest (a page that did not log in) read and nothing else; this
+		     one point adds the write. A val chain runs as the engine, so
+		     main.act may change the tree and the table for the page.
+		       {"cmd":"find","txt":"temp"}          search the names
+		       {"cmd":"rename"}                     rename L1_PT1 (and back)
+		       {"cmd":"state","id":"WO0100000002"}  close / reopen an order
+		       {"cmd":"gone"}                       a row for a point the
+		                                            tree does not have
+		     ================================================================ -->
+		<var id="ACT" sta="0x0303" val="" val_typ="0x1401" val_fnc="[main.act]" xdb_acl="0xFFFFFFF3"
+		     desc="an action from the page"/>
+
+		<!-- THE PAGE - http://127.0.0.1:8118/ (only from this computer) -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the page"
+		     con_host="127.0.0.1" con_port="8118" con_mod="SERVER" con_ses="8" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<con id="CN_LIVE" xdb_fnc="[CON.ws,PRO.mqtt]" desc="the live values for the page"
+		     con_host="#CN_WEB" con_port="/mqtt" con_mod="SERVER" con_ses="4" con_acl="127.0.0.1"
+		     con_tmo="5" con_clr="1" con_keeptmo="120.0" con_idletmo="-1"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1" pro_typ="0xC412" pro_fnc="[]"
+		     pro_cid="S01_SQX" pro_nid="S00" pro_subqos="0"
+		     pro_pfx="+/+" pro_getsfx="" pro_setsfx="set" pro_pubsfx="pub"
+		     pro_pubqos="0" pro_pubrtn="0"
+		     pro_retain="1" pro_retain_adr="//var" pro_retain_atr="val"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

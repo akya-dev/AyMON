@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     LINE/L2 - line 2, packing. The same shape as LINE/L1: points with a
+     name and a class, and the line's order book. Its order ids carry the
+     line number 2 in the key's top bits: WO0200000001 = 8589934593.
+     ===================================================================== -->
+<xdb id="LINE/L2" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/L2.log"
+     sta="0x0300" sta_typ="0x142" xdb_acl="0xFFFFFFF1" desc="Line 2 - packing">
+	<config>
+		<tio id="cls_T" sta_typ="0x0142" val_typ="0x0308" val_unt="°C"/>
+		<tio id="cls_P" sta_typ="0x0142" val_typ="0x0308" val_unt="bar"/>
+		<tio id="cls_V" sta_typ="0x0142" val_typ="0x0308" val_unt="m/min"/>
+	</config>
+
+	<data>
+		<io id="L2_TT1" xdb_cls="cls_T" sta="0x0303" val="0" desc="Shrink tunnel temperature"/>
+		<io id="L2_TT2" xdb_cls="cls_T" sta="0x0303" val="0" desc="Glue tank temperature"/>
+		<io id="L2_PT1" xdb_cls="cls_P" sta="0x0303" val="0" desc="Compressed air pressure"/>
+		<io id="L2_ST1" xdb_cls="cls_V" sta="0x0303" val="0" desc="Conveyor speed"/>
+
+		<list id="ORDERS" sta="0x0303" sta_typ="0x142">
+			<order id="WO0200000001" title="Six-pack, water 1.5 l" product="P6W150" state="open"/>
+			<order id="WO0200000002" title="Tray, sparkling 0.33 l" product="T24S033" state="closed"/>
+		</list>
+	</data>
+</xdb>
