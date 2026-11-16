@@ -20,6 +20,9 @@ server; the difference is configuration, not a different build.
 - **In production.** The same engine runs data-centre monitoring (DCIM)
   systems: one of them 1 837 devices, 272 000 points and three nodes. See
   [In the field](docs/08_In_the_Field.md).
+- **Small.** One executable and a few libraries: 3.8 MB for the core on
+  Windows, under 10 MB with every optional module. See
+  [what the engine is made of](#what-the-engine-is-made-of).
 - **Free to run.** The FREE edition never expires and allows production use
   within 5 documents, 8 connections, 8 devices and 4 logged-in users.
 
@@ -157,6 +160,39 @@ with Ctrl-C.
 | **The VM** | `tools/mac/aymon-vm.sh --shell` opens a shell in it, `--stop` stops it (the next run starts it again), `--delete` removes it. |
 | **Devices** | examples that talk over the network work as on Linux. USB and serial devices and a USB camera are on the Mac, not in the VM: `PRJEDU_vision` runs on its recorded frames. |
 | **Status** | the script has not yet been tried on a real Mac. If something goes wrong, please [open an issue](https://github.com/akya-dev/AyMON/issues/new/choose) with what it printed. |
+
+## What the engine is made of
+
+`bin/` holds the whole engine: one executable and a few libraries. The core,
+`AyXDB`, `AyDATA` and `AyPRO`, is 3.8 MB on Windows and 5.4 MB on Linux; with
+every optional module it stays under 10 MB. A module is loaded only when a
+project uses it.
+
+| File | What it is | Windows x64 | Linux x64 | Lines of code |
+|---|---|---:|---:|---:|
+| `AyXDB` (`.exe`) | the process: loads the engine, runs the console | 47 KB | 95 KB | 993 |
+| `AyDATA` | values and types, the XML document tree with its XPath, JSON | 789 KB | 991 KB | 27 120 |
+| `AyPRO` | the engine: events, threads and queues, connections and protocols, scripting, SQL, cluster and replication | 2.96 MB | 4.35 MB | 118 175 |
+| | shared by `AyXDB` and `AyPRO`: the log, utilities, the thread base | | | 3 568 |
+| `AyLIB_net` | mail, FTP and SFTP, file and ZIP functions | 343 KB | 593 KB | 3 985 |
+| `AyLIB_vision` | cameras and image functions | 482 KB | 835 KB | 8 910 |
+| `AyLIB_hw` | a board's GPIO, PWM, I²C and SPI | 120 KB | 273 KB | 3 735 |
+| `AyLIB_Python311` / `313` | Python scripts, one module per Python version | 311 / 317 KB | 523 / 515 KB | 2 246 |
+| `AyPRO_sqlite` | the embedded SQLite database | 1.05 MB | 1.41 MB | 538 |
+| `AyPRO_odbc` | other databases, over ODBC | 25 KB | 36 KB | 927 |
+| `AyPRO_hid` | USB HID devices | 20 KB | – | 244 |
+| | the interfaces of the modules and plug-ins | | | 601 |
+| **All** | | **6.5 MB** | **9.6 MB** | **171 042** |
+
+On Windows the files are `.dll`, on Linux `lib….so`. The 64-bit ARM build is the
+same size: 4.9 MB for the core, 9.1 MB in all.
+
+Lines of code are AyMON's own C++, counted from the build projects of the 4.4.3
+sources, without blank and comment-only lines. They leave out the third-party
+code compiled into some modules (SQLite in `AyPRO_sqlite`, libssh2 and miniz in
+`AyLIB_net`, stb in `AyLIB_vision`, HIDAPI in `AyPRO_hid`; see `NOTICE`), and
+OpenSSL, which ships beside the engine on Windows (`libcrypto` and `libssl`,
+8.5 MB) and comes from the system on Linux.
 
 ## The examples
 
