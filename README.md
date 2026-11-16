@@ -18,7 +18,8 @@ server; the difference is configuration, not a different build.
 - **AI assistants, inside rules.** An MCP endpoint lets Claude or any MCP
   client read the plant and change what it is allowed to — and nothing else.
 - **In production.** The same engine runs data-centre monitoring (DCIM)
-  systems: one of them 1 837 devices, 272 000 points and three nodes. See
+  systems: one of them follows more than 1 800 devices and 270 000 points on
+  three nodes. See
   [In the field](docs/08_In_the_Field.md).
 - **Small.** One executable and a few libraries: 3.8 MB for the core on
   Windows, under 10 MB with every optional module. See
