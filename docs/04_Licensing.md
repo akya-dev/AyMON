@@ -18,6 +18,7 @@ An engine with no licence file is not crippled. It is a small plant:
 | Protocols | Modbus, MQTT, HTTP / REST / SOAP, SNMP, OPC UA, RFID, bridge, SQL, telnet — **and every plug-in**: SQLite, ODBC, S7, HID, Python. A board's own pins (GPIO, I²C, SPI, `AyLIB_hw`) are not a licence feature at all; a chip is a device like any other |
 | Counted, never refused by address | cameras (`vision`): 2 with a real source — `link:` views and the `IMG.*` functions are free; smart-building devices (`sb`: ATEIS, AyBUS, VISCA, BLE RTU): 4; mail and file transfer (`net`): 20 operations a day, in memory, so a restart starts the count again |
 | Not included | cluster, replication, RPC, MCP — but see below |
+| Several projects in one engine | a project process (`xdb_roots="project"`) is not limited by roots: their documents, connections, devices and users add up against the numbers above. A **tenant** process (`xdb_roots="tenant"`, different customers in one engine) loads **2 roots** without the feature `tenant` (`15_Many_Projects_One_Engine.md`) |
 
 FREE is also the edition for personal use; there is no separate personal
 licence.
@@ -130,17 +131,19 @@ One line is the truth for the whole run, with what it leaves open right after it
 On FREE:
 
 ```
-XDB:LIC: enforced for this run: edition FREE, con 8 / dev 8 / cli 4, features off: cluster,rep,rpc,mcp,net,vision,sb
+XDB:LIC: enforced for this run: edition FREE, con 8 / dev 8 / cli 4, features off: cluster,rep,rpc,mcp,net,vision,sb,tenant
 XDB:LIC: documents allowed: 5
 XDB:LIC: cluster,rep,rpc,mcp are not licensed: they work on LOCAL connections (loopback, non-IP) and are refused on remote ones
 XDB:LIC: net is not licensed: mail and file transfer (PRO.smtp / ftp / sftp) work at any address and are COUNTED, 20 operations a day
 XDB:LIC: vision is not licensed: 2 camera(s) (CON.cam with a real source; link: and none: are free)
+XDB:LIC: tenant is not licensed: a tenant process (xdb_roots="tenant") loads 2 root(s); a project process is not limited by roots
 XDB:LIC: sb is not licensed: 4 device(s) of PRO.ateis / aybus / visca / blertu
 ```
 
 Everything above those lines explains how the engine got there; everything it
 refuses later follows from them. The licence file's own key for devices is still
-called `max_ses`; a licence with `vision` may limit cameras with `max_cam`. On a
+called `max_ses`; a licence with `vision` may limit cameras with `max_cam`, one with
+`tenant` the roots of a tenant process with `max_root`. On a
 running engine the same thing is one command away in the maintenance shell:
 
 ```
@@ -164,6 +167,7 @@ The practical consequence for you: **a new licence file means a restart.**
 | `NOT STARTED -- 'rep' is refused on a REMOTE connection` | The locality rule — the peer is not on this machine |
 | `LIC: camera CN_C3 (usb:2) NOT STARTED -- licence feature 'vision' is not in edition FREE: 2 camera(s) allowed` | One unit too many. A `link:` view takes none; `con_rct` tries again |
 | A `<con>` late in the document never appears | `max_con` reached; connections are taken in document order |
+| `root 'GAMMA' NOT LOADED -- licence feature 'tenant' is not in edition FREE: a tenant process loads 2 root(s)` | A third customer's root in a tenant process; a project process has no such limit |
 | A device never polls, others do | the device limit reached (`max_ses`, shown as `dev`); devices are first come, first served |
 | `REJECTED` | The file was edited, so its signature no longer holds. FREE applies |
 | `-- licence still holds, N tolerance day(s) left` | The machine differs from the one it was issued for: 30 days' tolerance, then `tolerance used up` and FREE |

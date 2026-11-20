@@ -20,6 +20,7 @@ seen working.
 | [12_Keeping_It_Running.md](12_Keeping_It_Running.md) | You are running it for real. Health in `sta`, why a device is in alarm, reading the `stats` line, the log, and getting in while it runs. |
 | [13_Durable_Documents.md](13_Durable_Documents.md) | You want a value to survive a restart without a database. `xdb_dur`, what a crash and a power cut cost, waiting for the disk, an SD card's wear, the newest copy in a cluster. |
 | [14_SQL_Both_Ways.md](14_SQL_Both_Ways.md) | You want the tree and a database in one query. A database table in XDB SQL (`sql()`, named queries `<sqlq>`), a table of the tree in the database's own SQL (`xdb()`), who may do which, the limits, and which bridge to choose. |
+| [15_Many_Projects_One_Engine.md](15_Many_Projects_One_Engine.md) | You want several projects in one engine process. Roots, one port for all of them, the host's `HOST.*`, the rules for different customers in one engine, backup and moving a root, the licence. |
 | [reference/](reference/README.md) | You need the exact call. Every built-in scope, object and function, every chain function and every connection type and protocol — arguments, results, measured examples — and how to ask the engine itself with `help`. |
 
 ## Suggested order
