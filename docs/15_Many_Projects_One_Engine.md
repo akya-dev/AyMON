@@ -1,5 +1,8 @@
 # Several projects in one engine
 
+Run **[PRJEDU_sites](../examples/hosting/PRJEDU_sites/README.md)** first: a host and two sites
+in one process, behind one port, with a page that stops, starts, backs up, adds and removes them.
+
 One engine process normally runs one project: a root document and the documents below it.
 From 4.4.3.729 one process can run **several projects side by side**, each a complete project of
 its own — its files, its documents, its users, its logs, its time zone — under a **host** that

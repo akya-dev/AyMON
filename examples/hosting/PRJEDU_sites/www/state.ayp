@@ -1,0 +1,8 @@
+<%
+// what index.html asks once a second; a POST with a=stop&id=ACME presses
+// a button. It runs as the visitor: an Engineer, the door's con_role.
+var a = "" + req.getForm("a");
+if (a != "" && a != "undefined" && a != "null") main.act(evt, a, "" + req.getForm("id"));
+res.type = "application/json";
+res.write(main.state(evt));
+%>

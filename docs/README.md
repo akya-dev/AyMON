@@ -50,6 +50,7 @@ PRJEDU_mcp      →  06_Access_and_Safety   →  04_Licensing
 PRJEDU_rep      →  10_Two_Engines         →  04_Licensing
 PRJEDU_cluster  →  10_Two_Engines         →  04_Licensing
 PRJEDU_remote   →  10_Two_Engines         →  06_Access_and_Safety
+PRJEDU_sites    →  15_Many_Projects_One_Engine  →  04_Licensing
 PRJEDU_gauge    →  03_Scripting
 PRJEDU_pycall   →  03_Scripting
 PRJEDU_vision   →  03_Scripting          →  05_Connections_and_Protocols
@@ -76,6 +77,7 @@ UA server (`PRJEDU_opcua`), values to publish or
 subscribe (`PRJEDU_mqtt`), a page to put them on (`PRJEDU_web`), history to
 keep (`PRJEDU_sqlite`, `PRJEDU_odbc`), history the engine writes and a journal that survives a crash (`PRJEDU_records`), a list kept as the window of a table (`PRJEDU_mirror`), the documents asked with SQL, from a page or any PostgreSQL client (`PRJEDU_xdbsql`), values that come back after a restart without a database (`PRJEDU_durable`), a second engine to feed (`PRJEDU_rep`),
 a second engine to take over (`PRJEDU_cluster`), a document to read and write on another node (`PRJEDU_remote`),
+several projects to run in one engine behind one port (`PRJEDU_sites`),
 a way in while it runs (`PRJEDU_telnet`), a plant's access to harden (`PRJEDU_hardening`), an AI assistant to let in
 (`PRJEDU_mcp`), Python and image processing next to the engine
 (`PRJEDU_gauge`), Python called from the XML and from script (`PRJEDU_pycall`), a camera to inspect a line with

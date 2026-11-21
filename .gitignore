@@ -38,5 +38,12 @@ desktop.ini
 # PRJEDU_net: the shift reports it makes and uploads
 **/out/
 
+# PRJEDU_sites: what the host's page makes - its backups, and the roots it
+# adds or restores (GAMMA, COPY). ACME and BETA are the example's own.
+examples/hosting/PRJEDU_sites/backup/
+examples/hosting/PRJEDU_sites/roots/*
+!examples/hosting/PRJEDU_sites/roots/ACME/
+!examples/hosting/PRJEDU_sites/roots/BETA/
+
 # The documentation site, built by tools/site/build.py
 tools/site/_build/

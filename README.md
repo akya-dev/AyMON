@@ -80,6 +80,7 @@ AyMON/
                      maintenance shell, a plant to harden
     cluster/         engines together: replication, a cluster that fails over,
                      a document on another node
+    hosting/         several projects in one engine, behind one port
     labs/            course labs: a PLC program, PID, OEE, a robot arm
     ai-vision/       AI assistants over MCP, Python, machine vision
     hobby/           a drone, the aircraft overhead, your phone (PRJPER_*)
@@ -248,6 +249,12 @@ Run an example from its own folder.
 | [**PRJEDU_rep**](examples/cluster/PRJEDU_rep/) | replication between two engines on one machine: the mirror that has no file of its own, direction decided by the document and not the connection, one connection row that works out its own end, and why an unlicensed feature is a *local* feature; a live page at http://127.0.0.1:8108/ | nothing |
 | [**PRJEDU_cluster**](examples/cluster/PRJEDU_cluster/) | two engines that share one job: an election (`PRO.clt`) over a link on each node, the role written into the job document's `sta` (TRANSIT, master, spare), replication (`PRO.rep`) whose direction follows the role, one set of files for both nodes told apart by `tid`, `CLT.info` for the cluster's state in a script, a write on the spare forwarded to the master, a planned hand-over — and a page that shows both nodes side by side while you kill one; measured (engine 4.3.4.622): master again 1–3 s after the kill, nothing skipped, at most the last step made again; both copies of the batch list the same, in the same order | nothing |
 | [**PRJEDU_remote**](examples/cluster/PRJEDU_remote/) | a document on another node: `evt.GetValue` and `SetValue` reach it over `PRO.rpc` with the address unchanged, one script for a document here and one over there, what the far node's `xdb_acl` does to the caller's role, and a list in `rpc_con` that walks through a failover the script never sees; three engines on one machine, a live page at http://127.0.0.1:8123/ | nothing |
+
+### [Several projects in one engine](examples/hosting/)
+
+| Project | What it teaches | Needs |
+|---|---|---|
+| [**PRJEDU_sites**](examples/hosting/PRJEDU_sites/) | one engine process, three projects: a host and two sites, each a complete project of its own (`xdb_roots="project"`, a `<doc xdb_root="1">` each) with its own files, page, log and time zone; one port for every page — the door hands a request to the site whose `root_host` is in its `Host` header (http://acme.localhost:8125/, http://beta.localhost:8125/); a bridge between two sites (`doc('SITE@BETA')`, `root_peers` on both sides) and what neither the host nor a site can see of the others; the host's page at http://127.0.0.1:8125/ with `HOST.list()` and buttons that stop, start, back up, add a site from a template, restore a backup as a new site and remove it, writing the process root's file as it goes; measured: a site added in 12–44 ms, a backup suspends it for about a third of a second | nothing; engine 4.4.3.761 or later |
 
 ### [Course labs](examples/labs/)
 

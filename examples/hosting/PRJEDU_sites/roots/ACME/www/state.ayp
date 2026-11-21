@@ -1,0 +1,9 @@
+<%
+// what index.html asks once a second; a POST with a=start&v=80 moves the
+// level the pump starts at. It runs as the visitor, on this root's
+// connection: ses.user_role is the role a visitor has HERE.
+var a = "" + req.getForm("a");
+if (a == "start") main.set_start(evt, "" + req.getForm("v"));
+res.type = "application/json";
+res.write(main.state(evt, ses.user_role));
+%>

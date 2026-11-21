@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_sites - a site's page. The same file in every root: it shows
+     the root it was served by, and asks that root's state.ayp once a
+     second. The host's door handed this request to the root by its
+     Host header; nothing of the host ran on it.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Site</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+    <style>td:first-child code { white-space: nowrap; }</style>
+</head>
+<body>
+<header>
+    <h1><span id="name">Site</span> <span class="doc">a root of the engine on <span id="port">--</span>, doc('SITE')</span></h1>
+    <div class="chips"><span id="c-zone" class="chip">--</span><span id="c-live" class="chip">--</span></div>
+</header>
+
+<main>
+    <section class="card">
+        <div class="label">The tank <span class="muted">this root's own values</span></div>
+        <div class="gauge-row">
+            <div class="gauge" id="gauge"><i id="fill"></i><b id="m-hi" class="a"></b><b id="m-lo"></b></div>
+            <div style="flex:1; min-width:0">
+                <div class="tiles">
+                    <div class="tile"><div class="t">level</div><div class="v"><span id="lvl">--</span><span class="u"> %</span></div></div>
+                    <div class="tile"><div class="t">pump starts</div><div class="v" id="starts">--</div></div>
+                </div>
+                <div class="lamps" style="margin-top:10px"><span class="lamp" id="pump"><i></i>pump</span></div>
+            </div>
+        </div>
+        <div class="ctl" style="margin-top:12px"><span>pump starts at</span><input type="range" id="hi" min="50" max="95" step="1" value="70"><b id="hiv">--</b><span class="u">%</span></div>
+        <div class="note">Move it: the write goes to this root's <code>START_AT</code>. Open another site's page beside this one; its tank does not move.</div>
+    </section>
+
+    <section class="card">
+        <div class="label">This root's clock <span class="muted"><code>xdb_tz</code> on its own <code>&lt;xdb&gt;</code></span></div>
+        <div class="tiles">
+            <div class="tile"><div class="t">local time</div><div class="v" style="font-size:18px" id="local">--</div></div>
+            <div class="tile"><div class="t">shift</div><div class="v" style="font-size:18px" id="shift">--</div></div>
+        </div>
+        <div class="note">One process, one machine clock: each root's <code>Time.GetTimeStr()</code>, timers and log stamps run in its own zone. The shift is worked out from it.</div>
+    </section>
+
+    <section class="card">
+        <div class="label">Over the bridge <span class="muted"><code>doc('SITE@<span id="ask1">..</span>')/id('LEVEL')/@val</code></span></div>
+        <div class="tiles">
+            <div class="tile" id="t-peer"><div class="t"><span id="ask2">--</span>'s level</div><div class="v" style="font-size:18px" id="peer">--</div></div>
+        </div>
+        <div class="note">This root's <code>root_peers</code>: <code id="peers">--</code>. The call is the one a script makes for a document on another engine, with no network under it; it works only when both roots name each other.</div>
+    </section>
+
+    <section class="card">
+        <div class="label">What this root sees <span class="muted">the boundary, from inside</span></div>
+        <div class="table-wrap"><table>
+            <tr><td><code>doc('*')/id('LEVEL')/@val</code></td><td id="seen">--</td></tr>
+            <tr><td><code>doc('HOST')/@tid</code></td><td id="other">--</td></tr>
+            <tr><td><code>HOST.list()</code></td><td id="host">--</td></tr>
+            <tr><td>your role here</td><td id="role">--</td></tr>
+        </table></div>
+        <div class="note">The host's page gives a visitor Engineer (<code>con_role="6"</code> on its door). Here the root's own connection decides, and it gives none: Guest.</div>
+    </section>
+
+    <section class="card wide">
+        <div class="label">The same port, other names</div>
+        <div class="small" id="links"></div>
+    </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

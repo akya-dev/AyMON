@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_sites - root BETA: a project of its own.
+
+     This file is an ordinary project root. Here the host loads it as a
+     ROOT (db\AyXDB.xml two directories up: <doc id="BETA" xdb_root="1">),
+     so %PRJ% is roots\BETA and %DB% is roots\BETA\db: its log, its page
+     and its files are in this directory and nowhere else.
+
+     ACME, BETA and the template the host's page copies to make GAMMA are
+     the same project: a tank, a pump, a page. Only this <xdb> line differs:
+       tid          the root's own record identity
+       xdb_tz       its local time: Time.*, timers, the stamps of its log
+       root_peers   the roots it shares a bridge with. A bridge needs both
+                    sides: doc('SITE@ACME') works from here only because
+                    ACME's file names BETA too
+     and ASK below: the root whose level this one reads over the bridge.
+
+     Inside a root, doc('SITE') is this document, doc('*') finds this
+     root's documents and no other. The host's HOST, BETA's SITE: neither
+     is there from here, and neither reaches in.
+     ===================================================================== -->
+<xdb id="SITE" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/SITE.log"
+     sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100"
+     tid="BET" xdb_tz="Europe/Istanbul" root_peers="ACME">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_SITE.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+	<data>
+		<!-- the tank: it fills by itself, the pump empties it -->
+		<var id="LEVEL" val="40.0" val_typ="0x0308" val_unt="%" desc="the tank's level"/>
+		<var id="PUMP" val="0" val_typ="0x0104" desc="1 = the pump runs"/>
+		<var id="START_AT" val="70.0" val_typ="0x0308" val_unt="%" desc="the pump starts at this level (the page moves it)"/>
+		<var id="STOP_AT" val="30.0" val_typ="0x0308" val_unt="%" desc="the pump stops at this level"/>
+		<var id="STARTS" val="0" val_typ="0x0104" desc="pump starts since the engine started"/>
+		<var id="SHIFT" val="" val_typ="0x0401" desc="the shift, by this root's own clock"/>
+
+		<!-- the bridge: which root this one asks, and what came back -->
+		<var id="ASK" val="ACME" val_typ="0x0401" desc="the root whose level is read over the bridge"/>
+		<var id="PEER" val="" val_typ="0x0401" desc="its level, or why there is none"/>
+
+		<!-- once a second, on this document's thread -->
+		<var id="T_SIM" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_per="1" evt_dly="1" evt_syn="0" evt_cfg="0x0042"
+		     evt_fnc="[main.tick]" desc="the tank, the shift, the bridge"/>
+
+		<!-- THE PAGE. It listens on no port: con_host="#WEB" takes the
+		     requests the host's door WEB hands to this root (Host:
+		     beta.localhost, the root_host the host gave it), and
+		     con_port="" takes every path. From here on everything is this
+		     root's: its files (pro_http_root = this root's www), its
+		     state.ayp, the role a visitor gets here. No con_role: a visitor
+		     is a Guest here, whatever the host lets it be on its own page. -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="this site's page, behind the host's door"
+		     con_host="#WEB" con_port="" con_mod="SERVER" con_ses="8"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

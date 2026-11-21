@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     PRJEDU_sites - the host's page, http://127.0.0.1:8125/. It shows what
+     the host may know of its roots (HOST.list) and drives them: stop,
+     start, back up, add one from a template, restore a backup as a new
+     root, remove what it added.
+     ===================================================================== -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Host</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+    <style>.peek td:first-child code { white-space: nowrap; }</style>
+</head>
+<body>
+<header>
+    <h1>One engine, several projects <span class="doc">the host: doc('HOST'), xdb_roots="project"</span></h1>
+    <div class="chips"><span id="c-zone" class="chip">--</span><span id="c-live" class="chip">--</span></div>
+</header>
+
+<main>
+    <section class="card wide">
+        <div class="label">The roots <span class="muted"><code>HOST.list()</code>: a summary, never a root's values</span></div>
+        <div class="table-wrap"><table>
+            <thead><tr><th>root</th><th>its page</th><th>running</th><th>health</th>
+                <th style="text-align:right">docs</th><th style="text-align:right">cons</th><th style="text-align:right">threads</th><th style="text-align:right">sessions</th>
+                <th style="text-align:right">FAIL / PANIC</th><th></th></tr></thead>
+            <tbody id="rows"></tbody>
+        </table></div>
+        <div class="ctl" style="margin-top:12px">
+            <button id="add">Add GAMMA from the template</button>
+            <button id="restore" disabled>Restore the last backup as COPY</button>
+        </div>
+        <div class="note">One process, one port. Each page link has the same port and another name: the door reads the
+            <code>Host</code> header and hands the request to the root whose <code>root_host</code> it is. Stop a root and
+            its page says so; start it and the page goes on where the tank was.</div>
+    </section>
+
+    <section class="card">
+        <div class="label">What the host gets from inside a root</div>
+        <div class="table-wrap"><table class="peek">
+            <tr><td><code>doc('SITE')/id('LEVEL')/@val</code></td><td id="peek-doc">--</td></tr>
+            <tr><td><code>doc('*')/id('LEVEL')/@val</code></td><td id="peek-star">--</td></tr>
+            <tr><td><code>doc('SITE@ACME')/id('LEVEL')/@val</code></td><td id="peek-bridge">--</td></tr>
+        </table></div>
+        <div class="note">Every root has a document called SITE with a LEVEL in it. None of them is in the host's tree:
+            the star finds the host's own document and stops. ACME's <code>root_peers</code> does not name the host, so
+            the bridge is refused too.</div>
+    </section>
+
+    <section class="card">
+        <div class="label">What the buttons did <span class="muted">the host's log has the same lines, and when each background job ended</span></div>
+        <div class="small" id="notes" style="font-family: ui-monospace, Consolas, monospace; white-space: pre-wrap">--</div>
+        <div class="note">Last backup: <code id="backup">none yet</code></div>
+    </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

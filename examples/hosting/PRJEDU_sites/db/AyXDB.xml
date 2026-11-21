@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_sites - AyMON example: several projects in one engine.
+
+     THE PROCESS ROOT, the file run.bat gives the engine. It is the HOST.
+
+     xdb_roots="project" lets this process run other projects beside it,
+     each a complete project of its own: its files, its documents, its
+     logs, its time zone. Each is a ROOT, one <doc xdb_root="1"> below.
+     ACME and BETA are two copies of the same small project in roots\ACME
+     and roots\BETA; %PRJ% of each is its own directory.
+
+     Everything on a root's <doc> here is the HOST'S word, not the root's:
+       root_host   the names the shared door (WEB, below) hands to the root
+       desc        the host's own note
+     The host's page writes this file the way a host does: "Add GAMMA"
+     appends a <doc> line below (HOST.add), "Remove" takes it out again.
+
+     WEB is the only port, and it is a DOOR: a request whose Host header
+     is a root's root_host goes to that root's own connection (its <con
+     con_host="#WEB">) before anything of the host runs on it. Any other
+     name is the host's: http://127.0.0.1:8125/ is this file's page.
+
+     Run:  run.bat   then open http://127.0.0.1:8125/
+     ===================================================================== -->
+<xdb id="HOST" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/HOST.log"
+     sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100" tid="HST" xdb_roots="project">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_HOST.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+		<doc id="ACME" sta="0x0300" xdb_root="1" root_host="acme.localhost" src="%PRJ%/roots/ACME/db/AyXDB.xml" desc="a site in Toronto"/>
+		<doc id="BETA" sta="0x0300" xdb_root="1" root_host="beta.localhost" src="%PRJ%/roots/BETA/db/AyXDB.xml" desc="a site in Istanbul"/>
+	</config>
+	<data>
+		<!-- THE DOOR. One port for the host and every root.
+		     con_role="6": a visitor of the HOST'S page is an Engineer, which
+		     HOST.* asks for; con_host + con_acl keep that to this machine.
+		     A request handed to a root does not keep it: the root's own
+		     connection decides from then on. A real host puts a login here
+		     (con_auth, docs/06_Access_and_Safety.md). -->
+		<con id="WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the door: the only port"
+		     con_host="127.0.0.1" con_port="8125" con_mod="SERVER" con_ses="16"
+		     con_acl="127.0.0.1" con_role="6"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.html"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>
