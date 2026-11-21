@@ -1,0 +1,9 @@
+[Unit]
+Description=AyMON public demo: look at every example's page every 5 minutes
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target

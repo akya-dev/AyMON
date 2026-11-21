@@ -1,0 +1,38 @@
+# AyMON public demo -- /etc/fail2ban/jail.d/aymon-demo.local (written by install.sh).
+# Bans go into nftables (fail2ban's own table), not iptables: Debian 12 has no iptables.
+
+[DEFAULT]
+banaction = nftables-multiport
+banaction_allports = nftables-allports
+bantime  = 1h
+findtime = 10m
+maxretry = 5
+
+# Debian 12 and Ubuntu 24.04 log SSH to the journal only
+[sshd]
+enabled  = true
+backend  = systemd
+mode     = aggressive
+
+# nginx's limit_req refused requests of one address again and again (error.log lines
+# "limiting requests, excess ... client: <address>"): one page never gets there.
+[nginx-limit-req]
+enabled  = true
+port     = http,https
+logpath  = /var/log/nginx/error.log
+findtime = 1m
+maxretry = 30
+bantime  = 15m
+
+# scanners asking for phpMyAdmin, wp-login and the like (404s in the access log)
+[nginx-botsearch]
+enabled  = true
+port     = http,https
+logpath  = /var/log/nginx/access.log
+maxretry = 3
+
+# an address banned again and again: a week, every port
+[recidive]
+enabled  = true
+bantime  = 1w
+findtime = 1d

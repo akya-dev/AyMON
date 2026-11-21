@@ -1,0 +1,5 @@
+// AyMON public demo (written by install.sh): fetch the package lists and install
+// security updates every day (unattended-upgrades' default origins: security only).
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+APT::Periodic::AutocleanInterval "7";

@@ -1,0 +1,6 @@
+[Unit]
+Description=AyMON public demo: reset an example whose page does not answer
+
+[Service]
+Type=oneshot
+ExecStart=/opt/aymon-demo/kit/bin/aymon-demo-check

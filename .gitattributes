@@ -1,6 +1,9 @@
 # Linux scripts must keep LF on every checkout (a CRLF shebang does not run)
 *.sh    text eol=lf
 *.py    text eol=lf
+# the demo-server kit runs on Linux only: its extension-less scripts, systemd units and
+# config templates too
+tools/demo-server/** text eol=lf
 # The engines are binaries, whatever their names
 bin/**  binary
 # GitHub's language bar counts source files and skips examples/ as documentation. Here the

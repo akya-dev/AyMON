@@ -1,0 +1,10 @@
+[Unit]
+Description=AyMON public demo: reset every example every @RESET_HOURS@ h
+
+[Timer]
+OnBootSec=@RESET_HOURS@h
+OnUnitActiveSec=@RESET_HOURS@h
+RandomizedDelaySec=2min
+
+[Install]
+WantedBy=timers.target

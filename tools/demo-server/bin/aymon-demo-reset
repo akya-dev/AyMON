@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# aymon-demo-reset [label|PRJ dir ...]
+#
+# Puts examples back to the repository's copy and (re)starts them: every value a visitor
+# wrote, every file, every log goes. No argument = every example in examples.conf.
+# One example at a time, so the others stay up. Also puts the licence back.
+set -euo pipefail
+. /opt/aymon-demo/kit/lib.sh
+load_env
+[ "$(id -u)" -eq 0 ] || die "run as root"
+
+want=" $* "
+lic_restore() {
+    local src=$REPO/bin/lic/AyMON.lic
+    grep -qx 'edition=EDU' "$src" || die "$src is not the EDU licence -- refusing to install it"
+    install -d -o "$ENGINE_USER" -g "$ENGINE_USER" -m 0750 "$LICDIR"
+    cmp -s "$src" "$LICDIR/AyMON.lic" || install -o root -g "$ENGINE_USER" -m 0644 "$src" "$LICDIR/AyMON.lic"
+    # nothing but the EDU licence in the licence directory
+    find "$LICDIR" -maxdepth 1 -name '*.lic' ! -name AyMON.lic -delete
+}
+lic_restore
+
+found=0
+while read -r label path port prj roots; do
+    if [ "$want" != "  " ] && [[ "$want" != *" $label "* ]] && [[ "$want" != *" $prj "* ]]; then
+        continue
+    fi
+    found=1
+    unit="$UNIT@$prj"
+    systemctl stop "$unit" 2>/dev/null || true
+
+    # the repository's tracked files only (no logs, no backups, no local leftovers)
+    tmp=$(mktemp -d)
+    git -C "$REPO" archive --format=tar HEAD "$path" | tar -x -C "$tmp"
+    [ -f "$tmp/$path/db/AyXDB.xml" ] || { rm -rf "$tmp"; die "$path/db/AyXDB.xml is not in the repository"; }
+    install -d -o "$ENGINE_USER" -g "$ENGINE_USER" -m 0750 "$RUN"
+    rsync -a --delete "$tmp/$path/" "$RUN/$prj/"
+    rm -rf "$tmp"
+
+    # what run.sh makes before it starts the engine: a log directory in the project and
+    # in every root / template of it
+    mkdir -p "$RUN/$prj/log"
+    for d in "$RUN/$prj"/roots/* "$RUN/$prj"/templates/*; do
+        [ -d "$d/db" ] && mkdir -p "$d/log"
+    done
+
+    # what a public server needs: larger session lists, the roots' public names
+    # (aymon-demo-overlay says what and why; the repository's files are not touched)
+    rargs=(); [ "$roots" != "-" ] && rargs=(${roots//,/ })
+    python3 "$KIT/bin/aymon-demo-overlay" "$RUN/$prj" "$DEMO_DOMAIN" "${LIVE_SESSIONS:-32}" "${rargs[@]}"
+
+    # no licence of any other kind travels with an example
+    find "$RUN/$prj" -name '*.lic' -delete
+    # the EDU licence for PRJEDU_* / PRJDEV_* (the names it is bound to), FREE for the rest
+    install -d -m 0755 "$CONF/units"
+    case $prj in
+        PRJEDU_*|PRJDEV_*) echo "AYMON_ARGS=-lic:$LICDIR" ;;
+        *)                 echo "AYMON_ARGS=" ;;
+    esac >"$CONF/units/$prj.env"
+
+    chown -R "$ENGINE_USER:$ENGINE_USER" "$RUN/$prj"
+    chmod -R u+rwX,g+rX,g-w,o-rwx "$RUN/$prj"
+    systemctl start "$unit"
+    note "$label ($prj) reset and started"
+done < <(examples)
+
+[ "$found" = 1 ] || die "nothing in $CONF/examples.conf matches:$want"

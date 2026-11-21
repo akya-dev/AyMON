@@ -1,0 +1,34 @@
+#!/usr/sbin/nft -f
+# AyMON public demo -- the firewall (written by install.sh from files/nftables.conf.in).
+#
+# In:  SSH, HTTP (redirect + certificate renewal), HTTPS. Nothing else: no engine port
+#      (Modbus 1502, MQTT 1884, PostgreSQL 15432, telnet, MCP ...) is reachable from outside,
+#      whatever an example's file says or a visitor writes into it.
+# Out: anything, except the engines' account, which reaches this machine only (the same
+#      fence as IPAddressDeny in aymon-demo@.service, a second time).
+#
+# Only this table is replaced: fail2ban's own table (inet f2b-table) stays when this file
+# is loaded again.
+
+table inet aymon_demo
+delete table inet aymon_demo
+
+table inet aymon_demo {
+    chain input {
+        type filter hook input priority filter; policy drop;
+        iif "lo" accept
+        ct state established,related accept
+        ct state invalid drop
+        icmp type { echo-request, destination-unreachable, time-exceeded, parameter-problem } limit rate 20/second accept
+        icmpv6 type { destination-unreachable, packet-too-big, time-exceeded, parameter-problem, echo-request, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert } accept
+        tcp dport { @SSH_PORTS@ } ct state new accept
+        tcp dport { @HTTP_PORT@, @HTTPS_PORT@ } ct state new accept
+    }
+    chain forward {
+        type filter hook forward priority filter; policy drop;
+    }
+    chain output {
+        type filter hook output priority filter; policy accept;
+        meta skuid "@ENGINE_USER@" oif != "lo" counter drop
+    }
+}

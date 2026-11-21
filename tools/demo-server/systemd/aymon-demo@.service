@@ -1,0 +1,82 @@
+# AyMON public demo -- one example per instance:  aymon-demo@PRJEDU_pid
+#
+# Derived from the engine's own aymon@.service (User=aymon, SIGTERM = clean stop,
+# NoNewPrivileges, ProtectSystem, PrivateTmp) and closed further, because on a demo
+# server every visitor is a stranger and some examples let a stranger write values:
+#   - the example's running copy is the only place it can write (and the licence's
+#     state file); everything else is read-only or not there at all;
+#   - it talks to nothing but this machine (IPAddressDeny / IPAddressAllow), so no value a
+#     visitor writes can turn the engine into a client of somewhere else;
+#   - it gets a slice of the machine, not the machine (memory, tasks, CPU);
+#   - a clean exit is restarted too: a visitor may stop a document.
+# The copy comes back from the repository at every reset (aymon-demo-reset.timer).
+
+[Unit]
+Description=AyMON public demo: %i
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=aymon
+Group=aymon
+WorkingDirectory=/var/lib/aymon-demo/run/%i
+# The licence: aymon-demo-reset writes /etc/aymon-demo/units/%i.env. A PRJEDU_* project
+# gets the public EDU licence (bin/lic/AyMON.lic of the repository, bound to PRJEDU_*
+# names): AYMON_ARGS=-lic:/var/lib/aymon-demo/lic, the directory where the engine also
+# keeps AyMON.lst. Any other (PRJHW_*, PRJPER_*) runs on FREE, the personal edition,
+# with no -lic: given the EDU licence it would only say it is not its project.
+Environment=AYMON_ARGS=
+EnvironmentFile=-/etc/aymon-demo/units/%i.env
+ExecStart=/opt/aymon-demo/bin/AyXDB -console /var/lib/aymon-demo/run/%i/db/AyXDB.xml $AYMON_ARGS
+KillSignal=SIGTERM
+KillMode=mixed
+TimeoutStopSec=60
+Restart=always
+RestartSec=5
+UMask=0027
+LimitNOFILE=4096
+
+# ---- what it may touch
+ProtectSystem=strict
+ReadWritePaths=/var/lib/aymon-demo/run/%i /var/lib/aymon-demo/lic
+InaccessiblePaths=-/etc/aymon-demo -/etc/letsencrypt -/etc/nginx -/etc/ssh -/var/log -/var/www
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectProc=invisible
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+
+# ---- what it may do
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+# ---- whom it may talk to: this machine only (nginx reaches it on 127.0.0.1)
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+IPAddressDeny=any
+IPAddressAllow=localhost
+
+# ---- how much of the machine
+MemoryMax=384M
+TasksMax=256
+CPUQuota=50%
+
+SyslogIdentifier=aymon-demo-%i
+
+[Install]
+WantedBy=multi-user.target

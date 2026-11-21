@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# aymon-demo-check -- asks every published page once, the way nginx does (127.0.0.1, the
+# public Host). An example whose page does not answer 2xx/3xx/401 is reset on its own.
+# Run every 5 minutes by aymon-demo-check.timer; prints one line per example.
+set -uo pipefail
+. /opt/aymon-demo/kit/lib.sh
+load_env
+
+bad=()
+while read -r label path port prj roots; do
+    ok=1
+    for host in $(hostnames_of "$label" "$roots"); do
+        code=$(curl -s -o /dev/null -m 5 -w '%{http_code}' -H "Host: $host" "http://127.0.0.1:$port/" || true)
+        case $code in
+            2??|3??|401) ;;
+            *) ok=0; note "$label: $host answered '$code'" ;;
+        esac
+    done
+    if [ $ok = 1 ]; then echo "$label ok"; else bad+=("$prj"); fi
+done < <(examples)
+
+if [ ${#bad[@]} -gt 0 ]; then
+    note "resetting: ${bad[*]}"
+    /opt/aymon-demo/kit/bin/aymon-demo-reset "${bad[@]}"
+fi

@@ -1,0 +1,6 @@
+// AyMON public demo (written by install.sh): an update that needs a reboot (a kernel,
+// libc, OpenSSL) gets one at night. The demo's units are enabled and come back by
+// themselves; nothing on this server keeps state that a reboot would lose.
+Unattended-Upgrade::Automatic-Reboot "true";
+Unattended-Upgrade::Automatic-Reboot-Time "04:30";
+Unattended-Upgrade::Remove-Unused-Dependencies "true";

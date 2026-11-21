@@ -1,0 +1,6 @@
+[Unit]
+Description=AyMON public demo: every example back to the repository's copy
+
+[Service]
+Type=oneshot
+ExecStart=/opt/aymon-demo/kit/bin/aymon-demo-reset

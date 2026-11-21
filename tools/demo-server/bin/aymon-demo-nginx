@@ -1,0 +1,279 @@
+#!/usr/bin/env bash
+# aymon-demo-nginx http|full
+#
+# Writes nginx's configuration for the demo from demo.env and examples.conf:
+#   /etc/nginx/conf.d/aymon-demo.conf          zones, maps (http level)
+#   /etc/nginx/snippets/aymon-demo-*.conf      what every site shares
+#   /etc/nginx/sites-available/aymon-demo      the servers (and its sites-enabled link)
+#   /var/www/aymon-demo/index.html             the landing page
+#   http  = port 80 only (redirects + the ACME challenge), before a certificate exists
+#   full  = everything
+# Tests the result with nginx -t and reloads nginx. Do not edit the files it writes.
+set -euo pipefail
+. /opt/aymon-demo/kit/lib.sh
+load_env
+mode=${1:-full}
+case $mode in http|full) ;; *) die "usage: $0 http|full" ;; esac
+
+NGX=${NGX_ROOT:-/etc/nginx}
+WWW=${WWW_ROOT:-/var/www}
+if [ "$TLS_MODE" = selfsigned ]; then
+    CERT=$CONF/tls/fullchain.pem; KEY=$CONF/tls/privkey.pem
+else
+    CERT=/etc/letsencrypt/live/aymon-demo/fullchain.pem; KEY=/etc/letsencrypt/live/aymon-demo/privkey.pem
+fi
+port_sfx=""; [ "$HTTPS_PORT" = 443 ] || port_sfx=":$HTTPS_PORT"
+mkdir -p "$NGX/conf.d" "$NGX/snippets" "$NGX/sites-available" "$NGX/sites-enabled" \
+         "$WWW/aymon-demo" "$WWW/letsencrypt"
+
+# ---- every public name -------------------------------------------------------------------
+names=("$DEMO_DOMAIN")
+while read -r label path port prj roots; do
+    for h in $(hostnames_of "$label" "$roots"); do names+=("$h"); done
+done < <(examples)
+
+# ---- http level ---------------------------------------------------------------------------
+{
+cat <<EOF
+# AyMON public demo -- http level. Written by aymon-demo-nginx: edit
+# $CONF/demo.env or $CONF/examples.conf and run it again instead.
+
+# One visitor = one client address: nothing sits in front of nginx. (Behind a CDN, the
+# CDN's address would be every visitor's -- README, "A CDN in front".) The engines count
+# their own limits (pro_http_rate, con_addr_max) by the socket's peer, which is nginx for
+# every visitor, so the limits that tell visitors apart are these.
+limit_req_zone  \$binary_remote_addr zone=aymon_req:10m   rate=10r/s;
+limit_req_zone  \$binary_remote_addr zone=aymon_login:10m rate=6r/m;
+limit_conn_zone \$binary_remote_addr zone=aymon_conn:10m;
+# live connections of one address to one example (a page opens one)
+limit_conn_zone \$binary_remote_addr\$host zone=aymon_ws:10m;
+limit_req_status  429;
+limit_conn_status 429;
+
+# Slow clients. These are read before nginx knows which server a request is for, so they
+# live here, not in the servers: half a header gets 10 s, then the connection is closed.
+server_tokens off;
+client_header_timeout 10s;
+large_client_header_buffers 4 8k;
+reset_timedout_connection on;
+
+# WebSocket: pass an upgrade on, close every other request's upstream connection (one
+# request per connection to the engine: a door that hands connections over, PRJEDU_sites,
+# must never see a second visitor on a connection it already handed to a root).
+map \$http_upgrade \$aymon_connection {
+    default upgrade;
+    ""      close;
+}
+
+# The names this server answers on port 80; any other Host is dropped without an answer.
+map \$host \$aymon_known {
+    hostnames;
+    default 0;
+EOF
+for h in "${names[@]}"; do echo "    $h 1;"; done
+echo "}"
+} >"$NGX/conf.d/aymon-demo.conf"
+
+# ---- shared by every TLS server -----------------------------------------------------------
+cat >"$NGX/snippets/aymon-demo-server.conf" <<EOF
+# AyMON public demo -- every TLS server. Written by aymon-demo-nginx.
+ssl_certificate     $CERT;
+ssl_certificate_key $KEY;
+ssl_protocols TLSv1.2 TLSv1.3;
+ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305;
+ssl_prefer_server_ciphers off;
+ssl_session_cache shared:aymon_tls:10m;
+ssl_session_timeout 1d;
+ssl_session_tickets off;
+
+# slow clients: a body and an answer each get this long, an idle connection this long
+client_body_timeout   10s;
+send_timeout          30s;
+keepalive_timeout     30s;
+# the examples' pages post small forms; nothing needs more
+client_max_body_size 64k;
+# connections of one address over every example together (a page holds 1-3)
+limit_conn aymon_conn 24;
+# the engine behind: it is on this machine, it answers at once or not at all
+proxy_connect_timeout 3s;
+proxy_send_timeout    30s;
+proxy_read_timeout    60s;
+
+add_header Strict-Transport-Security "max-age=31536000" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-Frame-Options "SAMEORIGIN" always;
+add_header Referrer-Policy "same-origin" always;
+add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), usb=(), serial=()" always;
+# 'unsafe-inline': the board examples' pages carry inline script and handlers
+add_header Content-Security-Policy "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' wss://\$host$port_sfx; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'" always;
+EOF
+
+# ---- shared by every location that goes to an engine --------------------------------------
+cat >"$NGX/snippets/aymon-demo-proxy.conf" <<EOF
+# AyMON public demo -- every location that goes to an engine. Written by aymon-demo-nginx.
+proxy_http_version 1.1;
+# The public name, and the port the browser used: PRJEDU_sites' door picks the root by the
+# name, and an engine compares a WebSocket's Origin (https://name) with Host (name:443).
+proxy_set_header Host \$host:\$server_port;
+proxy_set_header Upgrade \$http_upgrade;
+proxy_set_header Connection \$aymon_connection;
+# the engine marks its login cookie Secure behind a proxy that says https
+proxy_set_header X-Forwarded-Proto https;
+proxy_set_header X-Forwarded-For "";
+proxy_hide_header X-Content-Type-Options;
+proxy_hide_header X-Frame-Options;
+proxy_hide_header Strict-Transport-Security;
+
+# Most examples' pages open their live connection as ws://<host>/mqtt (kit.js), which a
+# browser refuses from an https page. Until the examples ask for wss:// under https
+# themselves, the answer is rewritten on the way out (the body must arrive unpacked).
+proxy_set_header Accept-Encoding "";
+sub_filter_types application/javascript text/javascript application/x-javascript;
+sub_filter 'ws://' 'wss://';
+sub_filter_once off;
+EOF
+
+# ---- the servers --------------------------------------------------------------------------
+site=$NGX/sites-available/aymon-demo
+{
+cat <<EOF
+# AyMON public demo -- the servers. Written by aymon-demo-nginx from $CONF/examples.conf.
+
+# Port 80: the ACME challenge, and a redirect for the names above; nothing else.
+server {
+    listen $HTTP_PORT default_server;
+    listen [::]:$HTTP_PORT default_server;
+    server_name _;
+    server_tokens off;
+    location ^~ /.well-known/acme-challenge/ {
+        root $WWW/letsencrypt;
+        default_type text/plain;
+    }
+    location / {
+        if (\$aymon_known = 0) { return 444; }
+        return 301 https://\$host$port_sfx\$request_uri;
+    }
+}
+EOF
+if [ "$mode" = full ]; then
+cat <<EOF
+
+# A TLS client naming no server of ours gets no certificate at all; a request whose Host
+# names none of ours (after a handshake for one that does) gets no answer.
+server {
+    listen $HTTPS_PORT ssl default_server;
+    listen [::]:$HTTPS_PORT ssl default_server;
+    server_name _;
+    ssl_reject_handshake on;
+    return 444;
+}
+
+# The landing page: what is here, with a link to each example.
+server {
+    listen $HTTPS_PORT ssl http2;
+    listen [::]:$HTTPS_PORT ssl http2;
+    server_name $DEMO_DOMAIN;
+    include snippets/aymon-demo-server.conf;
+    root $WWW/aymon-demo;
+    location / {
+        limit_req zone=aymon_req burst=20 nodelay;
+        try_files \$uri \$uri/ =404;
+    }
+}
+EOF
+while read -r label path port prj roots; do
+    for h in $(hostnames_of "$label" "$roots"); do
+cat <<EOF
+
+# $label -- $path ($prj), engine on 127.0.0.1:$port
+server {
+    listen $HTTPS_PORT ssl http2;
+    listen [::]:$HTTPS_PORT ssl http2;
+    server_name $h;
+    include snippets/aymon-demo-server.conf;
+    location / {
+        limit_req zone=aymon_req burst=40 nodelay;
+        include snippets/aymon-demo-proxy.conf;
+        proxy_pass http://127.0.0.1:$port;
+    }
+    # the page's live values: MQTT in a WebSocket, open as long as the page is
+    location = /mqtt {
+        limit_req zone=aymon_req burst=5 nodelay;
+        limit_conn aymon_conn 24;   # (a limit_conn here replaces the server's: both again)
+        limit_conn aymon_ws 4;
+        include snippets/aymon-demo-proxy.conf;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_pass http://127.0.0.1:$port;
+    }
+    # camera frames and MJPEG streams: passed on as they come
+    location ^~ /blob/ {
+        limit_req zone=aymon_req burst=40 nodelay;
+        include snippets/aymon-demo-proxy.conf;
+        proxy_buffering off;
+        proxy_read_timeout 300s;
+        proxy_pass http://127.0.0.1:$port;
+    }
+    # the engine's login (PRJEDU_pages): a few tries a minute per address
+    location = /auth/login {
+        limit_req zone=aymon_login burst=5 nodelay;
+        include snippets/aymon-demo-proxy.conf;
+        proxy_pass http://127.0.0.1:$port;
+    }
+}
+EOF
+    done
+done < <(examples)
+fi
+} >"$site"
+ln -sfn "$site" "$NGX/sites-enabled/aymon-demo"
+# Debian's own default site also claims default_server on port 80
+rm -f "$NGX/sites-enabled/default"
+
+# ---- the landing page ---------------------------------------------------------------------
+{
+cat <<'EOF'
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AyMON examples</title>
+<style>
+:root { color-scheme: light dark; --fg: #1d2330; --bg: #f7f8fa; --mut: #5b6475; --card: #fff; --line: #dde1e8; --acc: #1f6feb; }
+@media (prefers-color-scheme: dark) { :root { --fg: #e6e9ef; --bg: #12151b; --mut: #9aa3b2; --card: #1a1f27; --line: #2a313c; --acc: #6ea8fe; } }
+body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: var(--fg); background: var(--bg); }
+main { max-width: 860px; margin: 0 auto; padding: 32px 16px 48px; }
+h1 { font-size: 1.6rem; margin: 0 0 4px; } p { color: var(--mut); margin: 0 0 20px; }
+ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+li { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+a { color: var(--acc); text-decoration: none; font-weight: 600; } a:hover { text-decoration: underline; }
+small { display: block; color: var(--mut); font-size: .85rem; overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<main>
+<h1>AyMON examples</h1>
+<p>Each example is a project of the <a href="https://github.com/akya-dev/AyMON">AyMON example repository</a>,
+running on its own engine. Values you change are yours to play with: every example goes back to the
+repository's copy every few hours.</p>
+<ul>
+EOF
+while read -r label path port prj roots; do
+    for h in $(hostnames_of "$label" "$roots"); do
+        echo "<li><a href=\"https://$h$port_sfx/\">${h%%.*}</a><small>$prj &middot; ${path#examples/}</small></li>"
+    done
+done < <(examples)
+cat <<'EOF'
+</ul>
+</main>
+</body>
+</html>
+EOF
+} >"$WWW/aymon-demo/index.html"
+
+if [ -z "${NGX_ROOT:-}" ]; then
+    nginx -t
+    systemctl reload nginx 2>/dev/null || systemctl restart nginx
+    note "nginx: $mode configuration for ${#names[@]} names loaded"
+fi
