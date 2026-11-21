@@ -226,6 +226,18 @@ Secrets stay in the engine: an attribute whose name says it is a password, a key
 The MCP tool `xdb_sql` hides by the rule of the other MCP tools: any name holding `pwd`, `pass`, `key`, `secret` or
 `token`.
 
+**Several nodes.** In a cluster give a client every node and let it choose: the port reports whether its node is the
+master or a spare for its documents (`in_hot_standby`, `default_transaction_read_only`, as PostgreSQL's own standby
+servers do), so
+
+```
+psql "host=S01,S02,S03 port=15432 dbname=postgres target_session_attrs=primary"
+```
+
+lands on the master (`prefer-standby` on a spare, for reports). A write on a spare is refused with `25006`; a session
+open on a spare that is promoted is told and writes on. JDBC (`targetServerType=primary`) and Npgsql
+(`Target Session Attributes=primary`) ask the same way.
+
 With `con_auth` the login is a real one and its password goes over TLS only: give the port `con_ssl_cert` (STARTTLS) or
 make it `CON.tls`, and set SSL mode `require` in pgAdmin / `sslmode=require` for psql.
 
