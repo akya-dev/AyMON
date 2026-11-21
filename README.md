@@ -6,6 +6,10 @@ XML-shaped tree, runs scripts and timers on that tree, raises alarms, writes
 history and serves the web pages. One engine runs on a small box and on a
 server; the difference is configuration, not a different build.
 
+**Try it in your browser: [demo.aymon.ca](https://demo.aymon.ca/)** — nineteen of
+the examples below, running live on a small shared server. Nothing to install;
+whatever you change goes back to the repository's copy every 3 hours.
+
 - **One command, nothing to install.** Every example here starts with
   `run.bat` or `./run.sh` — no licence, no hardware, no database. The
   machines they talk to come with them, simulated.
@@ -63,7 +67,8 @@ This repository is where you get AyMON: the engine for Windows and Linux in
 command and needs **no licence, no hardware and no database** unless its own
 README says otherwise.
 
-The same pages as a searchable site: **https://docs.aymon.ca/**
+The same pages as a searchable site: **https://docs.aymon.ca/** — and the
+examples running live: **https://demo.aymon.ca/**
 
 ```
 AyMON/
