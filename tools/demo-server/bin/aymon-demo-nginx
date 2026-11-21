@@ -231,6 +231,19 @@ ln -sfn "$site" "$NGX/sites-enabled/aymon-demo"
 rm -f "$NGX/sites-enabled/default"
 
 # ---- the landing page ---------------------------------------------------------------------
+# The server, read from the machine at every run, so that a visitor knows what the speed of
+# this box says: a small shared machine, each example held to its unit's limits.
+html() { sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' <<<"$1"; }
+srv_os=$( . /etc/os-release 2>/dev/null; echo "${PRETTY_NAME:-$(uname -s)}" )
+srv_cpu=$(nproc 2>/dev/null || echo "?")
+srv_model=$(awk -F': *' '/^model name/ {print $2; exit}' /proc/cpuinfo 2>/dev/null | sed -e 's/ *([^)]*)//g' || true)
+srv_mem=$(awk '/^MemTotal:/ {printf "%.0f", $2 / 1048576}' /proc/meminfo 2>/dev/null || true)
+srv_eng=$( { grep -aoE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]{3,}' "$PREFIX/bin/libAyPRO.so" 2>/dev/null || true; } | head -n 1)
+srv_unit="$KIT/systemd/$UNIT@.service"
+srv_memmax=$(awk -F= '/^MemoryMax=/ {print $2}' "$srv_unit" 2>/dev/null | sed -e 's/M$/ MB/' -e 's/G$/ GB/' || true)
+srv_cpuq=$(awk -F= '/^CPUQuota=/ {print $2}' "$srv_unit" 2>/dev/null || true)
+srv_n=$(examples | wc -l)
+srv_day=$(date -u +%Y-%m-%d)
 {
 cat <<'EOF'
 <!doctype html>
@@ -249,6 +262,10 @@ ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(
 li { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
 a { color: var(--acc); text-decoration: none; font-weight: 600; } a:hover { text-decoration: underline; }
 small { display: block; color: var(--mut); font-size: .85rem; overflow-wrap: anywhere; }
+h2 { font-size: 1.15rem; margin: 32px 0 6px; }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; margin-bottom: 8px; }
+th, td { text-align: left; vertical-align: top; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+th { color: var(--mut); font-weight: 500; width: 32%; }
 </style>
 </head>
 <body>
@@ -264,8 +281,24 @@ while read -r label path port prj roots; do
         echo "<li><a href=\"https://$h$port_sfx/\">${h%%.*}</a><small>$prj &middot; ${path#examples/}</small></li>"
     done
 done < <(examples)
+echo "</ul>"
+echo "<h2>This server</h2>"
+echo "<p>A small machine shared by every visitor, for trying the examples. It is not a benchmark:"
+echo "how fast a page answers here says little about the engine. Measured figures are in"
+echo "<a href=\"https://github.com/akya-dev/AyMON/blob/main/docs/08_In_the_Field.md\">In the field</a>.</p>"
+echo "<table>"
+[ -n "$DEMO_HOST_NOTE" ] && echo "<tr><th>Host</th><td>$(html "$DEMO_HOST_NOTE")</td></tr>"
+echo "<tr><th>Processor</th><td>$srv_cpu virtual cores${srv_model:+ ($(html "$srv_model"))}</td></tr>"
+[ -n "$srv_mem" ] && echo "<tr><th>Memory</th><td>about $srv_mem GB, shared by $srv_n examples</td></tr>"
+echo "<tr><th>System</th><td>$(html "$srv_os")</td></tr>"
+[ -n "$srv_eng" ] && echo "<tr><th>Engine</th><td>AyMON $srv_eng, one engine process per example</td></tr>"
+if [ -n "$srv_memmax$srv_cpuq" ]; then
+    echo "<tr><th>Each example</th><td>at most ${srv_memmax:-?} of memory and ${srv_cpuq:-?} of one core</td></tr>"
+fi
+echo "<tr><th>Reset</th><td>every $RESET_HOURS hours, to the repository's copy</td></tr>"
+echo "<tr><th>Page written</th><td>$srv_day (UTC)</td></tr>"
+echo "</table>"
 cat <<'EOF'
-</ul>
 </main>
 </body>
 </html>

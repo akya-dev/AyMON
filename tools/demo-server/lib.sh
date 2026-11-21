@@ -22,6 +22,7 @@ load_env() {
     TLS_MODE=${TLS_MODE:-letsencrypt}
     HTTPS_PORT=${HTTPS_PORT:-443}     # 443 on a server; another only on a test rig
     HTTP_PORT=${HTTP_PORT:-80}
+    DEMO_HOST_NOTE=${DEMO_HOST_NOTE:-}
 }
 
 # examples: prints "label path port prj roots" for every active line of examples.conf

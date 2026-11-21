@@ -40,7 +40,7 @@ the certificate, and resets and restarts every example.
 | `10-packages` | nginx, certbot, nftables, fail2ban, unattended-upgrades, git — from the distribution only |
 | `20-host` | SSH by key only, the firewall, fail2ban, nightly security updates (`SKIP_HOST_HARDENING=1`: none of these) |
 | `30-engine` | clones the repository to `/opt/aymon-demo/repo`, the engine of this CPU (`bin/linux-x64` / `bin/linux-arm64`), the EDU licence, one sandboxed unit per example, the reset and check timers |
-| `40-web` | nginx, one Let's Encrypt certificate for every name, the landing page `https://$DEMO_DOMAIN/` |
+| `40-web` | nginx, one Let's Encrypt certificate for every name, the landing page `https://$DEMO_DOMAIN/` (the examples, then a "This server" table read from the machine -- cores, memory, system, engine version, each example's limits -- plus `DEMO_HOST_NOTE`, so that nobody takes this box's speed for the engine's) |
 
 ## Choices, and why
 
