@@ -130,7 +130,7 @@ The same education licence works on both platforms.
 | **Raspberry Pi / ARM** | 64-bit ARM (aarch64) with the same glibc and OpenSSL: Raspberry Pi 4 or 5 with **64-bit** Raspberry Pi OS (Bookworm or Trixie), or another arm64 board. `run.sh` picks `bin/linux-arm64` by itself. A 32-bit system has no engine here. The engine and the examples have run on a real Raspberry Pi 5 (Debian 13); a Pi 4 has not been tried. |
 | **Helpers** | `examples/web/PRJEDU_telnet/shell.sh` and `examples/ai-vision/PRJEDU_mcp/try.sh` run small Python 3 scripts (standard library only) — the counterparts of `shell.ps1` / `try.ps1`. |
 | **Python in the engine** | only `PRJEDU_gauge` and `PRJEDU_pycall` (and `PRJPER_tello`'s optional video decoder on Linux): `bin/linux-x64` (and `bin/linux-arm64`, like `bin\win-x64` on Windows) holds a Python module for **Python 3.11** (`libAyLIB_Python311.so`: Debian 12, Raspberry Pi OS Bookworm; deadsnakes on Ubuntu) and one for **Python 3.13** (`libAyLIB_Python313.so`: Debian 13, Raspberry Pi OS Trixie; it needs glibc 2.38, which Ubuntu 22.04 does not have); the engine takes the one whose Python the machine has — the gauge with numpy installed for that version, pycall with the standard library only. The engine needs Python's **shared library**, a package of its own that `python3` does not bring: `sudo apt install libpython3.11` on Bookworm, `libpython3.13` on Trixie (and `python3-numpy` for the gauge). Every other example runs without it — the module is loaded only when a document has a Python script. |
-| **ODBC** | `PRJEDU_odbc` runs on its embedded SQLite out of the box. For PostgreSQL or SQL Server install unixODBC and the driver (`sudo apt install unixodbc odbc-postgresql`); on Linux the drivers are named in `/etc/odbcinst.ini` — `{PostgreSQL Unicode}`, not Windows' `{PostgreSQL Unicode(x64)}`. |
+| **ODBC** | `PRJEDU_odbc` runs on its embedded SQLite out of the box. For PostgreSQL or SQL Server install unixODBC and the driver (`sudo apt install unixodbc odbc-postgresql`); on Linux the drivers are named in `/etc/odbcinst.ini` — `{PostgreSQL Unicode}`, not Windows' `{PostgreSQL Unicode(x64)}`. PostgreSQL without ODBC (`ConnStrPGNATIVE`, `DRIVER=PostgreSQLi`) needs only `sudo apt install libpq5`. |
 | **Paths** | the projects write `%PRJ%` / `%DB%` paths with `/`, which both platforms read; a file database written as `Database=log\x.db` works too — on Linux the engine reads the `\` as a separator. |
 | **Copied from Windows?** | a zip loses the executable bits: `chmod +x examples/*/*/*.sh bin/linux-*/AyXDB`. A `git clone` keeps them. |
 
@@ -166,14 +166,14 @@ with Ctrl-C.
 
 `bin/` holds the whole engine: one executable and a few libraries. The core,
 `AyXDB`, `AyDATA` and `AyPRO`, is 4.0 MB on Windows and 5.8 MB on Linux; with
-every optional module it stays under 10 MB. A module is loaded only when a
-project uses it.
+every optional module it is 6.7 MB on Windows and 10 MB on Linux. A module is
+loaded only when a project uses it.
 
 | File | What it is | Windows x64 | Linux x64 | Lines of code |
 |---|---|---:|---:|---:|
 | `AyXDB` (`.exe`) | the process: loads the engine, runs the console | 47 KB | 95 KB | 999 |
 | `AyDATA` | values and types, the XML document tree with its XPath, JSON | 795 KB | 997 KB | 27 404 |
-| `AyPRO` | the engine: events, threads and queues, connections and protocols, scripting, SQL, cluster and replication, several projects in one process | 3.20 MB | 4.71 MB | 124 100 |
+| `AyPRO` | the engine: events, threads and queues, connections and protocols, scripting, SQL, cluster and replication, several projects in one process | 3.21 MB | 4.72 MB | 124 380 |
 | | shared by `AyXDB` and `AyPRO`: the log, utilities, the thread base | | | 3 580 |
 | `AyLIB_net` | mail, FTP and SFTP, file and ZIP functions | 344 KB | 593 KB | 4 009 |
 | `AyLIB_vision` | cameras and image functions | 482 KB | 835 KB | 8 927 |
@@ -181,19 +181,23 @@ project uses it.
 | `AyLIB_Python311` / `313` | Python scripts, one module per Python version | 311 / 317 KB | 523 / 515 KB | 2 246 |
 | `AyPRO_sqlite` | the embedded SQLite database | 1.05 MB | 1.42 MB | 562 |
 | `AyPRO_odbc` | other databases, over ODBC | 25 KB | 36 KB | 927 |
+| `AyPRO_pgsql` | PostgreSQL without ODBC, over libpq | 33 KB | 48 KB | 1 115 |
 | `AyPRO_hid` | USB HID devices | 20 KB | – | 244 |
 | | the interfaces of the modules and plug-ins | | | 603 |
-| **All** | | **6.7 MB** | **9.99 MB** | **177 354** |
+| **All** | | **6.7 MB** | **10.05 MB** | **178 749** |
 
 On Windows the files are `.dll`, on Linux `lib….so`. The 64-bit ARM build is the
-same size: 5.3 MB for the core, 9.4 MB in all.
+same size: 5.3 MB for the core, 9.5 MB in all.
 
 Lines of code are AyMON's own C++, counted from the build projects of the 4.4.3
 sources, without blank and comment-only lines. They leave out the third-party
 code compiled into some modules (SQLite in `AyPRO_sqlite`, libssh2 and miniz in
-`AyLIB_net`, stb in `AyLIB_vision`, HIDAPI in `AyPRO_hid`; see `NOTICE`), and
-OpenSSL, which ships beside the engine on Windows (`libcrypto` and `libssl`,
-8.5 MB) and comes from the system on Linux.
+`AyLIB_net`, stb in `AyLIB_vision`, HIDAPI in `AyPRO_hid`, libpq's headers in
+`AyPRO_pgsql`; see `NOTICE`), OpenSSL, which ships beside the engine on Windows
+(`libcrypto` and `libssl`, 8.5 MB) and comes from the system on Linux, and libpq,
+which `AyPRO_pgsql` loads: PostgreSQL 18's `libpq` with the `libintl`, `libiconv`
+and `libwinpthread` it needs beside the engine on Windows (2.4 MB), the system's
+`libpq5` on Linux.
 
 ## The examples
 

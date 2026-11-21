@@ -69,5 +69,12 @@
 		         createdb -U postgres aymon_edu -->
 		<var id="ConnStrPGSQL" eng="PGSQL" desc="PostgreSQL on this machine"
 		     val="DRIVER={PostgreSQL Unicode(x64)};SERVER=127.0.0.1;PORT=5432;DATABASE=aymon_edu;UID=postgres;PWD=change-me;"/>
+
+		<!-- PostgreSQL without ODBC: the engine's own driver over libpq
+		     (AyPRO_pgsql, attached by DRIVER=PostgreSQLi). The same keys as
+		     psqlODBC's string. Nothing to install on Windows: bin\win-x64
+		     carries libpq. On Linux: sudo apt install libpq5 -->
+		<var id="ConnStrPGNATIVE" eng="PGSQL" desc="PostgreSQL on this machine, through libpq"
+		     val="DRIVER=PostgreSQLi;SERVER=127.0.0.1;PORT=5432;DATABASE=aymon_edu;UID=postgres;PWD=change-me;"/>
 	</data>
 </xdb>

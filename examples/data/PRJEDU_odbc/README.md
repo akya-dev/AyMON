@@ -55,6 +55,7 @@ script does not change.
 <var id="ConnStr"      eng="SQLITE3" val="DRIVER=SQLite3i;Database=%PRJ%/log/plant.db;"/>
 <var id="ConnStrMSSQL" eng="MSSQL"   val="DRIVER={SQL Server};SERVER=.\SQLEXPRESS;DATABASE=aymon_edu;Trusted_Connection=Yes;APP=AyMON;"/>
 <var id="ConnStrPGSQL" eng="PGSQL"   val="DRIVER={PostgreSQL Unicode(x64)};SERVER=127.0.0.1;PORT=5432;DATABASE=aymon_edu;UID=postgres;PWD=change-me;"/>
+<var id="ConnStrPGNATIVE" eng="PGSQL" val="DRIVER=PostgreSQLi;SERVER=127.0.0.1;PORT=5432;DATABASE=aymon_edu;UID=postgres;PWD=change-me;"/>
 ```
 
 The entry whose id is exactly **`ConnStr`** is the one in use; the others are
@@ -69,6 +70,13 @@ parked. To use SQL Server, rename `ConnStr` to `ConnStrSQLITE` and
 The script creates the table itself. For PostgreSQL, use the driver name
 *ODBC Data Sources (64-bit)* shows on your machine; installers name it
 differently (`PostgreSQL Unicode(x64)`, `PostgreSQL ODBC Driver(UNICODE)`).
+
+PostgreSQL also works **without ODBC**: `ConnStrPGNATIVE` names
+`DRIVER=PostgreSQLi`, the engine's own driver over libpq, with the same keys as
+the psqlODBC string. Nothing to install on Windows (`bin\win-x64` carries libpq
+and the three DLLs it needs); on Linux `sudo apt install libpq5`. It answers as
+psqlODBC does, with fewer round trips: a parameterised statement is one round
+trip to the server instead of four.
 
 A password in a connection string is written to the log as `PWD=***`, but it
 is in `AyXDB.xml` in clear text — that file is as secret as the password.

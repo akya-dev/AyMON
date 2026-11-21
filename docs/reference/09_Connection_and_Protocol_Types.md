@@ -262,8 +262,9 @@ Example: [PRJEDU_web](../../examples/web/PRJEDU_web/) (`CN_LIVES`).
 
 A database, named by a connection string in `con_host`. `CON.odbc` is the same class under its
 older name (measured: `[CON.odbc,PRO.odbc]` works). The driver is chosen by the string:
-`DRIVER=SQLite3i;Database=<file>;` goes to the built-in SQLite plug-in, anything else to ODBC
-(`AyPRO_odbc`, both beside the engine).
+`DRIVER=SQLite3i;Database=<file>;` goes to the built-in SQLite plug-in, `DRIVER=PostgreSQLi;..`
+to PostgreSQL over libpq (`AyPRO_pgsql`; on Windows libpq and three DLLs it needs ship beside the
+engine, on Linux the system's `libpq5`), anything else to ODBC (`AyPRO_odbc`; all beside the engine).
 
 | Field | Default | Meaning |
 |---|---|---|

@@ -25,8 +25,9 @@ database at all. Every result below was measured on engine 4.4.2.702.
 
 `SQL.*` works on a `<con>` whose `xdb_fnc` is `[CON.sql,PRO.sql]` (`CON.odbc` / `PRO.odbc` are
 the same pair under their old names). `con_host` is the connection string and chooses the
-driver: `DRIVER=SQLite3i;Database=<file>;` is the embedded SQLite, attached on first use; any
-other string goes to ODBC. The connection itself is on
+driver: `DRIVER=SQLite3i;Database=<file>;` is the embedded SQLite, attached on first use;
+`DRIVER=PostgreSQLi;SERVER=..;DATABASE=..;UID=..;PWD=..` is PostgreSQL without ODBC, over libpq
+(`AyPRO_pgsql`, attached on first use; psqlODBC's keys and answers); any other string goes to ODBC. The connection itself is on
 [page 09](09_Connection_and_Protocol_Types.md). The `<con>` used for every example below:
 
 ```xml

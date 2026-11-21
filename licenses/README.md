@@ -18,6 +18,9 @@ name carries the same components.
 | `libssh2-BSD-3-Clause.txt` | libssh2 1.11.1 in `AyLIB_net.dll` (the SSH transport) | libssh2's own `COPYING`, as shipped upstream |
 | `miniz-MIT.txt` | miniz 3.0.2 in `AyLIB_net.dll` (deflate, behind `FILE.zip`) | miniz's own `LICENSE`, as shipped upstream |
 | `pybind11-BSD-3-Clause.txt` | pybind11 2.10.2 in `AyLIB_Python.dll` | pybind11's own `LICENSE`, as shipped upstream |
+| `PostgreSQL-License.txt` | libpq 18.6 (`bin/win-x64/libpq.dll`) and its two headers compiled into `AyPRO_pgsql.dll` / `libAyPRO_pgsql.so` | PostgreSQL's own `COPYRIGHT`, unchanged |
+| `LGPL-2.1.txt` | GNU gettext runtime 0.19.8 (`libintl-9.dll`) and GNU libiconv 1.19 (`libiconv-2.dll`), shipped for libpq on Windows | the standard LGPL-2.1 text |
+| `winpthreads-MIT-and-BSD-3-Clause.txt` | mingw-w64 winpthreads (`libwinpthread-1.dll`), shipped for libintl on Windows | winpthreads' own `COPYING`, as shipped upstream |
 
 The terms for AyMON itself are not here — they are in `/LICENSE` at the top
 of this repository.

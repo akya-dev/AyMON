@@ -87,6 +87,41 @@ AyPRO_odbc (AyPRO_odbc.dll, libAyPRO_odbc.so)
   No third-party source. It links the system's ODBC driver manager only
   (odbc32 on Windows, unixODBC on Linux).
 
+AyPRO_pgsql (AyPRO_pgsql.dll, libAyPRO_pgsql.so) -- libpq's two public headers
+  PostgreSQL 18.6's libpq-fe.h and postgres_ext.h, unchanged: declarations
+  only, no libpq code is compiled in. Portions Copyright (c) 1996-2025,
+  PostgreSQL Global Development Group; Portions Copyright (c) 1994, The
+  Regents of the University of California. PostgreSQL License
+  (licenses/PostgreSQL-License.txt).
+  At run time it loads libpq: on Linux the system's libpq5, nothing shipped;
+  on Windows the four DLLs below, copied unchanged from the PostgreSQL 18.6
+  installation and loaded only when a DRIVER=PostgreSQLi connection opens.
+
+=============================================================================
+SHIPPED BESIDE THE ENGINE FOR AyPRO_pgsql (bin/win-x64, Windows only)
+=============================================================================
+
+libpq.dll -- PostgreSQL 18.6 client library
+  Portions Copyright (c) 1996-2025, PostgreSQL Global Development Group.
+  Portions Copyright (c) 1994, The Regents of the University of California.
+  PostgreSQL License (licenses/PostgreSQL-License.txt). It uses the
+  libssl-3-x64.dll / libcrypto-3-x64.dll above.
+
+libintl-9.dll -- GNU gettext runtime 0.19.8 (libpq's message catalogs)
+  Copyright (C) 1995-2010 Free Software Foundation, Inc.
+libiconv-2.dll -- GNU libiconv 1.19 (needed by libintl)
+  Copyright (C) 1999-2026 Free Software Foundation, Inc.
+  Both under the GNU Lesser General Public License, version 2.1 or later
+  (licenses/LGPL-2.1.txt). They are separate, unmodified dynamic libraries
+  that you may replace with your own builds of the same interface; their
+  source is at https://ftp.gnu.org/gnu/gettext/ and
+  https://ftp.gnu.org/gnu/libiconv/.
+
+libwinpthread-1.dll -- mingw-w64 winpthreads (needed by libintl)
+  Copyright (c) 2011 mingw-w64 project, MIT licence; parts derived from the
+  Posix Threads library for Microsoft Windows, (C) 2010 Lockless Inc., under
+  a BSD 3-clause licence (licenses/winpthreads-MIT-and-BSD-3-Clause.txt).
+
 The plug-in code around these components is AKYA's own and is supplied under
 Part B of /LICENSE.
 
