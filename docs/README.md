@@ -10,7 +10,7 @@ seen working.
 | [02_Timers_and_Events.md](02_Timers_and_Events.md) | You want something to happen on its own. Threads, `evt_*`, why a write runs a chain of functions. |
 | [03_Scripting.md](03_Scripting.md) | You want to write the logic. Where script lives, how XML calls it, the eight places the language is **not** JavaScript, decimals and times, and web pages written in script (`.ayp`). |
 | [04_Licensing.md](04_Licensing.md) | You want to know what is free, what is not, and why the replication example runs anyway. |
-| [05_Connections_and_Protocols.md](05_Connections_and_Protocols.md) | You want to reach something outside the engine. Transports and protocols, who dials and who asks, one port for several services, polled against subscribed, mail, file transfer and cameras, and what to do about a protocol AyMON does not speak. |
+| [05_Connections_and_Protocols.md](05_Connections_and_Protocols.md) | You want to reach something outside the engine. Transports and protocols, who dials and who asks, one port for several services, polled against subscribed, mail, file transfer, PostgreSQL without ODBC and cameras, and what to do about a protocol AyMON does not speak. |
 | [06_Access_and_Safety.md](06_Access_and_Safety.md) | You are about to let something in. The three gates — `con_acl`, the login, `xdb_acl` — TLS, what the examples deliberately leave open, and the fields that close the rest before a plant faces a network. |
 | [07_Real_Hardware.md](07_Real_Hardware.md) | You want to put a real device where an example has a simulated one. What each simulation stands for, what to get, roughly what it costs, and where the example's README tells how to connect it. |
 | [08_In_the_Field.md](08_In_the_Field.md) | You want to know whether it holds up. A production DCIM system's size, the engine's measured throughput, and the regression rigs every change goes through. |
@@ -32,7 +32,7 @@ assumes you have seen the thing work.
 PRJEDU_101      →  02_Timers_and_Events   →  03_Scripting
 PRJEDU_modbus   →  01_The_Element_Tree    →  05_Connections_and_Protocols
 PRJEDU_sqlite   →  03_Scripting  (the SQL section)
-PRJEDU_odbc     →  03_Scripting
+PRJEDU_odbc     →  03_Scripting          →  05_Connections_and_Protocols
 PRJEDU_records  →  11_Records_and_Saving
 PRJEDU_mirror   →  11_Records_and_Saving  (A list that is a table)
 PRJEDU_sqlxdb   →  11_Records_and_Saving  (Names from the tree in a query)

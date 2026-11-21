@@ -46,7 +46,7 @@ connection that starts, logs nothing and never talks.
 | `CON.tls` | TCP with TLS: the listener holds the certificate | `PRJEDU_web` (8443), `PRJEDU_telnet` (2324) |
 | `CON.ws` / `CON.wss` | a WebSocket, which is what a browser can open | `PRJEDU_web`, `PRJEDU_rep` |
 | `CON.ser` | a serial port | — (same `PRO.modbus` above it, with `pro_mod="RTU"`) |
-| `CON.sql` | a database connection, named by a connection string (`CON.odbc` is the same class) | `PRJEDU_odbc` |
+| `CON.sql` | a database connection, named by a connection string (`CON.odbc` is the same class). The string picks the driver: `DRIVER=SQLite3i` the embedded SQLite, `DRIVER=PostgreSQLi` PostgreSQL over libpq (below), anything else ODBC | `PRJEDU_odbc` |
 | `CON.sqlite` | the same, for the embedded SQLite driver, where `con_host` is the database **file**. Needs `xdb_lib="AyPRO_sqlite"` on the root document; a `CON.sql` whose string says `DRIVER=SQLite3i` attaches it by itself | `PRJEDU_sqlite` |
 | `CON.ssh` | a channel over SSH, with the server's key checked; `PRO.sftp` above it | below |
 | `CON.cam` | a camera: USB, MJPEG, snapshots, RTSP, raw H.264 in UDP, a recording | `PRJEDU_vision`, `PRJPER_tello` |
@@ -240,6 +240,69 @@ thread's `thr_alm_wdt`). A server's "no" is final; only "no answer, connection l
 the job on the wire" is repeated (`pro_try`), so a message may arrive twice. A file is
 written as `.part` first with `"tmp"`. Without the `net` licence feature these count 20
 operations a day (`04_Licensing`).
+
+## PostgreSQL without ODBC
+
+A `CON.sql` whose connection string starts with `DRIVER=PostgreSQLi` talks to PostgreSQL
+through libpq, PostgreSQL's own client library, with no ODBC driver or data source in
+between (engine 4.4.3.769 on; the plug-in `AyPRO_pgsql` is attached by that first use):
+
+```xml
+<con id="CN_SQL" xdb_fnc="[CON.sql,PRO.sql]" con_ses="4" pro_tmo="10"
+     con_host="DRIVER=PostgreSQLi;SERVER=127.0.0.1;PORT=5432;DATABASE=plant;UID=aymon;PWD={s3cret}"
+     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+```
+
+The rest of the string is psqlODBC's, so a connection moves from ODBC by its `DRIVER` value
+alone, and everything above it stays as it was: `SQL.qry`, `SQL.attach`, `PRO.sql`, the SQL
+mirror lists and record sinks (`11_Records_and_Saving`), XDB SQL's `sql()`
+(`14_SQL_Both_Ways`). `PRJEDU_odbc` has the string ready (`ConnStrPGNATIVE`).
+
+| Key | |
+|---|---|
+| `SERVER`, `PORT` | the server; a comma list = several hosts, and libpq's `target_session_attrs` picks one |
+| `DATABASE`, `UID`, `PWD` | `PWD={..}` when the password holds `;`; the log writes it as `***` |
+| `SSLmode` | `disable` .. `verify-full` |
+| `pqopt={k=v ..}`, any libpq keyword | handed to libpq (`connect_timeout`, `application_name`, `sslrootcert` ..) |
+| `ConnSettings={..}` | SQL run right after connecting; an error refuses the connection |
+| psqlODBC's own keys | (`UseDeclareFetch`, `BoolsAsChar` ..) not used; the log names them once |
+
+**Why.** psqlODBC itself sits on libpq; what goes is the ODBC layer. A parameterised
+statement is one round trip to the server instead of psqlODBC's four, which is what counts
+over a network: 2.2 against 8.7 ms at a 2 ms round trip. Against a local server, measured
+inside the engine: reading cells 1.4-1.8 times, parameterised statements 3 times, `SQL.qry`
+1.5-2 times faster. A query whose time is the server's own (a large join, the disk) gains
+little.
+
+**The same answers.** What a script reads is what it read through psqlODBC: a `bool` is `1` /
+`0`, a `bytea` hex without `\x`, a `uuid` upper case, a `timestamptz` the wall time in the
+engine's zone without an offset; everything else is the server's text. Typed reads
+(`SQL.getdata`) give integers, floats (NaN and the infinities kept), `numeric` as a decimal,
+and with `con_dtm="1"` time values. Parameters go as text without a type, as psqlODBC sent
+them. A text of several statements answers its first result; an error in any of them fails
+the call.
+
+**A time limit that ends.** A statement past its connection's limit (`pro_tmo`) is cancelled
+on the server and answers `57014`; the link stays usable. One still running 2 s after the
+cancel takes its link with it, and the pool opens a new one.
+
+**What to deploy.** Windows: `AyPRO_pgsql.dll` and PostgreSQL 18's `libpq.dll`,
+`libintl-9.dll`, `libiconv-2.dll` and `libwinpthread-1.dll` beside the engine, all four from
+one installation; `bin/win-x64` holds them. Linux and the Raspberry Pi: `libAyPRO_pgsql.so`
+(in `bin/`) and the system's libpq, `sudo apt install libpq5`. A missing library fails that
+connection, never the engine's start, and says what is missing:
+
+```
+SQL.connect: ERROR (con=DRIVER=PostgreSQLi;..;PWD=***..), 08001:1:0:pgsql: libpq could not be loaded [Windows error 126] -- expected libpq.dll next to the executable ..
+```
+
+**Moving every string at once.** `<xdb xdb_sql_pg="native">` on the root document sends
+every connection string whose `DRIVER` starts with `PostgreSQL` (`{PostgreSQL Unicode(x64)}`,
+`{PostgreSQL ODBC Driver(UNICODE)}` ..) through libpq, unchanged. A `DSN=` string names no
+driver and stays with ODBC; absent or `odbc` = as before. Deploy the libraries first: a
+string moved without them fails.
+
+Not there: `COPY` from a script, server-side named statements, pipelining.
 
 ## A camera
 

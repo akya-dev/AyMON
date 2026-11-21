@@ -169,6 +169,13 @@ And without asking:
   `src`, a script file, its log, its `rec_dir`, its web root, certificates, an SQLite database — must
   lie in the root's directory (write `%PRJ%/...`). An embedded SQLite database cannot attach another
   file; ODBC must use the root's own server credentials (no DSN, no Windows login of the engine).
+- **PostgreSQL through libpq (`DRIVER=PostgreSQLi`) says everything itself.** The string must name
+  the server, the database, the user and the password: libpq would otherwise take them from the
+  host (its stored passwords, `pg_service.conf`, the `PG*` environment), so `passfile` and `service`
+  are refused, and key files (`sslcert`, `sslkey`, `sslrootcert` ..) lie in the root's directory.
+  The engine lets the root log in with a password only, never with the engine's own Windows or
+  Unix identity; that needs libpq 16 or newer on the host (Ubuntu 22.04's 14 and Debian 12's 15
+  refuse the root's connection instead).
 - **No Python, no bridges.**
 
 The host's own documents are not bound by these rules — the doors, the monitoring and the backups

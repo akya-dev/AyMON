@@ -281,9 +281,10 @@ instant, whatever their offset. Text with no offset means **local** time. A valu
 that is not one of these, written to an attribute declared as one, is **refused** with
 one `ERROR` line, and the attribute keeps its value.
 
-SQL decimal columns answer decimals through ODBC (SQL Server, PostgreSQL); the
-built-in SQLite driver answers a `DECIMAL` column as a float (`12.50` comes back
-as `12.5`). Date-and-time columns answer time values when the
+SQL decimal columns answer decimals through ODBC (SQL Server, PostgreSQL) and
+through the PostgreSQL driver without ODBC (`DRIVER=PostgreSQLi`,
+`05_Connections_and_Protocols`); the built-in SQLite driver answers a `DECIMAL`
+column as a float (`12.50` comes back as `12.5`). Date-and-time columns answer time values when the
 `<con>` says `con_dtm="1"`. In Python they arrive as `decimal.Decimal`, `datetime`,
 `date` and `timedelta`, and go back the same way.
 
