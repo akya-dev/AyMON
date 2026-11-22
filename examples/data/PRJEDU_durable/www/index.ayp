@@ -67,6 +67,8 @@ var lv = ["normal", "warning", "ALARM", "EMERGENCY"];
 <p class="hint">Kill the engine (<code>kill.bat</code>, or close its window) and start it again
 (<code>run.bat</code>): the kept values go on from where they were, "since this start" begins at 0.
 A killed process loses at most the last 10 ms of changes (<code>rec_flush</code>).</p>
+<h2>How it works <span class="kept">a sketch; click for full size</span></h2>
+<p><a href="/flow.svg" target="_blank" rel="noopener"><img src="/flow.svg" alt="A sketch: values with xdb_dur in MIX/S00 go to log/rec through the commit thread every 10 ms; after a kill they come back at the next start" style="display:block;width:100%;max-width:660px;height:auto"></a></p>
 </main>
 <footer>Written by the engine at <%= Time.GetTimeStr(0) %>. JSON: <a href="/api.ayp">/api.ayp</a></footer>
 </body>

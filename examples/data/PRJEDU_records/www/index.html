@@ -89,6 +89,11 @@
         <div class="label">Table val <span class="muted">from HIS.val, <span id="n-val">--</span> rows</span></div>
         <div class="table-wrap"><table><thead id="h-val"></thead><tbody id="b-val"></tbody></table></div>
     </section>
+    <section class="card wide">
+        <div class="label">How it works <span class="muted">a sketch; click for full size</span></div>
+        <a href="flow.svg" target="_blank" rel="noopener"><img src="flow.svg" alt="A sketch: TANK/S00 makes alarm, event and value records; the root's addresses send them through the journal in log/rec to the sinks in HIS/S00, which write log/history.db"
+           style="display:block;width:100%;max-width:660px;height:auto;margin:0 auto;border-radius:6px"></a>
+    </section>
 </main>
 
 <script src="mqtt-lite.js"></script>

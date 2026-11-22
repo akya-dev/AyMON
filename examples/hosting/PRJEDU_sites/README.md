@@ -32,6 +32,10 @@ curl -H "Host: acme.localhost:8125" http://127.0.0.1:8125/state.ayp
 `templates/site` is a third copy of the same project that nothing loads: the host's page
 makes new sites from it.
 
+![A sketch: one engine process, one port; the door hands each request to HOST, ACME or BETA by its Host header; ACME and BETA read each other over a bridge, the host reads neither](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## The host's page
 
 **The roots**, from `HOST.list()`: running or not, the worst health level, how many

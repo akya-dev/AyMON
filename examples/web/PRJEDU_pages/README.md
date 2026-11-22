@@ -23,6 +23,10 @@ Users: **opr** / **opr123** (operator) and **eng** / **eng123** (engineer).
 
 If you have written ASP, JSP, PHP or EJS, you already know the syntax.
 
+![A sketch: a request for tank.ayp; the engine translates the template once, runs it with the visitor's role, reads the tank farm with evt.GetValue and answers HTML](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## The syntax
 
 | Form | Meaning |

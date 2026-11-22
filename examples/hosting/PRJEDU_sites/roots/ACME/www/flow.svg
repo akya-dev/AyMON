@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 470" width="660" height="470" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_sites: one engine, one port, several projects</title>
+  <!-- A sketch of the process: the door, the roots it hands requests to, the bridge and what the host may not see. -->
+  <defs>
+    <marker id="arrp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#7a5bc4"/></marker>
+    <marker id="arrg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#2e8b57"/></marker>
+    <marker id="arrs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#6b7385"/></marker>
+    <g id="brw">
+      <rect x="0" y="0" width="124" height="40" rx="4" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+      <path d="M0 12 H124" stroke="#1d2330" stroke-width="1"/>
+      <circle cx="7" cy="6" r="2" fill="#9aa3b2"/><circle cx="14" cy="6" r="2" fill="#9aa3b2"/><circle cx="21" cy="6" r="2" fill="#9aa3b2"/>
+    </g>
+  </defs>
+  <rect width="660" height="470" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_sites: one engine, one port, several projects</text>
+
+  <!-- the browsers -->
+  <use href="#brw" x="16" y="56"/>
+  <text x="22" y="85" font-size="9.5" font-family="ui-monospace, Consolas, monospace" fill="#1d2330">127.0.0.1:8125</text>
+  <use href="#brw" x="16" y="116"/>
+  <text x="22" y="145" font-size="9.5" font-family="ui-monospace, Consolas, monospace" fill="#1d2330">acme.localhost:8125</text>
+  <use href="#brw" x="16" y="176"/>
+  <text x="22" y="205" font-size="9.5" font-family="ui-monospace, Consolas, monospace" fill="#1d2330">beta.localhost:8125</text>
+  <text x="16" y="236" font-size="10" fill="#6b7385">browsers send every</text>
+  <text x="16" y="249" font-size="10" fill="#6b7385">*.localhost name to this</text>
+  <text x="16" y="262" font-size="10" fill="#6b7385">machine by themselves</text>
+  <g stroke="#7a5bc4" stroke-width="2" fill="none">
+    <path d="M140 76 H172" marker-end="url(#arrp)"/>
+    <path d="M140 136 H156 V82 H172" marker-end="url(#arrp)"/>
+    <path d="M140 196 H156 V82"/>
+  </g>
+
+  <!-- the process -->
+  <rect x="164" y="40" width="480" height="356" rx="8" fill="#f8f9fb" stroke="#1d2330" stroke-width="1.5"/>
+  <text x="176" y="56" font-size="10" fill="#6b7385">one AyXDB process · one licence (-lic:) · run.bat gives it db/AyXDB.xml</text>
+  <rect x="176" y="64" width="456" height="30" rx="4" fill="#ede7fa" stroke="#7a5bc4" stroke-width="1.5"/>
+  <text x="186" y="84" font-size="11" fill="#1d2330"><tspan font-weight="600">the door:</tspan> WEB on 127.0.0.1:8125, the only port. It reads the Host header.</text>
+  <g stroke="#7a5bc4" stroke-width="1.5" fill="none">
+    <path d="M240 94 V116" marker-end="url(#arrp)"/><path d="M390 94 V116" marker-end="url(#arrp)"/><path d="M566 94 V116" marker-end="url(#arrp)"/>
+  </g>
+  <g font-size="9" fill="#7a5bc4" font-family="ui-monospace, Consolas, monospace">
+    <text x="246" y="110">127.0.0.1</text><text x="396" y="110">acme.localhost</text><text x="560" y="110" text-anchor="end">beta.localhost</text>
+  </g>
+
+  <!-- three roots -->
+  <rect x="176" y="118" width="128" height="176" rx="6" fill="#fff" stroke="#6b7385" stroke-width="1.5"/>
+  <text x="184" y="136" font-weight="600" fill="#1d2330">HOST</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="184" y="152" fill="#6b7385">db/AyXDB.xml</text>
+    <text x="184" y="166" fill="#6b7385">the machine's time</text>
+    <text x="184" y="188">its page: the roots,</text>
+    <text x="184" y="201">Stop, Start, Backup,</text>
+    <text x="184" y="214">Add, Restore, Remove</text>
+    <text x="184" y="236">HOST.list(): health</text>
+    <text x="184" y="249">and counts, never a</text>
+    <text x="184" y="262">site's values</text>
+    <text x="184" y="284" fill="#6b7385">visitors: Engineer</text>
+  </g>
+
+  <rect x="326" y="118" width="134" height="176" rx="6" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="334" y="136" font-weight="600" fill="#1d2330">ACME <tspan font-weight="400" font-size="10" fill="#6b7385">doc SITE</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="334" y="152" fill="#6b7385">roots/ACME</text>
+    <text x="334" y="166" fill="#6b7385">America/Toronto</text>
+    <text x="334" y="188">a tank and a pump,</text>
+    <text x="334" y="201">its page, its log</text>
+    <text x="334" y="223" font-family="ui-monospace, Consolas, monospace" font-size="9">CN_WEB con_host="#WEB"</text>
+    <text x="334" y="236">no port of its own</text>
+    <text x="334" y="258">root_peers="BETA"</text>
+    <text x="334" y="284" fill="#6b7385">visitors: Guest</text>
+  </g>
+
+  <rect x="498" y="118" width="134" height="176" rx="6" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="506" y="136" font-weight="600" fill="#1d2330">BETA <tspan font-weight="400" font-size="10" fill="#6b7385">doc SITE</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="506" y="152" fill="#6b7385">roots/BETA</text>
+    <text x="506" y="166" fill="#6b7385">Europe/Istanbul</text>
+    <text x="506" y="188">the same project,</text>
+    <text x="506" y="201">its own values</text>
+    <text x="506" y="223" font-family="ui-monospace, Consolas, monospace" font-size="9">CN_WEB con_host="#WEB"</text>
+    <text x="506" y="236">no port of its own</text>
+    <text x="506" y="258">root_peers="ACME"</text>
+    <text x="506" y="284" fill="#6b7385">visitors: Guest</text>
+  </g>
+
+  <!-- the bridge, and what the host may not read -->
+  <path d="M462 206 H496" stroke="#2e8b57" stroke-width="2" marker-start="url(#arrg)" marker-end="url(#arrg)"/>
+  <text x="479" y="198" text-anchor="middle" font-size="9" fill="#2e8b57">bridge</text>
+  <path d="M306 206 H324" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="3 3"/>
+  <path d="M310 200 L320 212 M320 200 L310 212" stroke="#c0392b" stroke-width="2"/>
+  <g font-size="10" fill="#1d2330">
+    <text x="176" y="314"><tspan fill="#2e8b57">ACME reads BETA's level:</tspan> doc('SITE@BETA'), allowed because each names the other.</text>
+    <text x="176" y="330"><tspan fill="#c0392b">The host reads nothing inside a site:</tspan> no SITE in its tree; @ACME refused.</text>
+  </g>
+
+  <!-- what the host's buttons make -->
+  <rect x="176" y="342" width="216" height="44" rx="5" fill="#fff" stroke="#6b7385" stroke-dasharray="5 4"/>
+  <text x="184" y="359" font-size="10.5" font-weight="600" fill="#1d2330">GAMMA <tspan font-weight="400" fill="#6b7385">from templates/site</tspan></text>
+  <text x="184" y="375" font-size="10" fill="#6b7385">HOST.add: gamma.localhost, Tokyo time</text>
+  <rect x="404" y="342" width="228" height="44" rx="5" fill="#fff" stroke="#6b7385" stroke-dasharray="5 4"/>
+  <text x="412" y="359" font-size="10.5" font-weight="600" fill="#1d2330">COPY <tspan font-weight="400" fill="#6b7385">from the last backup</tspan></text>
+  <text x="412" y="375" font-size="10" fill="#6b7385">HOST.restore: copy.localhost</text>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 418 H40" stroke="#7a5bc4" stroke-width="2"/><text x="46" y="422">HTTP, handed by the Host header</text>
+    <path d="M246 418 H270" stroke="#2e8b57" stroke-width="2"/><text x="276" y="422">a bridge between roots</text>
+    <path d="M414 418 H438" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/><text x="444" y="422">made by the host's page</text>
+  </g>
+  <text x="16" y="444" font-size="11" fill="#6b7385">Each site is a whole project: its files, documents, page, log and time zone. Neither sees the other but over</text>
+  <text x="16" y="460" font-size="11" fill="#6b7385">the bridge, and the host sees neither. The host and every site count as one document each in the licence.</text>
+</svg>

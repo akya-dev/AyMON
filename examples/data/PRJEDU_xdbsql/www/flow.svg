@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 490" width="660" height="490" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_xdbsql: SQL on the tree</title>
+  <!-- A sketch of the ways in, what XDB SQL reads and who may do what. -->
+  <defs>
+    <marker id="arrb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#3b82c4"/></marker>
+    <marker id="arrg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#2e8b57"/></marker>
+  </defs>
+  <rect width="660" height="490" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_xdbsql: SQL on the tree</text>
+
+  <!-- who asks -->
+  <rect x="16" y="50" width="160" height="86" rx="5" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M16 64 H176" stroke="#1d2330" stroke-width="1"/>
+  <g fill="#9aa3b2"><circle cx="24" cy="57" r="2.5"/><circle cx="32" cy="57" r="2.5"/><circle cx="40" cy="57" r="2.5"/></g>
+  <text x="50" y="61" font-size="9" fill="#6b7385" font-family="ui-monospace, Consolas, monospace">127.0.0.1:8119</text>
+  <text x="24" y="81" font-size="11" font-weight="600" fill="#1d2330">the page, a Guest</text>
+  <text x="24" y="96" font-size="10" fill="#1d2330">writes XDB SQL to Q/@qry;</text>
+  <text x="24" y="110" font-size="10" fill="#1d2330">never SQL for the database</text>
+  <text x="24" y="126" font-size="10" fill="#6b7385">HTTP + MQTT in a WebSocket</text>
+
+  <rect x="16" y="158" width="160" height="104" rx="5" fill="#1d2330"/>
+  <text x="24" y="176" font-size="10" fill="#9fe3b0" font-family="ui-monospace, Consolas, monospace">$ psql "host=127.0.0.1</text>
+  <text x="24" y="189" font-size="10" fill="#9fe3b0" font-family="ui-monospace, Consolas, monospace">  port=15432 .."</text>
+  <text x="24" y="210" font-size="11" font-weight="600" fill="#fff">any PostgreSQL client</text>
+  <text x="24" y="225" font-size="10" fill="#d7dbe3">psql, pg_try.py, psycopg,</text>
+  <text x="24" y="239" font-size="10" fill="#d7dbe3">pgAdmin 4, Grafana, Excel</text>
+  <text x="24" y="253" font-size="10" fill="#d7dbe3">and Power BI (psqlODBC)</text>
+
+  <g stroke="#7a5bc4" stroke-width="2"><path d="M176 96 H206"/></g>
+  <g fill="#fff" stroke="#7a5bc4" stroke-width="1.5"><circle cx="186" cy="96" r="3"/><circle cx="196" cy="96" r="3"/></g>
+  <g stroke="#1d2330" stroke-width="2"><path d="M176 200 H206"/></g>
+  <g fill="#fff" stroke="#1d2330" stroke-width="1.5"><circle cx="186" cy="200" r="3"/><circle cx="196" cy="200" r="3"/></g>
+
+  <!-- the engine -->
+  <rect x="206" y="40" width="214" height="296" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="216" y="60" font-weight="600" fill="#1f5f3b">SQL/S00 · XDB SQL</text>
+  <g font-size="10.5" fill="#1d2330">
+    <text x="216" y="78">a document is a schema, an element</text>
+    <text x="216" y="92">name a table, an element a row,</text>
+    <text x="216" y="106">an attribute a column</text>
+  </g>
+  <g font-size="10" fill="#1d2330">
+    <rect x="216" y="116" width="194" height="32" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="224" y="129" font-weight="600">CN_XQL <tspan font-weight="400" fill="#6b7385">the page's way in</tspan></text>
+    <text x="224" y="142" font-size="8.5" font-family="ui-monospace, Consolas, monospace" fill="#6b7385">xdb:doc=LINE/*,SQL/S00;sql=CN_HIS</text>
+    <rect x="216" y="154" width="194" height="46" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="224" y="168" font-weight="600">PRO.pgwire</text>
+    <text x="224" y="181">CN_PG 15432: con_role 6, Engineer</text>
+    <text x="224" y="194">CN_PGM 15433: role 2, read only</text>
+    <rect x="216" y="206" width="194" height="46" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="224" y="220" font-weight="600">&lt;sqlq&gt; HIS_LAST, HIS_STATS</text>
+    <text x="224" y="233">named queries: the values bound;</text>
+    <text x="224" y="246">their xdb_acl says who may run them</text>
+    <rect x="216" y="258" width="194" height="46" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="224" y="272" font-weight="600">Q_X <tspan font-weight="400" fill="#6b7385">the other way round</tspan></text>
+    <text x="224" y="285">SQLite's own SQL with xdb('..')</text>
+    <text x="224" y="298">in it, run by the script every 5 s</text>
+  </g>
+  <text x="216" y="324" font-size="10" fill="#1f5f3b">the caller's role decides every row and write</text>
+
+  <!-- the tree as a table -->
+  <rect x="450" y="40" width="194" height="156" rx="6" fill="#fff" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="460" y="58" font-weight="600" fill="#1f5f3b">the tree: "LINE/*".io</text>
+  <g font-size="9.5" fill="#1d2330">
+    <g fill="#6b7385"><text x="460" y="78">_doc</text><text x="504" y="78">id</text><text x="544" y="78">val</text><text x="582" y="78">val_unt</text><text x="622" y="78">hi</text></g>
+    <path d="M460 83 H638" stroke="#dfe3ea"/>
+    <text x="460" y="97">LINE/L1</text><text x="504" y="97">L1_LT1</text><text x="544" y="97">57.45</text><text x="582" y="97">%</text><text x="622" y="97">68</text>
+    <text x="460" y="112">LINE/L1</text><text x="504" y="112">L1_PT1</text><text x="544" y="112">2.82</text><text x="582" y="112">bar</text><text x="622" y="112">3.5</text>
+    <text x="460" y="127">LINE/L2</text><text x="504" y="127">L2_PT1</text><text x="544" y="127">5.88</text><text x="582" y="127">bar</text><text x="622" y="127">6.3</text>
+    <g fill="#c0392b"><text x="460" y="142">LINE/L2</text><text x="504" y="142">L2_TT1</text><text x="544" y="142">187.87</text><text x="582" y="142">°C</text><text x="622" y="142">186</text></g>
+  </g>
+  <text x="460" y="164" font-size="10" fill="#6b7385">read where they are, no copy;</text>
+  <text x="460" y="177" font-size="10" fill="#6b7385">val_unt comes from the class;</text>
+  <text x="460" y="190" font-size="10" fill="#6b7385">UPDATE goes the point's own way</text>
+  <path d="M420 118 H448" stroke="#2e8b57" stroke-width="2" marker-start="url(#arrg)" marker-end="url(#arrg)"/>
+
+  <!-- the database -->
+  <path d="M452 218 V318 A96 11 0 0 0 644 318 V218" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <ellipse cx="548" cy="218" rx="96" ry="11" fill="#f3f5f8" stroke="#1d2330" stroke-width="1.5"/>
+  <g text-anchor="middle" fill="#1d2330">
+    <text x="548" y="248" font-weight="600">CN_HIS · log/plant.db</text>
+    <text x="548" y="263" font-size="10" fill="#6b7385">SQLite, a reading every 2 s</text>
+    <text x="548" y="284" font-size="10" font-family="ui-monospace, Consolas, monospace">his (tim, doc, rid, val)</text>
+    <text x="548" y="304" font-size="10" fill="#6b7385">pro_sql_xql="1": XDB SQL may read it</text>
+  </g>
+  <path d="M410 229 H450" stroke="#3b82c4" stroke-width="2" marker-start="url(#arrb)" marker-end="url(#arrb)"/>
+  <path d="M410 281 H450" stroke="#3b82c4" stroke-width="2" stroke-dasharray="6 4" marker-start="url(#arrb)" marker-end="url(#arrb)"/>
+
+  <!-- who may do what -->
+  <rect x="16" y="350" width="628" height="90" rx="6" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <g font-size="10.5" fill="#1d2330">
+    <g fill="#6b7385"><text x="28" y="368">who asks</text><text x="196" y="368">read the tree</text><text x="300" y="368">named query</text><text x="404" y="368">sql('CN_HIS', ..)</text><text x="524" y="368">UPDATE .. SET hi</text></g>
+    <path d="M28 374 H632" stroke="#dfe3ea"/>
+    <text x="28" y="390">the page, Guest (0)</text><text x="196" y="390" fill="#2e8b57">yes</text><text x="300" y="390" fill="#2e8b57">yes</text><text x="404" y="390" fill="#c0392b">refused</text><text x="524" y="390" fill="#d9731a">0 rows written</text>
+    <text x="28" y="408">port 15432, Engineer (6)</text><text x="196" y="408" fill="#2e8b57">yes</text><text x="300" y="408" fill="#2e8b57">yes</text><text x="404" y="408" fill="#2e8b57">yes</text><text x="524" y="408" fill="#2e8b57">written</text>
+    <text x="28" y="426">port 15433, Monitor (2)</text><text x="196" y="426" fill="#2e8b57">yes</text><text x="300" y="426" fill="#2e8b57">yes</text><text x="404" y="426" fill="#c0392b">refused</text><text x="524" y="426" fill="#c0392b">refused</text>
+  </g>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 462 H40" stroke="#7a5bc4" stroke-width="2"/><text x="46" y="466">HTTP + MQTT</text>
+    <path d="M130 462 H154" stroke="#1d2330" stroke-width="2"/><text x="160" y="466">PostgreSQL wire protocol</text>
+    <path d="M312 462 H336" stroke="#2e8b57" stroke-width="2"/><text x="342" y="466">the tree</text>
+    <path d="M400 462 H424" stroke="#3b82c4" stroke-width="2"/><text x="430" y="466">SQL to SQLite</text>
+    <path d="M520 462 H544" stroke="#3b82c4" stroke-width="2" stroke-dasharray="6 4"/><text x="550" y="466">with xdb()</text>
+  </g>
+  <text x="16" y="484" font-size="11" fill="#6b7385">The ports listen on 127.0.0.1 and ask no password: the port gives the role. On a network: con_auth, TLS, con_acl.</text>
+</svg>

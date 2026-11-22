@@ -18,6 +18,10 @@ after CTRL-C, after a kill, after a power cut. The XML file is never written.
 
 The guide for all of this is [13_Durable_Documents](../../../docs/13_Durable_Documents.md).
 
+![A sketch: values with xdb_dur in MIX/S00 go to log/rec through the commit thread every 10 ms; after a kill they come back at the next start](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## What it teaches
 
 * **`xdb_dur` on a value.** `BATCHES`, `HOURS`, `SP`, `LAST` and `SHIFT` in `db\db_MIX.xml`

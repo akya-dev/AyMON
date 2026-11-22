@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 450" width="660" height="450" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_sqlite: three timers and the page, one file</title>
+  <!-- A sketch of what the example does with its database; not every attribute is shown. -->
+  <defs>
+    <marker id="arrb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#3b82c4"/></marker>
+  </defs>
+  <rect width="660" height="450" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_sqlite: history in one file</text>
+
+  <!-- the engine -->
+  <rect x="16" y="40" width="400" height="356" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="28" y="60" font-weight="600" fill="#1f5f3b">HIS/S00 · the engine</text>
+  <g font-size="11" fill="#1d2330">
+    <rect x="28" y="76" width="104" height="40" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="36" y="92" font-weight="600">T_READ</text><text x="36" y="106" font-size="10" fill="#6b7385">once a second</text>
+    <text x="144" y="92">INSERT a reading</text><text x="144" y="106" font-size="10" fill="#6b7385">prepare, parameter, execute: values bound</text>
+
+    <rect x="28" y="132" width="104" height="40" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="36" y="148" font-weight="600">T_SUM</text><text x="36" y="162" font-size="10" fill="#6b7385">every ten seconds</text>
+    <text x="144" y="148">count, lowest, highest, mean → STATS</text><text x="144" y="162" font-size="10" fill="#6b7385">exec_direct: nothing variable in it</text>
+
+    <rect x="28" y="188" width="104" height="40" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="36" y="204" font-weight="600">L_RECENT</text><text x="36" y="218" font-size="10" fill="#6b7385">SQL written to @qry</text>
+    <text x="144" y="204">SQL.qry: each row an &lt;item&gt;,</text><text x="144" y="218" font-size="10" fill="#6b7385">each column an attribute</text>
+
+    <rect x="28" y="244" width="104" height="40" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="36" y="260" font-weight="600">FIND</text><text x="36" y="274" font-size="10" fill="#6b7385">the page writes it</text>
+    <text x="144" y="260">count(*) WHERE tag = ? → FOUND</text><text x="144" y="274" font-size="10" fill="#6b7385">the typed text is a bound value, never SQL</text>
+  </g>
+  <!-- what SQL.qry left in the document -->
+  <text x="28" y="304" font-size="11" fill="#1f5f3b">what SQL.qry leaves in the document, read by address:</text>
+  <rect x="28" y="312" width="376" height="72" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <g font-size="10" font-family="ui-monospace, Consolas, monospace" fill="#1d2330">
+    <text x="36" y="328">&lt;list id="L_RECENT"&gt;</text>
+    <text x="48" y="342" font-size="9.5">&lt;item ts="2026-09-20 22:21:17" tag="TANK_TEMP" val="25.45"/&gt;</text>
+    <text x="48" y="356" font-size="9.5">&lt;item ts="2026-09-20 22:21:16" tag="TANK_TEMP" val="25.4"/&gt; ..</text>
+    <text x="36" y="374" fill="#2e8b57">id('L_RECENT')/item[1]/@val   → 25.45</text>
+  </g>
+
+  <!-- SQL over CN_SQL -->
+  <text x="443" y="72" text-anchor="middle" font-size="10" fill="#3b82c4">CN_SQL</text>
+  <g stroke="#3b82c4" stroke-width="2" fill="none">
+    <path d="M416 96 H468" marker-end="url(#arrb)"/>
+    <path d="M416 152 H468" marker-start="url(#arrb)"/>
+    <path d="M416 208 H468" marker-start="url(#arrb)" marker-end="url(#arrb)"/>
+    <path d="M416 264 H468" marker-start="url(#arrb)" marker-end="url(#arrb)"/>
+  </g>
+
+  <!-- the file -->
+  <path d="M470 84 V286 A80 12 0 0 0 630 286 V84" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <ellipse cx="550" cy="84" rx="80" ry="12" fill="#f3f5f8" stroke="#1d2330" stroke-width="1.5"/>
+  <g text-anchor="middle" fill="#1d2330">
+    <text x="550" y="118" font-weight="600">log/plant.db</text>
+    <text x="550" y="133" font-size="10" fill="#6b7385">one file, SQLite, built in</text>
+    <text x="550" y="164" font-size="11">table reading</text>
+    <text x="550" y="179" font-size="10" font-family="ui-monospace, Consolas, monospace">ts, tag, val, note</text>
+    <text x="550" y="212" font-size="10" fill="#6b7385">every tenth tag is</text>
+    <text x="550" y="226" font-size="10" font-family="ui-monospace, Consolas, monospace" fill="#c0392b">x'; DROP TABLE</text>
+    <text x="550" y="239" font-size="10" font-family="ui-monospace, Consolas, monospace" fill="#c0392b">reading; --</text>
+    <text x="550" y="254" font-size="10" fill="#6b7385">stored as text;</text>
+    <text x="550" y="267" font-size="10" fill="#6b7385">the table stays</text>
+  </g>
+  <text x="470" y="318" font-size="10" fill="#6b7385">any SQLite tool opens it too:</text>
+  <text x="470" y="331" font-size="10" fill="#6b7385">sqlite3, a GUI, Python</text>
+
+  <!-- the page -->
+  <path d="M416 372 H468" stroke="#7a5bc4" stroke-width="2"/>
+  <g fill="#fff" stroke="#7a5bc4" stroke-width="1.5"><circle cx="436" cy="372" r="3"/><circle cx="448" cy="372" r="3"/></g>
+  <rect x="470" y="346" width="174" height="72" rx="5" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M470 360 H644" stroke="#1d2330" stroke-width="1"/>
+  <g fill="#9aa3b2"><circle cx="478" cy="353" r="2.5"/><circle cx="486" cy="353" r="2.5"/><circle cx="494" cy="353" r="2.5"/></g>
+  <text x="504" y="357" font-size="9" fill="#6b7385" font-family="ui-monospace, Consolas, monospace">127.0.0.1:8106</text>
+  <text x="478" y="376" font-size="11" font-weight="600" fill="#1d2330">the page</text>
+  <text x="478" y="391" font-size="10" fill="#1d2330">reads NOW, STATS, RECENT,</text>
+  <text x="478" y="404" font-size="10" fill="#1d2330">FOUND; writes FIND only</text>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 422 H40" stroke="#3b82c4" stroke-width="2"/><text x="46" y="426">SQL over CN_SQL (CON.sqlite)</text>
+    <path d="M222 422 H246" stroke="#7a5bc4" stroke-width="2"/><text x="252" y="426">HTTP + MQTT in a WebSocket</text>
+  </g>
+  <text x="16" y="444" font-size="11" fill="#6b7385">No server, no driver, no password, no port. Stop the engine and start it again: the rows are still there.</text>
+</svg>

@@ -33,6 +33,10 @@ SELECT tim, doc, rid, val FROM his
 
 Nothing to install: the tables are one file, `log\plant.db`.
 
+![A sketch: SQL.qry reads the xdb-in address on the tree, sends the SQL without its comments to SQLite, and fills each row's name and unit from the tree](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## What it teaches
 
 * **a column from the tree.** `/*xdb: name = address */` fills column `name` of every

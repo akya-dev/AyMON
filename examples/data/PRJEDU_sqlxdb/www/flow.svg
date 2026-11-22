@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 500" width="660" height="500" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_sqlxdb: names from the tree in a query</title>
+  <!-- A sketch of what SQL.qry does with Q_FIND's two comments; the order of the steps is the engine's. -->
+  <defs>
+    <marker id="arrb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82c4"/></marker>
+    <marker id="arrg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#2e8b57"/></marker>
+    <marker id="arrk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#1d2330"/></marker>
+  </defs>
+  <rect width="660" height="500" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_sqlxdb: names from the tree in a query</text>
+
+  <!-- the query as the engine gets it -->
+  <rect x="16" y="38" width="628" height="76" rx="6" fill="#f3f5f8" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="28" y="56" font-size="11" fill="#6b7385">Q_FIND/@qry: the text the page's search makes</text>
+  <g font-size="10" font-family="ui-monospace, Consolas, monospace" fill="#1d2330">
+    <text x="28" y="74">SELECT tim, doc, rid, val FROM his</text>
+    <text x="28" y="88"> WHERE rid IN (<tspan fill="#2e8b57">/*xdb-in: doc('LINE/*')//io[contains-ci(@desc, 'pressure')]/@id */</tspan>)</text>
+    <text x="28" y="102"><tspan fill="#2e8b57">/*xdb: name = doc('{doc}')/id('{rid}')/@desc ; unit = doc('{doc}')/id('{rid}')/@val_unt */</tspan></text>
+  </g>
+  <path d="M330 114 V136" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+
+  <!-- the tree -->
+  <rect x="16" y="140" width="214" height="196" rx="6" fill="#fff" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="26" y="158" font-weight="600" fill="#1f5f3b">the tree</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="26" y="178" font-weight="600">doc LINE/L1</text>
+    <text x="34" y="193"><tspan font-family="ui-monospace, Consolas, monospace">L1_LT1</tspan>  Filler bowl level</text>
+    <text x="34" y="207"><tspan font-family="ui-monospace, Consolas, monospace" fill="#2e8b57">L1_PT1</tspan>  Filler <tspan fill="#2e8b57">pressure</tspan></text>
+    <text x="34" y="221"><tspan font-family="ui-monospace, Consolas, monospace">L1_ST1</tspan>  Capper motor speed</text>
+    <text x="26" y="243" font-weight="600">doc LINE/L2</text>
+    <text x="34" y="258"><tspan font-family="ui-monospace, Consolas, monospace" fill="#2e8b57">L2_PT1</tspan>  Compressed air <tspan fill="#2e8b57">pressure</tspan></text>
+    <text x="34" y="272"><tspan font-family="ui-monospace, Consolas, monospace">L2_TT1</tspan>  Shrink tunnel temperature</text>
+    <text x="34" y="286"><tspan font-family="ui-monospace, Consolas, monospace">L2_ST1</tspan>  Conveyor speed ..</text>
+    <text x="26" y="308" fill="#6b7385">the unit is on the class:</text>
+    <text x="26" y="322" fill="#6b7385"><tspan font-family="ui-monospace, Consolas, monospace">cls_P</tspan> val_unt="bar", read through it</text>
+  </g>
+
+  <!-- the engine -->
+  <rect x="246" y="140" width="190" height="196" rx="6" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="256" y="158" font-weight="600" fill="#1f5f3b">REP/S00 · SQL.qry</text>
+  <g font-size="10.5" fill="#1d2330">
+    <text x="256" y="180"><tspan font-weight="600">1</tspan>  read the xdb-in address:</text>
+    <text x="268" y="194" font-family="ui-monospace, Consolas, monospace" font-size="9.5">IN ('L1_PT1','L2_PT1')</text>
+    <text x="256" y="218"><tspan font-weight="600">2</tspan>  send the SQL, the list</text>
+    <text x="268" y="232">written out, no comments</text>
+    <text x="256" y="256"><tspan font-weight="600">3</tspan>  the rows come back:</text>
+    <text x="268" y="270">time, doc, id, value</text>
+    <text x="256" y="294"><tspan font-weight="600">4</tspan>  fill name and unit row</text>
+    <text x="268" y="308">by row from the tree,</text>
+    <text x="268" y="322">each address read once</text>
+  </g>
+  <!-- steps 1 and 4 go to the tree, 2 and 3 to the database -->
+  <path d="M246 186 H232" stroke="#2e8b57" stroke-width="2" marker-end="url(#arrg)"/>
+  <path d="M246 302 H232" stroke="#2e8b57" stroke-width="2" marker-end="url(#arrg)"/>
+  <path d="M436 214 H462" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrb)"/>
+  <path d="M462 262 H438" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrb)"/>
+
+  <!-- the database -->
+  <path d="M464 152 V326 A90 11 0 0 0 644 326 V152" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <ellipse cx="554" cy="152" rx="90" ry="11" fill="#f3f5f8" stroke="#1d2330" stroke-width="1.5"/>
+  <g text-anchor="middle" fill="#1d2330">
+    <text x="554" y="184" font-weight="600">log/plant.db</text>
+    <text x="554" y="199" font-size="10" fill="#6b7385">SQLite</text>
+    <text x="554" y="228" font-size="11">table his</text>
+    <text x="554" y="243" font-size="10" font-family="ui-monospace, Consolas, monospace">tim, doc, rid, val</text>
+    <text x="554" y="266" font-size="10" fill="#6b7385">no name, no unit:</text>
+    <text x="554" y="280" font-size="10" fill="#6b7385">a rename never touches it</text>
+    <text x="554" y="304" font-size="11">table wo</text>
+    <text x="554" y="319" font-size="10" font-family="ui-monospace, Consolas, monospace">wo_wid, title, qty, made</text>
+  </g>
+
+  <!-- the result -->
+  <path d="M341 336 V354" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+  <rect x="16" y="358" width="628" height="86" rx="6" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="28" y="376" font-size="11" fill="#6b7385">the result, as the page gets it (qry_out)</text>
+  <g font-size="10.5" fill="#1d2330">
+    <g fill="#6b7385"><text x="28" y="396">tim</text><text x="150" y="396">doc</text><text x="216" y="396">rid</text><text x="280" y="396">val</text><text x="330" y="396" fill="#2e8b57">name</text><text x="536" y="396" fill="#2e8b57">unit</text></g>
+    <path d="M28 401 H632" stroke="#dfe3ea"/>
+    <text x="28" y="416">2026-11-21 22:21:17</text><text x="150" y="416">LINE/L1</text><text x="216" y="416">L1_PT1</text><text x="280" y="416">2.82</text><text x="330" y="416" fill="#2e8b57">Filler pressure</text><text x="536" y="416" fill="#2e8b57">bar</text>
+    <text x="28" y="432">2026-11-21 22:21:17</text><text x="150" y="432">LINE/L2</text><text x="216" y="432">L2_PT1</text><text x="280" y="432">5.88</text><text x="330" y="432" fill="#2e8b57">Compressed air pressure</text><text x="536" y="432" fill="#2e8b57">bar</text>
+  </g>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 466 H40" stroke="#2e8b57" stroke-width="2"/><text x="46" y="470">read from the tree, never sent to the database</text>
+    <path d="M330 466 H354" stroke="#3b82c4" stroke-width="2"/><text x="360" y="470">SQL over CN_SQL</text>
+  </g>
+  <text x="16" y="490" font-size="11" fill="#6b7385">Rename L1_PT1 in the tree: its rows, old ones too, show the new name at the next query. The table was never told.</text>
+</svg>

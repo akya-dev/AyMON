@@ -24,6 +24,10 @@ Nothing to install: the table is one file, `log\orders.db`.
 The guide for this is [11_Records_and_Saving](../../../docs/11_Records_and_Saving.md),
 section "A list that is a table".
 
+![A sketch: the list ORDERS in WO/S00 mirrors the table wo in log/orders.db; the mirror writes what the list changes within a second and loads the open orders every 3 s; another program writes the table directly](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## What it teaches
 
 * **the mirror.** `<his xdb_fnc="[HIS.cfg]" his_wri="row">` in `WO/S00`, named `ORDERS`:

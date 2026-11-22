@@ -17,6 +17,10 @@ history. Nothing to install: the database is one file, `log\history.db`.
 
 The guide for all of this is [11_Records_and_Saving](../../../docs/11_Records_and_Saving.md).
 
+![A sketch: TANK/S00 makes alarm, event and value records; the root's addresses send them through the journal in log/rec to the sinks in HIS/S00, which write log/history.db](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## What it teaches
 
 * **a record, and the three addresses.** `alm_adr`, `evt_adr` and `his_adr` are written

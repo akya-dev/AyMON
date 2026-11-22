@@ -54,6 +54,11 @@
         <div class="note" id="found">The engine runs <code>SELECT count(*), max(ts) FROM reading WHERE tag = ?</code>
             with what you typed as the one parameter. Try the attack: it finds the rows that carry that text - and the table is still there.</div>
     </section>
+    <section class="card wide">
+        <div class="label">How it works <span class="muted">a sketch; click for full size</span></div>
+        <a href="flow.svg" target="_blank" rel="noopener"><img src="flow.svg" alt="A sketch: three timers and the page's search in HIS/S00 write and read one SQLite file, log/plant.db, over CN_SQL; SQL.qry turns rows into elements read by address"
+           style="display:block;width:100%;max-width:660px;height:auto;margin:0 auto;border-radius:6px"></a>
+    </section>
 </main>
 
 <script src="mqtt-lite.js"></script>

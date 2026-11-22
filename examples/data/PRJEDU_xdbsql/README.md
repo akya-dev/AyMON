@@ -44,6 +44,10 @@ LINE/L2  L2_TT2  Shrink tunnel temperature, outlet  166.38  °C     167
 The same query can take in a table of a real database, and a database's own SQL can take in a table of the tree.
 Nothing to install: the history table is one file, `log\plant.db` (SQLite).
 
+![A sketch: the page and any PostgreSQL client query the tree with XDB SQL through CN_XQL or PRO.pgwire; named queries and xdb() reach SQLite; the caller's role decides what is read and written](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## What it teaches
 
 * **the tree as tables.** `"LINE/*".io` is every `<io>` of both line documents; `_doc` says which document a row came

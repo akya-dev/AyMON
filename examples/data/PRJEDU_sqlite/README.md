@@ -25,6 +25,10 @@ The database is SQLite, embedded in the engine through a plug-in. **Nothing
 to install**: no server, no ODBC data source, no driver, no password, no
 port. The whole database is one file, `log\plant.db`.
 
+![A sketch: three timers and the page's search in HIS/S00 write and read one SQLite file, log/plant.db, over CN_SQL; SQL.qry turns rows into elements read by address](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## What it teaches
 
 * **the connection is a file** — `con_host="%PRJ%\log\plant.db"` with the

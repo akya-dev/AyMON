@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 470" width="660" height="470" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_records: the engine keeps the history</title>
+  <!-- A sketch of the record pipeline: who makes records, who keeps them, the journal between. -->
+  <defs>
+    <marker id="arrk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#1d2330"/></marker>
+    <marker id="arrb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82c4"/></marker>
+  </defs>
+  <rect width="660" height="470" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_records: the engine keeps the history</text>
+
+  <!-- the tank: it only makes records -->
+  <rect x="16" y="40" width="186" height="230" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="26" y="58" font-weight="600" fill="#1f5f3b">TANK/S00 · the tank</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="26" y="80" font-family="ui-monospace, Consolas, monospace" font-weight="600">LEVEL</text>
+    <text x="26" y="94"><tspan fill="#c0392b">alm</tspan> ALM.onlvl: 80 / 85 %</text>
+    <text x="26" y="107"><tspan fill="#2e8b57">val</tspan> HIS.val, his_per 10 s</text>
+    <text x="26" y="128" font-family="ui-monospace, Consolas, monospace" font-weight="600">TEMP</text>
+    <text x="26" y="142"><tspan fill="#2e8b57">val</tspan> HIS.val, his_dbd 1 °C</text>
+    <text x="26" y="163" font-family="ui-monospace, Consolas, monospace" font-weight="600">PUMP</text>
+    <text x="26" y="177"><tspan fill="#3b82c4">evt</tspan> HIS.evt: on, off</text>
+    <text x="26" y="198" font-weight="600">a numbered dose</text>
+    <text x="26" y="212"><tspan fill="#3b82c4">evt</tspan> HIS.rec(evt, "evt", ..)</text>
+    <text x="26" y="238" fill="#6b7385">it makes records only: no SQL,</text>
+    <text x="26" y="251" fill="#6b7385">no table, no address</text>
+  </g>
+
+  <!-- the root says who keeps what -->
+  <rect x="222" y="40" width="196" height="88" rx="6" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="230" y="57" font-size="11" font-weight="600" fill="#1d2330">the root, db/AyXDB.xml</text>
+  <g font-size="9.5" font-family="ui-monospace, Consolas, monospace" fill="#1d2330">
+    <text x="230" y="75">alm_adr → HIS/S00 ALM_H</text>
+    <text x="230" y="89">evt_adr → HIS/S00 EVT_H</text>
+    <text x="230" y="103">his_adr → HIS/S00 VAL_H</text>
+    <text x="230" y="119">rec_dir = log/rec</text>
+  </g>
+
+  <!-- the journal -->
+  <path d="M202 196 H220" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+  <rect x="222" y="146" width="196" height="124" rx="6" fill="#f3f5f8" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M232 158 h20 l6 6 h26 v14 h-52 z" fill="#f2c94c" stroke="#9a7d1e"/>
+  <text x="292" y="173" font-size="11" font-weight="600" fill="#1d2330">the journal</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="232" y="196">a record goes to disk first</text>
+    <text x="232" y="210">and leaves only after its row</text>
+    <text x="232" y="224">is committed</text>
+    <text x="232" y="246" fill="#6b7385">killed? the next start takes</text>
+    <text x="232" y="259" fill="#6b7385">the waiting records back</text>
+  </g>
+  <path d="M418 196 H436" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+
+  <!-- the sinks -->
+  <rect x="438" y="40" width="206" height="230" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="448" y="58" font-weight="600" fill="#1f5f3b">HIS/S00 · the history</text>
+  <g font-size="10" fill="#1d2330">
+    <rect x="448" y="68" width="186" height="34" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="456" y="82" font-weight="600">&lt;his id="ALM_H"&gt;</text><text x="456" y="95"><tspan fill="#c0392b">alm</tspan> → table alm</text>
+    <rect x="448" y="108" width="186" height="34" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="456" y="122" font-weight="600">&lt;his id="EVT_H"&gt;</text><text x="456" y="135"><tspan fill="#3b82c4">evt</tspan>, <tspan fill="#d9731a">aud</tspan> → table evt</text>
+    <rect x="448" y="148" width="186" height="34" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="456" y="162" font-weight="600">&lt;his id="VAL_H"&gt;</text><text x="456" y="175"><tspan fill="#2e8b57">val</tspan> → table val</text>
+    <text x="448" y="200">his_col: the white list of the</text>
+    <text x="448" y="213">columns a record may fill</text>
+    <text x="448" y="234" fill="#6b7385">rows written once a second,</text>
+    <text x="448" y="247" fill="#6b7385">many in one statement, keyed</text>
+    <text x="448" y="260" fill="#6b7385">by the record's uid</text>
+  </g>
+
+  <!-- the database -->
+  <path d="M514 270 V290" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrb)"/>
+  <path d="M596 292 V272" stroke="#3b82c4" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrb)"/>
+  <text x="506" y="286" font-size="9.5" fill="#3b82c4" text-anchor="end">CN_SQL</text>
+  <text x="604" y="286" font-size="9.5" fill="#3b82c4">CN_READ</text>
+  <path d="M446 304 V376 A99 11 0 0 0 644 376 V304" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <ellipse cx="545" cy="304" rx="99" ry="11" fill="#f3f5f8" stroke="#1d2330" stroke-width="1.5"/>
+  <g text-anchor="middle" fill="#1d2330">
+    <text x="545" y="332" font-weight="600">log/history.db</text>
+    <text x="545" y="347" font-size="10">tables alm, evt, val</text>
+    <text x="545" y="364" font-size="10" fill="#6b7385">PRIMARY KEY (id), id = uid:</text>
+    <text x="545" y="377" font-size="10" fill="#6b7385">a record twice is one row</text>
+  </g>
+
+  <!-- the page -->
+  <path d="M332 328 H426 V262 H438" stroke="#7a5bc4" stroke-width="2" fill="none"/>
+  <g fill="#fff" stroke="#7a5bc4" stroke-width="1.5"><circle cx="350" cy="328" r="3"/><circle cx="362" cy="328" r="3"/></g>
+  <rect x="16" y="290" width="316" height="96" rx="5" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M16 304 H332" stroke="#1d2330" stroke-width="1"/>
+  <g fill="#9aa3b2"><circle cx="24" cy="297" r="2.5"/><circle cx="32" cy="297" r="2.5"/><circle cx="40" cy="297" r="2.5"/></g>
+  <text x="50" y="301" font-size="9" fill="#6b7385" font-family="ui-monospace, Consolas, monospace">127.0.0.1:8116</text>
+  <text x="24" y="321" font-size="11" font-weight="600" fill="#1d2330">the page: the tank, and the tables read back</text>
+  <text x="24" y="336" font-size="10" fill="#1d2330">the line is what the tank did, a dot is a row</text>
+  <text x="24" y="353" font-size="10" fill="#1d2330">Set point: SET_SP/@opr, an <tspan fill="#d9731a">aud</tspan> record with role 0</text>
+  <text x="24" y="368" font-size="10" fill="#1d2330">Stop the writer: HOLD stops CN_SQL; the records</text>
+  <text x="24" y="381" font-size="10" fill="#1d2330">wait in the journal, and survive kill.bat</text>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 412 H40" stroke="#1d2330" stroke-width="1.5"/><text x="46" y="416">records</text>
+    <path d="M110 412 H134" stroke="#3b82c4" stroke-width="2"/><text x="140" y="416">SQL, written by the engine</text>
+    <path d="M300 412 H324" stroke="#3b82c4" stroke-width="2" stroke-dasharray="5 4"/><text x="330" y="416">read for the page</text>
+    <path d="M450 412 H474" stroke="#7a5bc4" stroke-width="2"/><text x="480" y="416">HTTP + MQTT</text>
+  </g>
+  <text x="16" y="438" font-size="11" fill="#6b7385">Kinds: alm an alarm, evt an event, aud an audit line, val a value's history. A record carries the role that made it.</text>
+  <text x="16" y="456" font-size="11" fill="#6b7385">Not in the journal: HIS.val's pending record (a period's last change) lives in memory until the period ends.</text>
+</svg>
