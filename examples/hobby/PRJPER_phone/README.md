@@ -35,6 +35,10 @@ On Linux the same example starts with `./run.sh` (the engine in
 One document, `PHN/S00`, and four connections: a listener and its MQTT link
 for each door. FREE allows six.
 
+![A sketch: phones open phone.html over Wi-Fi on https 8110 and publish one line every 0.2 s to IN; the engine files it, makes the phone's elements with their classes and alarms; the dashboard on 127.0.0.1:8111 writes limits, buzz and reset as role 3](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## What you see
 
 **On the phone**, a banner that is green, amber or red, and the readings

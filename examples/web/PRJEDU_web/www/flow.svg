@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 496" width="660" height="496" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_web: one port, three services</title>
+  <!-- A sketch of the two listeners, the connections behind them by path, the tank's values and what MQTT carries. -->
+  <defs>
+    <marker id="arrk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#1d2330"/></marker>
+  </defs>
+  <rect width="660" height="496" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_web: one port, three services</text>
+
+  <!-- the page, plain -->
+  <rect x="16" y="44" width="160" height="132" rx="5" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M16 58 H176" stroke="#1d2330" stroke-width="1"/>
+  <g fill="#9aa3b2"><circle cx="24" cy="51" r="2.5"/><circle cx="32" cy="51" r="2.5"/><circle cx="40" cy="51" r="2.5"/></g>
+  <text x="50" y="55" font-size="9" fill="#6b7385" font-family="ui-monospace, Consolas, monospace">127.0.0.1:8080</text>
+  <rect x="24" y="68" width="26" height="56" rx="3" fill="none" stroke="#6b7385" stroke-width="1.5"/>
+  <rect x="25" y="84" width="24" height="39" fill="#f2c94c"/>
+  <text x="58" y="78" font-size="11" font-weight="600" fill="#1d2330">the page asks</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="58" y="93">1 GET /: the files</text>
+    <text x="58" y="107">2 /api/values: now</text>
+    <text x="58" y="121">3 /mqtt: each change</text>
+  </g>
+  <text x="24" y="142" font-size="10" fill="#1d2330">and the slider writes the</text>
+  <text x="24" y="155" font-size="10" fill="#1d2330">set point over the same /mqtt;</text>
+  <text x="24" y="168" font-size="10" fill="#6b7385">the colour comes from sta</text>
+
+  <!-- any other client -->
+  <rect x="16" y="188" width="160" height="50" rx="5" fill="#1d2330"/>
+  <g font-size="9" font-family="ui-monospace, Consolas, monospace" fill="#9fe3b0">
+    <text x="24" y="203">mosquitto_sub -L ws://</text>
+    <text x="24" y="215">127.0.0.1:8080/mqtt ..</text>
+    <text x="24" y="231">curl ../api/values</text>
+  </g>
+
+  <!-- the page, encrypted -->
+  <rect x="16" y="250" width="160" height="66" rx="5" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M16 264 H176" stroke="#1d2330" stroke-width="1"/>
+  <g fill="#9aa3b2"><circle cx="24" cy="257" r="2.5"/><circle cx="32" cy="257" r="2.5"/><circle cx="40" cy="257" r="2.5"/></g>
+  <text x="50" y="261" font-size="9" fill="#6b7385" font-family="ui-monospace, Consolas, monospace">https://127.0.0.1:8443</text>
+  <text x="24" y="281" font-size="10" fill="#1d2330">the same page, encrypted:</text>
+  <text x="24" y="294" font-size="10" fill="#1d2330">app.js opens wss:// under</text>
+  <text x="24" y="307" font-size="10" fill="#1d2330">https, ws:// under http</text>
+
+  <!-- the engine -->
+  <rect x="196" y="40" width="448" height="280" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="208" y="58" font-weight="600" fill="#1f5f3b">PLT/S00 · one document, six connections</text>
+
+  <g stroke="#7a5bc4" stroke-width="2" fill="none"><path d="M176 112 H208"/><path d="M176 282 H208"/><path d="M176 212 H186 V166 H208"/></g>
+  <g fill="#fff" stroke="#7a5bc4" stroke-width="1.5">
+    <circle cx="182" cy="112" r="3"/><circle cx="190" cy="112" r="3"/>
+    <circle cx="182" cy="282" r="3"/><circle cx="190" cy="282" r="3"/>
+  </g>
+
+  <!-- port 8080 -->
+  <rect x="208" y="66" width="214" height="114" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="216" y="82" font-size="11" font-weight="600" fill="#1d2330">127.0.0.1:8080 <tspan font-weight="400" font-size="10" fill="#6b7385">http, ws: the only port</tspan></text>
+  <g font-size="9.5" font-family="ui-monospace, Consolas, monospace" fill="#7a5bc4">
+    <text x="216" y="102">/</text><text x="216" y="134">/api</text><text x="216" y="166">/mqtt</text>
+  </g>
+  <g font-size="10" fill="#1d2330">
+    <text x="256" y="102"><tspan font-weight="600">CN_WEB</tspan> CON.tcp, PRO.http</text>
+    <text x="256" y="115" fill="#6b7385">the listener; files from www</text>
+    <text x="256" y="134"><tspan font-weight="600">CN_API</tspan> PRO.rest</text>
+    <text x="256" y="147" fill="#6b7385">main.api writes the JSON</text>
+    <text x="256" y="166"><tspan font-weight="600">CN_LIVE</tspan> CON.ws, PRO.mqtt</text>
+  </g>
+  <path d="M216 122 H414 M216 154 H414" stroke="#dfe3ea"/>
+
+  <!-- port 8443 -->
+  <rect x="208" y="190" width="214" height="118" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="216" y="206" font-size="11" font-weight="600" fill="#1d2330">127.0.0.1:8443 <tspan font-weight="400" font-size="10" fill="#6b7385">https, wss</tspan></text>
+  <g font-size="9.5" font-family="ui-monospace, Consolas, monospace" fill="#7a5bc4">
+    <text x="216" y="226">/</text><text x="216" y="274">/api</text><text x="216" y="298">/mqtt</text>
+  </g>
+  <g font-size="10" fill="#1d2330">
+    <text x="256" y="226"><tspan font-weight="600">CN_WEBS</tspan> CON.tls, PRO.http</text>
+    <text x="256" y="239" fill="#6b7385">the TLS handshake, with</text>
+    <text x="256" y="251" fill="#6b7385">the public demo_cert.pem</text>
+    <text x="256" y="274"><tspan font-weight="600">CN_APIS</tspan> CON.tls, PRO.rest</text>
+    <text x="256" y="298"><tspan font-weight="600">CN_LIVES</tspan> CON.wss, PRO.mqtt</text>
+  </g>
+  <path d="M216 260 H414 M216 284 H414" stroke="#dfe3ea"/>
+
+  <!-- the tank's values -->
+  <rect x="440" y="66" width="192" height="242" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="448" y="82" font-size="11" font-weight="600" fill="#1d2330">the tank</text>
+  <text x="448" y="96" font-size="10" fill="#6b7385">main.tick every 0.5 s (T_SIM)</text>
+  <g font-size="9.5" font-family="ui-monospace, Consolas, monospace" fill="#1d2330">
+    <text x="448" y="118">LEVEL</text><text x="448" y="160">TEMP</text><text x="448" y="178">PUMP</text><text x="448" y="196">SETPOINT</text><text x="448" y="238">COUNT</text>
+  </g>
+  <g font-size="10" fill="#1d2330">
+    <text x="514" y="118">47.3 %</text>
+    <text x="448" y="132" fill="#d9731a">ALM.onlvl: warning 80,</text>
+    <text x="448" y="145" fill="#c0392b">alarm 90: bits in sta</text>
+    <text x="514" y="160">14-22 C</text>
+    <text x="514" y="178">holds the set point</text>
+    <text x="514" y="196">50 %</text>
+    <text x="448" y="210" fill="#7a5bc4">the page writes it: rounded,</text>
+    <text x="448" y="223" fill="#7a5bc4">clamped 0..100, logged</text>
+    <text x="514" y="238">steps</text>
+    <text x="448" y="264" fill="#6b7385">every change is published to</text>
+    <text x="448" y="277" fill="#6b7385">each matching subscriber;</text>
+    <text x="448" y="290" fill="#6b7385">the script never names MQTT</text>
+  </g>
+  <path d="M422 166 H440 M422 298 H440" stroke="#1d2330" stroke-width="1.5"/>
+  <g fill="#fff" stroke="#1d2330" stroke-width="1.5"><circle cx="431" cy="166" r="3"/><circle cx="431" cy="298" r="3"/></g>
+  <path d="M440 140 H424" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+  <path d="M440 272 H424" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+
+  <!-- what /mqtt carries -->
+  <rect x="16" y="334" width="628" height="92" rx="6" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="26" y="351" font-size="10.5" font-weight="600" fill="#1d2330">over /mqtt <tspan font-weight="400" fill="#6b7385">a topic is document / element / attribute, the payload the value as text</tspan></text>
+  <g font-size="9.5" font-family="ui-monospace, Consolas, monospace" fill="#1d2330">
+    <text x="26" y="369">page</text><text x="72" y="369">SUBSCRIBE</text><text x="136" y="369">PLT/S00/+/val, PLT/S00/+/sta</text>
+    <text x="26" y="385">engine</text><text x="72" y="385">PUBLISH</text><text x="136" y="385">PLT/S00/LEVEL/val "47.3"</text>
+    <text x="26" y="401">engine</text><text x="72" y="401">PUBLISH</text><text x="136" y="401">PLT/S00/LEVEL/sta "0x0347"</text>
+    <g fill="#7a5bc4"><text x="26" y="417">page</text><text x="72" y="417">PUBLISH</text><text x="136" y="417">PLT/S00/SETPOINT/val/set "250"</text></g>
+  </g>
+  <g font-size="10" fill="#6b7385">
+    <text x="420" y="369">once, when the page opens</text>
+    <text x="420" y="385">at every change of the level</text>
+    <text x="420" y="401">0x0004 warning, 0x0008 alarm</text>
+    <text x="420" y="417" fill="#7a5bc4">stored as 100, published back</text>
+  </g>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 446 H40" stroke="#7a5bc4" stroke-width="2"/><text x="46" y="450">HTTP, REST, MQTT in a WebSocket</text>
+    <path d="M250 446 H274" stroke="#1d2330" stroke-width="1.5"/><text x="280" y="450">inside the engine</text>
+  </g>
+  <text x="16" y="472" font-size="11" fill="#6b7385">Only CN_WEB and CN_WEBS listen: con_host="#CN_WEB" with con_port="/mqtt" takes a path on them.</text>
+  <text x="16" y="488" font-size="11" fill="#6b7385">Everything stays on 127.0.0.1: no login, no access control, every client reads and writes every value.</text>
+</svg>

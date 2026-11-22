@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 530" width="660" height="530" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_cluster: two engines, one job, and a failover</title>
+  <!-- A sketch of the two engine processes, the one port each listens on, the election and replication links, and the failover. -->
+  <defs>
+    <marker id="arrb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82c4"/></marker>
+  </defs>
+  <rect width="660" height="530" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_cluster: two engines, one job, and a failover</text>
+
+  <!-- the browser -->
+  <rect x="200" y="36" width="260" height="52" rx="5" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M200 50 H460" stroke="#1d2330" stroke-width="1"/>
+  <g fill="#9aa3b2"><circle cx="208" cy="43" r="2.5"/><circle cx="216" cy="43" r="2.5"/><circle cx="224" cy="43" r="2.5"/></g>
+  <text x="234" y="47" font-size="9" fill="#6b7385" font-family="ui-monospace, Consolas, monospace">127.0.0.1:9201/  or  :9202/</text>
+  <text x="210" y="66" font-size="11" font-weight="600" fill="#1d2330">the page: one column per node</text>
+  <text x="210" y="80" font-size="10" fill="#6b7385">each from that node's own /mqtt link</text>
+  <g stroke="#7a5bc4" stroke-width="2" fill="none">
+    <path d="M312 88 V162 H258"/>
+    <path d="M348 88 V162 H402"/>
+  </g>
+  <g fill="#fff" stroke="#7a5bc4" stroke-width="1.5"><circle cx="312" cy="100" r="3"/><circle cx="312" cy="112" r="3"/><circle cx="348" cy="100" r="3"/><circle cx="348" cy="112" r="3"/></g>
+
+  <!-- node S01 -->
+  <rect x="16" y="104" width="254" height="272" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="28" y="124" font-weight="600" fill="#1f5f3b">S01 <tspan font-weight="400" font-size="10" fill="#6b7385">one AyXDB process</tspan></text>
+  <text x="28" y="139" font-size="10" fill="#6b7385">AyXDB_S01.xml · tid="S01" · priority 1</text>
+  <rect x="28" y="148" width="230" height="56" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="36" y="164" font-size="11" font-weight="600" fill="#1d2330">CN_EXT <tspan font-weight="400" fill="#6b7385">127.0.0.1:9201, the one port</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="36" y="180" font-family="ui-monospace, Consolas, monospace">/</text><text x="48" y="180">the page</text>
+    <text x="128" y="180" font-family="ui-monospace, Consolas, monospace">/mqtt</text><text x="164" y="180">CN_LIVE</text>
+    <text x="36" y="195" font-family="ui-monospace, Consolas, monospace">/clt</text><text x="64" y="195">CN_S01, S02</text>
+    <text x="128" y="195" font-family="ui-monospace, Consolas, monospace">/rep</text><text x="156" y="195">CN_R01, R02</text>
+  </g>
+  <rect x="28" y="212" width="230" height="48" rx="4" fill="#fff" stroke="#2e8b57"/>
+  <text x="36" y="228" font-size="11" font-weight="600" fill="#1d2330">SYS/S00 <tspan font-weight="400" fill="#6b7385">plain, 0x0300</tspan></text>
+  <text x="36" y="242" font-size="10" fill="#1d2330">this node's own: never replicated</text>
+  <text x="36" y="255" font-size="10" fill="#1d2330">main.tick, 0.5 s: CLT.info for the page</text>
+  <rect x="28" y="268" width="230" height="96" rx="4" fill="#fff" stroke="#2e8b57"/>
+  <text x="36" y="284" font-size="11" font-weight="600" fill="#1d2330">APP/S00 <tspan font-weight="400" fill="#6b7385">the job</tspan></text>
+  <rect x="190" y="273" width="60" height="16" rx="8" fill="#2e8b57"/>
+  <text x="220" y="285" font-size="9.5" font-weight="600" fill="#fff" text-anchor="middle">MASTER</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="36" y="300">0x1303: cluster master, it runs</text>
+    <text x="36" y="314">main.step, every 1 s: COUNT + RATE (5)</text>
+    <text x="36" y="328">a batch every 100 units: LOG, ten kept</text>
+    <text x="36" y="342">BY = the node that made the last unit</text>
+  </g>
+  <text x="36" y="357" font-size="10" fill="#6b7385">starts 0x3200: waits for the election</text>
+
+  <!-- node S02 -->
+  <rect x="390" y="104" width="254" height="272" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="402" y="124" font-weight="600" fill="#1f5f3b">S02 <tspan font-weight="400" font-size="10" fill="#6b7385">another AyXDB process</tspan></text>
+  <text x="402" y="139" font-size="10" fill="#6b7385">AyXDB_S02.xml · tid="S02" · priority 2</text>
+  <rect x="402" y="148" width="230" height="56" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="410" y="164" font-size="11" font-weight="600" fill="#1d2330">CN_EXT <tspan font-weight="400" fill="#6b7385">127.0.0.1:9202, the one port</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="410" y="180" font-family="ui-monospace, Consolas, monospace">/</text><text x="422" y="180">the page</text>
+    <text x="502" y="180" font-family="ui-monospace, Consolas, monospace">/mqtt</text><text x="538" y="180">CN_LIVE</text>
+    <text x="410" y="195" font-family="ui-monospace, Consolas, monospace">/clt</text><text x="438" y="195">CN_S01, S02</text>
+    <text x="502" y="195" font-family="ui-monospace, Consolas, monospace">/rep</text><text x="530" y="195">CN_R01, R02</text>
+  </g>
+  <rect x="402" y="212" width="230" height="48" rx="4" fill="#fff" stroke="#2e8b57"/>
+  <text x="410" y="228" font-size="11" font-weight="600" fill="#1d2330">SYS/S00 <tspan font-weight="400" fill="#6b7385">plain, 0x0300</tspan></text>
+  <text x="410" y="242" font-size="10" fill="#1d2330">this node's own: never replicated</text>
+  <text x="410" y="255" font-size="10" fill="#1d2330">main.tick, 0.5 s: CLT.info for the page</text>
+  <rect x="402" y="268" width="230" height="96" rx="4" fill="#fff" stroke="#2e8b57"/>
+  <text x="410" y="284" font-size="11" font-weight="600" fill="#1d2330">APP/S00 <tspan font-weight="400" fill="#6b7385">the job</tspan></text>
+  <rect x="564" y="273" width="60" height="16" rx="8" fill="#3b82c4"/>
+  <text x="594" y="285" font-size="9.5" font-weight="600" fill="#fff" text-anchor="middle">SPARE</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="410" y="300">0x2202: cluster spare, parked</text>
+    <text x="410" y="314">no thread, no timer: main.step is off</text>
+    <text x="410" y="328">a mirror: the same COUNT, BATCH, LOG</text>
+    <text x="410" y="342">a user's RUN or RATE goes to the master</text>
+  </g>
+  <text x="410" y="357" font-size="10" fill="#6b7385">starts 0x3200: waits for the election</text>
+
+  <!-- the election -->
+  <path d="M258 186 H402" stroke="#1d2330" stroke-width="2"/>
+  <g fill="#fff" stroke="#1d2330" stroke-width="1.5"><circle cx="324" cy="186" r="3"/><circle cx="336" cy="186" r="3"/></g>
+  <g font-size="9.5" fill="#1d2330" text-anchor="middle">
+    <text x="330" y="202" font-weight="600">PRO.clt election</text>
+    <text x="330" y="215">/clt, heartbeat 2 s</text>
+  </g>
+
+  <!-- replication -->
+  <path d="M258 300 H400" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrb)"/>
+  <path d="M402 332 H260" stroke="#3b82c4" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrb)"/>
+  <g font-size="9.5" fill="#3b82c4" text-anchor="middle">
+    <text x="330" y="292" font-weight="600">PRO.rep, /rep</text>
+    <text x="330" y="314">APP/S00, each change</text>
+    <text x="330" y="346">a write on the spare</text>
+    <text x="330" y="358">forwarded (fwd)</text>
+  </g>
+
+  <!-- the failover -->
+  <rect x="16" y="392" width="628" height="76" rx="6" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="28" y="409" font-size="11" fill="#6b7385">close the master's window: the failover, measured on Windows</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="28" y="428" font-weight="600" fill="#c0392b">1  S01 is killed</text>
+    <text x="28" y="442">its window closed, or</text>
+    <text x="28" y="455">Stop-Process -Force</text>
+    <text x="184" y="428" font-weight="600">2  the link closes</text>
+    <text x="184" y="442">S02 campaigns at once,</text>
+    <text x="184" y="455">no heartbeats waited for</text>
+    <text x="340" y="428" font-weight="600" fill="#2e8b57">3  S02 is MASTER, 1.0 s</text>
+    <text x="340" y="442">goes on from its own copy;</text>
+    <text x="340" y="455">at most one step made again</text>
+    <text x="496" y="428" font-weight="600" fill="#3b82c4">4  S01 started again</text>
+    <text x="496" y="442">SPARE, the job copied in 1 s;</text>
+    <text x="496" y="455">preempt="0": no switch back</text>
+  </g>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 488 H40" stroke="#7a5bc4" stroke-width="2"/><text x="46" y="492">HTTP + MQTT, the page</text>
+    <path d="M180 488 H204" stroke="#1d2330" stroke-width="2"/><text x="210" y="492">election</text>
+    <path d="M272 488 H296" stroke="#3b82c4" stroke-width="2"/><text x="302" y="492">replication, master to spare</text>
+    <path d="M466 488 H490" stroke="#3b82c4" stroke-width="2" stroke-dasharray="6 4"/><text x="496" y="492">a forwarded write</text>
+  </g>
+  <text x="16" y="512" font-size="11" fill="#6b7385">Both nodes run the same files; only tid differs. The rows do not say which way the data goes: the</text>
+  <text x="16" y="526" font-size="11" fill="#6b7385">document's role does, so it turns with the roles. On 127.0.0.1 all of it runs in FREE.</text>
+</svg>

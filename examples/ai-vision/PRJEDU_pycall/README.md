@@ -45,6 +45,10 @@ the alarm `ALM.onlvl` computes on a value Python writes from inside an event
 call was logged but not stored, so `RMS` and `BPFO` never showed WARNING or
 ALARM.
 
+![A sketch: every 2 s main.sense writes a block of 512 samples into WAVE, whose val_fnc queues vib.analyse on the engine's Python thread; every 5 s main.ask queues vib.forecast and gets 1 back at once; Python writes RMS, BPFO and FORECAST, which the page reads over MQTT](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## What you see
 
 * **The pump, now**: every figure Python computed from the last block.

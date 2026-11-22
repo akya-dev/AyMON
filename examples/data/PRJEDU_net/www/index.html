@@ -97,6 +97,11 @@
         <div class="label">What the mail server received <span class="muted">MBX/S00, SMTP written in script - the last ten</span></div>
         <div id="inbox"><div class="note">nothing yet - press a button</div></div>
     </section>
+    <section class="card wide">
+        <div class="label">How it works <span class="muted">a sketch; click for full size</span></div>
+        <a href="flow.svg" target="_blank" rel="noopener"><img src="flow.svg" alt="A sketch: PLT/S00 writes a mail or an FTP job to a point on TH_MAIL; CN_MAIL and CN_FILES carry it to the servers written in script, MBX/S00 on port 2525 and FTP/S00 on port 2121, and the answer comes back into the same point"
+           style="display:block;width:100%;max-width:660px;height:auto;margin:0 auto;border-radius:6px"></a>
+    </section>
 </main>
 
 <script src="mqtt-lite.js"></script>

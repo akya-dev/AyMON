@@ -28,6 +28,10 @@ It already knows what an element, a value, an alarm state and a log are, so the
 built-in tools need no code — the example adds configuration, two small project
 tools, and nothing else.
 
+![A sketch: Claude Code, Claude Desktop or try.bat call two MCP endpoints in AI/S00, CN_MCP on 8095 (read only, role 2) and CN_MCPW on 8096 (read and write, role 3); the xdb_acl of the published plant PLT/S00 decides what each role may read or write; the page on 8109 reads as a Guest](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## The page
 
 `PLT/S00` serves it with two more connections: `CN_WEB` (HTTP, `www\`) and

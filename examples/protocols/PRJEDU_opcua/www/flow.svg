@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 532" width="660" height="532" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_opcua: a moulding machine over OPC UA</title>
+  <!-- A simple P&ID of the simulated machine, its OPC UA server and the engine's three sessions with it; not to scale. -->
+  <defs>
+    <marker id="arrs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#6b7385"/></marker>
+  </defs>
+  <rect width="660" height="532" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_opcua: a moulding machine over OPC UA</text>
+
+  <!-- the machine: simulated -->
+  <rect x="16" y="40" width="628" height="186" rx="8" fill="#f8f9fb" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="28" y="58" font-weight="600" fill="#1d2330">IMM1 · the moulding machine <tspan font-weight="400" font-size="10" fill="#6b7385">simulated: sim/ua_machine.py, Python + asyncua in sim/.venv (setup.bat / setup.sh)</tspan></text>
+
+  <g transform="translate(0 4)">
+    <!-- hopper, barrel with four heated zones, nozzle, mould -->
+    <path d="M40 72 H84 L70 96 V108 H54 V96 Z" fill="#fff" stroke="#1d2330" stroke-width="2"/>
+    <rect x="50" y="108" width="250" height="24" fill="#fff" stroke="#1d2330" stroke-width="2.5"/>
+    <path d="M58 120 l6 -6 l6 12 l6 -12 l6 12 l6 -12 l6 12 l6 -12 l6 12 l6 -12 l6 12 l6 -12 l6 12 l6 -12 l6 12 l6 -12 l6 12 l6 -12 l6 12 l6 -12 l6 12 l6 -12 l6 12 l6 -12 l6 12 l6 -12 l6 12 l6 -12 l6 12 l6 -12 l6 12 l6 -12 l6 12 l6 -12 l6 12 l6 -12 l6 12 l6 -12 l6 6" fill="none" stroke="#9aa3b2" stroke-width="1.2"/>
+    <g fill="#d9731a">
+      <rect x="72" y="103" width="51" height="5"/><rect x="72" y="132" width="51" height="5"/>
+      <rect x="127" y="103" width="51" height="5"/><rect x="127" y="132" width="51" height="5"/>
+      <rect x="182" y="103" width="51" height="5"/><rect x="182" y="132" width="51" height="5"/>
+      <rect x="237" y="103" width="51" height="5"/><rect x="237" y="132" width="51" height="5"/>
+    </g>
+    <path d="M300 112 L316 118 V122 L300 128" fill="#fff" stroke="#1d2330" stroke-width="2"/>
+    <rect x="318" y="76" width="20" height="68" fill="#dfe3ea" stroke="#1d2330" stroke-width="2"/>
+    <rect x="342" y="76" width="20" height="68" fill="#dfe3ea" stroke="#1d2330" stroke-width="2"/>
+    <path d="M338 104 H346 V136 H338" fill="#fff" stroke="#1d2330" stroke-width="1.2"/>
+    <text x="340" y="70" text-anchor="middle" font-size="10" fill="#6b7385">mould</text>
+
+    <!-- the four zone temperatures: one array -->
+    <g stroke="#1d2330" stroke-width="1.2"><path d="M97 137 V139 M152 137 V139 M207 137 V139 M262 137 V139"/></g>
+    <g fill="#fff" stroke="#1d2330" stroke-width="1.5">
+      <circle cx="97" cy="152" r="13"/><circle cx="152" cy="152" r="13"/><circle cx="207" cy="152" r="13"/><circle cx="262" cy="152" r="13"/>
+    </g>
+    <g text-anchor="middle" fill="#1d2330">
+      <g font-size="9.5" font-weight="600"><text x="97" y="151">TT</text><text x="152" y="151">TT</text><text x="207" y="151">TT</text><text x="262" y="151">TT</text></g>
+      <g font-size="8.5"><text x="97" y="161">1</text><text x="152" y="161">2</text><text x="207" y="161">3</text><text x="262" y="161">4</text></g>
+    </g>
+    <text x="284" y="158" font-size="10" fill="#1d2330">BarrelTemp, one Double[4]:</text>
+    <text x="284" y="171" font-size="10" fill="#6b7385">200 / 210 / 220 / 230 °C running</text>
+
+    <!-- the mould temperature and its set point -->
+    <path d="M362 90 H387" stroke="#1d2330" stroke-width="1.2"/>
+    <g fill="#fff" stroke="#1d2330" stroke-width="1.5"><circle cx="400" cy="90" r="13"/><circle cx="456" cy="90" r="13"/></g>
+    <g text-anchor="middle" fill="#1d2330" font-size="9.5" font-weight="600"><text x="400" y="94">TT</text><text x="456" y="94">TIC</text></g>
+    <path d="M413 90 H441" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrs)"/>
+    <path d="M456 103 V124 H366" fill="none" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrs)"/>
+    <text x="400" y="116" text-anchor="middle" font-size="9" fill="#1d2330">MouldTemp</text>
+    <text x="474" y="86" font-size="10" fill="#1d2330">MouldTempSP</text>
+    <text x="474" y="99" font-size="9.5" fill="#6b7385">writable, °C</text>
+
+    <!-- the other nodes -->
+    <g font-size="10" fill="#1d2330">
+      <text x="500" y="128">Run <tspan fill="#6b7385">writable: start / stop</tspan></text>
+      <text x="500" y="142">State <tspan fill="#6b7385">0 STOPPED, 1 HEATING,</tspan></text>
+      <text x="530" y="155" fill="#6b7385">2 RUNNING</text>
+      <text x="500" y="169">CycleTime, CycleCount, Job</text>
+    </g>
+  </g>
+
+  <!-- the server -->
+  <rect x="26" y="182" width="608" height="36" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="36" y="196" font-size="10.5" font-weight="600" fill="#1d2330">OPC UA server</text>
+  <text x="124" y="196" font-size="9.5" font-family="ui-monospace, Consolas, monospace" fill="#1d2330">opc.tcp://127.0.0.1:4840/moulding/</text>
+  <text x="340" y="196" font-size="10" fill="#1d2330">Objects/Moulding/IMM1, methods ResetCounter(), SetJob()</text>
+  <text x="36" y="211" font-size="10" fill="#1d2330">namespace <tspan font-size="9.5" font-family="ui-monospace, Consolas, monospace">urn:aymon:examples:moulding</tspan> <tspan fill="#6b7385">(ns=2 today)</tspan> · Anonymous may read, 'setter' may write and call</text>
+
+  <!-- the three sessions -->
+  <g stroke="#3b82c4" stroke-width="2"><path d="M126 226 V252 M334 226 V252 M538 226 V252"/></g>
+  <g fill="#fff" stroke="#3b82c4" stroke-width="1.5">
+    <circle cx="126" cy="234" r="3"/><circle cx="126" cy="244" r="3"/>
+    <circle cx="334" cy="234" r="3"/><circle cx="334" cy="244" r="3"/>
+    <circle cx="538" cy="234" r="3"/><circle cx="538" cy="244" r="3"/>
+  </g>
+  <g font-size="10" fill="#3b82c4">
+    <text x="136" y="243">Read, every second</text>
+    <text x="344" y="243">Publish: changes</text>
+    <text x="548" y="243">Write, Call</text>
+  </g>
+
+  <!-- the engine -->
+  <rect x="16" y="252" width="628" height="152" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="28" y="270" font-weight="600" fill="#1f5f3b">UA/S00 · the OPC UA client <tspan font-weight="400" font-size="10" fill="#6b7385">three connections, three sessions, a thread each</tspan></text>
+
+  <rect x="26" y="280" width="200" height="82" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="34" y="296" font-size="11" font-weight="600" fill="#1d2330">CN_UA <tspan font-weight="400" font-size="10" fill="#6b7385">None · Anonymous</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="34" y="311">IMM_READ: READ, 1 s, TH_UA</text>
+    <text x="34" y="325" font-size="9" font-family="ui-monospace, Consolas, monospace">STATE JOB CYCLE SP MOULD_P</text>
+    <text x="34" y="339">ZONES as JSON, Z4 with pro_rng 3</text>
+    <text x="34" y="353" fill="#c0392b">RUN_A: BadUserAccessDenied</text>
+  </g>
+
+  <rect x="234" y="280" width="200" height="82" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="242" y="296" font-size="11" font-weight="600" fill="#1d2330">CN_UAP <tspan font-weight="400" font-size="10" fill="#6b7385">None · Anonymous</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="242" y="311">IMMP_SUB: PUBLISH, TH_UAP</text>
+    <text x="242" y="325">pro_pub_int 100 ms, keep-alive 2 s</text>
+    <text x="242" y="339" font-size="9" font-family="ui-monospace, Consolas, monospace">MOULD_S COUNT</text>
+    <text x="242" y="353" fill="#6b7385">a Publish waits: its own session</text>
+  </g>
+
+  <rect x="442" y="280" width="192" height="82" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="450" y="296" font-size="11" font-weight="600" fill="#1d2330">CN_UAS <tspan font-weight="400" font-size="10" fill="#6b7385">Basic256Sha256</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="450" y="311">SignAndEncrypt, 'setter', TH_UAS</text>
+    <text x="450" y="325">SP_W, RUN_W: WRITE</text>
+    <text x="450" y="339">OPC.call: ResetCounter, SetJob</text>
+    <text x="450" y="353" fill="#6b7385">our certificate: OPC.cert</text>
+  </g>
+
+  <text x="28" y="380" font-size="10" fill="#1d2330">NodeIds by namespace URI: nsu=urn:aymon:examples:moulding;s=IMM1.MouldTemp - the engine finds today's ns at connect.</text>
+  <text x="28" y="394" font-size="10" fill="#1d2330">The page writes REQ only; T_CMD_S (TH_UAS) and T_CMD_A (TH_UA) carry it out on the session's own thread, RES answers.</text>
+
+  <!-- the page -->
+  <path d="M120 404 V424" stroke="#7a5bc4" stroke-width="2"/>
+  <g fill="#fff" stroke="#7a5bc4" stroke-width="1.5"><circle cx="120" cy="410" r="3"/><circle cx="120" cy="419" r="3"/></g>
+  <rect x="16" y="424" width="300" height="56" rx="5" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M16 438 H316" stroke="#1d2330" stroke-width="1"/>
+  <g fill="#9aa3b2"><circle cx="24" cy="431" r="2.5"/><circle cx="32" cy="431" r="2.5"/><circle cx="40" cy="431" r="2.5"/></g>
+  <text x="50" y="435" font-size="9" fill="#6b7385" font-family="ui-monospace, Consolas, monospace">127.0.0.1:8102</text>
+  <text x="24" y="454" font-size="10" fill="#1d2330">setpoint, Start, Stop, SetJob, Reset, Stop anonymously;</text>
+  <text x="24" y="468" font-size="10" fill="#1d2330">poll and subscription side by side; OPC.browse of IMM1</text>
+
+  <!-- certificates -->
+  <rect x="332" y="424" width="312" height="56" rx="5" fill="#fff" stroke="#9aa3b2"/>
+  <text x="340" y="440" font-size="10.5" font-weight="600" fill="#1d2330">certificates, both ways</text>
+  <text x="340" y="454" font-size="10" fill="#1d2330">ours, db/pki/aymon_cert.pem: move it on the machine</text>
+  <text x="340" y="468" font-size="10" fill="#1d2330">from sim/pki/rejected/ to trusted/; pro_trust names theirs</text>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 500 H40" stroke="#1d2330" stroke-width="2.5"/><text x="46" y="504">process</text>
+    <path d="M100 500 H124" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="4 3"/><text x="130" y="504">signal</text>
+    <path d="M180 500 H208" stroke="#3b82c4" stroke-width="2"/><circle cx="188" cy="500" r="3" fill="#fff" stroke="#3b82c4"/><circle cx="200" cy="500" r="3" fill="#fff" stroke="#3b82c4"/><text x="214" y="504">OPC UA session</text>
+    <path d="M314 500 H338" stroke="#7a5bc4" stroke-width="2"/><text x="344" y="504">HTTP + MQTT</text>
+    <circle cx="436" cy="500" r="8" fill="#fff" stroke="#1d2330"/><text x="450" y="504">on the machine</text>
+    <rect x="548" y="493" width="20" height="14" rx="2" fill="none" stroke="#6b7385" stroke-dasharray="4 3"/><text x="574" y="504">simulated</text>
+  </g>
+  <text x="16" y="524" font-size="11" fill="#6b7385">A real machine: its endpoint in con_host, con_port and pro_adr, its namespace URI, its certificate in pro_trust.</text>
+</svg>

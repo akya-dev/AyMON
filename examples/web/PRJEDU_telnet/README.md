@@ -24,6 +24,8 @@ into. `PRO.telnet` is the same capability on a socket, and because it is an
 ordinary protocol it inherits the transport, TLS, the address filter and the
 per-session role from the connection layer every other protocol already uses.
 
+![A sketch: a terminal reaches the maintenance shell of SHL/S00 on 127.0.0.1:2323 (plain) or 2324 (TLS); con_acl, con_auth A_SHELL and the elements' xdb_acl are three gates, and a typed line runs with the session's role](flow.svg)
+
 ## What you should see
 
 ```
@@ -39,7 +41,7 @@ SHL/S00> evt.GetValue("id('LEVEL')/@sta")
 SHL/S00> ver
 platform : 4.3.4 build 446
 document : SHL/S00
-log file : C:\AyMON\AyMON\PRJEDU_telnet\log\SHL-20260922_235809.log
+log file : C:\AyMON\AyMON\examples\web\PRJEDU_telnet\log\SHL-20260922_235809.log
 licence  : AyMON EDU, 'AyMON education and personal use', lic_id AKYA-2026-000002 -- OKY
 limits   : doc 2/4 con 2/8 ses 0/32 cli 1/4 (refused: doc 0 con 0 ses 0 cli 0)
 SHL/S00> log on 4

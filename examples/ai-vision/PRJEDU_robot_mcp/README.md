@@ -32,6 +32,10 @@ On Linux: `./run.sh`, then `./try.sh` (`try.py`, Python 3 standard library).
 | `CEL/S00` | the **cell controller** — the rules, the part handshake, the feeder, the page — and the **assistant's channel**. On the MCP whitelist (`mcp_pub="1"`) |
 | `AI/S00` | the **MCP endpoint** `http://127.0.0.1:8099/mcp` (key `demo-robot-key`, role 3 Operator) and the project's three tools. Not on the whitelist |
 
+![A sketch: an assistant calls the MCP endpoint CN_MCP on 8099 in AI/S00 as an Operator; its tools write AI_CMD and AI_SPEED in the cell CEL/S00, the only published document; the person's page on 8098 writes CMD, FEED, SPEED and AI_ENABLE; both channels pass the same rules before the cell drives the simulated robot ROB/S00 over its dashboard and Modbus TCP](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## Two operators, two channels
 
 | | the person, at the page | the assistant, over MCP |

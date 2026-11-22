@@ -132,6 +132,13 @@
         <div class="label msgs-label">What the PLC said</div>
         <ol id="msgs"></ol>
     </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card line-card">
+        <div class="label">How it works <span class="muted">a sketch; click for full size</span></div>
+        <a href="flow.svg" target="_blank" rel="noopener"><img src="flow.svg" alt="A sketch: the simulated filling line PLT/S00 (supply tank, valve, conveyor, photo-eyes, level switches, operator panel) behind a Modbus TCP remote I/O on port 1503; the PLC CTL/S00 polls it, runs its step sequence every 100 ms and writes the outputs back; the HMI on port 8093 listens to both documents"
+           style="display:block;width:100%;max-width:660px;height:auto;margin:0 auto;border-radius:6px"></a>
+    </section>
 </main>
 
 <script src="mqtt-lite.js"></script>

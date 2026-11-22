@@ -20,6 +20,10 @@ no limits.
 Nothing to install. The page is three plain files with no framework, and its
 MQTT client is the ~150 lines in `www\mqtt-lite.js`.
 
+![A sketch: the page on 127.0.0.1:8080 (or https on 8443) reaches PLT/S00 through one listener per port; /api goes to PRO.rest, /mqtt to the MQTT broker that publishes every change of the tank and takes the set point back](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## What goes over which wire
 
 ```

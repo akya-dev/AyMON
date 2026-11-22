@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 526" width="660" height="526" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_odbc: one connection string picks the database</title>
+  <!-- A sketch of how ConnStr in the root document reaches CN_SQL, and which driver each string goes to. -->
+  <defs>
+    <marker id="arrb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82c4"/></marker>
+    <marker id="arrk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#1d2330"/></marker>
+  </defs>
+  <rect width="660" height="526" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_odbc: one connection string picks the database</text>
+
+  <!-- the root document: the strings -->
+  <rect x="16" y="40" width="628" height="108" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="28" y="58" font-weight="600" fill="#1f5f3b">XDB · db/AyXDB.xml <tspan font-weight="400" font-size="10" fill="#6b7385">the root document: the entry whose id is exactly ConnStr is the one in use</tspan></text>
+  <g font-size="9.5" fill="#6b7385"><text x="28" y="76">id</text><text x="142" y="76">eng</text><text x="202" y="76">val: the connection string</text></g>
+  <rect x="22" y="82" width="616" height="15" rx="3" fill="#ffffff" stroke="#2e8b57"/>
+  <g font-size="9.5" font-family="ui-monospace, Consolas, monospace">
+    <g fill="#1d2330" font-weight="600"><text x="28" y="93">ConnStr</text><text x="142" y="93">SQLITE3</text><text x="202" y="93">DRIVER=SQLite3i;Database=%PRJ%/log/plant.db;</text></g>
+    <g fill="#6b7385">
+      <text x="28" y="110">ConnStrMSSQL</text><text x="142" y="110">MSSQL</text><text x="202" y="110">DRIVER={SQL Server};SERVER=.\SQLEXPRESS;DATABASE=aymon_edu;..</text>
+      <text x="28" y="125">ConnStrPGSQL</text><text x="142" y="125">PGSQL</text><text x="202" y="125">DRIVER={PostgreSQL Unicode(x64)};SERVER=127.0.0.1;PORT=5432;..</text>
+      <text x="28" y="140">ConnStrPGNATIVE</text><text x="142" y="140">PGSQL</text><text x="202" y="140">DRIVER=PostgreSQLi;SERVER=127.0.0.1;PORT=5432;..</text>
+    </g>
+  </g>
+  <text x="630" y="93" text-anchor="end" font-size="10" font-weight="600" fill="#2e8b57">in use</text>
+  <text x="630" y="125" text-anchor="end" font-size="10" fill="#6b7385">parked</text>
+
+  <path d="M90 148 V176" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+  <text x="98" y="167" font-size="10" fill="#1d2330">xdb_init: main.init() reads ConnStr, expands %PRJ%, writes it to CN_SQL/@con_host</text>
+
+  <!-- the history document -->
+  <rect x="16" y="178" width="314" height="214" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="28" y="196" font-weight="600" fill="#1f5f3b">HIS/S00 · the history</text>
+  <rect x="28" y="206" width="222" height="64" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="36" y="220" font-size="10" fill="#6b7385">it starts in this order:</text>
+  <g font-size="9.5" fill="#1d2330">
+    <g font-family="ui-monospace, Consolas, monospace"><text x="36" y="236">xdb_init</text><text x="36" y="250">xdb_fnc</text><text x="36" y="264">xdb_start</text></g>
+    <text x="104" y="236">con_host = ConnStr</text>
+    <text x="104" y="250">CN_SQL is made and dials</text>
+    <text x="104" y="264">find or make table reading</text>
+  </g>
+  <rect x="28" y="280" width="222" height="80" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <g font-size="10" fill="#1d2330">
+    <text x="36" y="296" font-weight="600">T_READ</text><text x="88" y="296">1 s: an INSERT, values bound</text>
+    <text x="36" y="313" font-weight="600">T_SUM</text><text x="88" y="313">10 s: STATS; L_RECENT by SQL.qry</text>
+    <text x="36" y="330" font-weight="600">FIND</text><text x="88" y="330">the page's tag: WHERE tag = ?</text>
+  </g>
+  <text x="36" y="350" font-size="9.5" fill="#6b7385">seq moves only when execute() answers 1</text>
+  <text x="28" y="378" font-size="10" fill="#1d2330">SQL all three accept; only "does the table exist?" asks eng</text>
+
+  <rect x="260" y="206" width="60" height="154" rx="4" fill="#fff" stroke="#3b82c4" stroke-width="1.5"/>
+  <text x="290" y="224" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1d2330">CN_SQL</text>
+  <g font-size="9" text-anchor="middle" font-family="ui-monospace, Consolas, monospace" fill="#1d2330">
+    <text x="290" y="240">CON.sql</text><text x="290" y="252">PRO.sql</text>
+  </g>
+  <g font-size="9.5" text-anchor="middle" fill="#6b7385">
+    <text x="290" y="276">con_host</text><text x="290" y="288">empty in</text><text x="290" y="300">the file</text>
+    <text x="290" y="322">con_pool 2</text><text x="290" y="336">con_rct 5</text>
+  </g>
+
+  <!-- the drivers -->
+  <g stroke="#3b82c4" stroke-width="2" fill="none">
+    <path d="M320 283 H336 V207 H354" marker-end="url(#arrb)"/>
+    <path d="M336 283 H354" marker-end="url(#arrb)" stroke-dasharray="6 4"/>
+    <path d="M336 283 V363 H354" marker-end="url(#arrb)" stroke-dasharray="6 4"/>
+  </g>
+  <g font-size="10" fill="#1d2330">
+    <rect x="356" y="178" width="132" height="58" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="364" y="195" font-weight="600">AyPRO_sqlite</text>
+    <text x="364" y="210" font-size="9" font-family="ui-monospace, Consolas, monospace">DRIVER=SQLite3i</text>
+    <text x="364" y="226" fill="#6b7385">the embedded SQLite</text>
+
+    <rect x="356" y="256" width="132" height="58" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="364" y="273" font-weight="600">AyPRO_odbc</text>
+    <text x="364" y="288">any string no driver</text>
+    <text x="364" y="303" fill="#6b7385">claims: the ODBC driver</text>
+
+    <rect x="356" y="334" width="132" height="58" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="364" y="351" font-weight="600">AyPRO_pgsql</text>
+    <text x="364" y="366" font-size="9" font-family="ui-monospace, Consolas, monospace">DRIVER=PostgreSQLi</text>
+    <text x="364" y="382" fill="#6b7385">over libpq, no ODBC</text>
+  </g>
+  <text x="356" y="410" font-size="10" fill="#6b7385">plug-ins beside AyPRO.dll,</text>
+  <text x="356" y="423" font-size="10" fill="#6b7385">attached on first use;</text>
+  <text x="356" y="436" font-size="10" fill="#6b7385">none is named in the XML</text>
+
+  <!-- the databases -->
+  <g stroke="#3b82c4" stroke-width="2" fill="none">
+    <path d="M488 207 H520" marker-end="url(#arrb)"/>
+    <path d="M488 285 H520" marker-end="url(#arrb)" stroke-dasharray="6 4"/>
+    <path d="M488 300 H504 V352 H520" marker-end="url(#arrb)" stroke-dasharray="6 4"/>
+    <path d="M488 371 H520" marker-end="url(#arrb)" stroke-dasharray="6 4"/>
+  </g>
+  <text x="509" y="327" font-size="9" fill="#3b82c4">psqlODBC</text>
+
+  <path d="M522 186 V228 A61 8 0 0 0 644 228 V186" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <ellipse cx="583" cy="186" rx="61" ry="8" fill="#f3f5f8" stroke="#1d2330" stroke-width="1.5"/>
+  <g text-anchor="middle" fill="#1d2330">
+    <text x="583" y="208" font-size="11" font-weight="600">log/plant.db</text>
+    <text x="583" y="222" font-size="9.5" fill="#6b7385">SQLite, made by itself</text>
+  </g>
+
+  <path d="M522 264 V306 A61 8 0 0 0 644 306 V264" fill="#fff" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <ellipse cx="583" cy="264" rx="61" ry="8" fill="#f3f5f8" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <g text-anchor="middle" fill="#1d2330">
+    <text x="583" y="286" font-size="11" font-weight="600">SQL Server</text>
+    <text x="583" y="300" font-size="9" font-family="ui-monospace, Consolas, monospace" fill="#6b7385">.\SQLEXPRESS</text>
+  </g>
+
+  <path d="M522 342 V384 A61 8 0 0 0 644 384 V342" fill="#fff" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <ellipse cx="583" cy="342" rx="61" ry="8" fill="#f3f5f8" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <g text-anchor="middle" fill="#1d2330">
+    <text x="583" y="364" font-size="11" font-weight="600">PostgreSQL</text>
+    <text x="583" y="378" font-size="9" font-family="ui-monospace, Consolas, monospace" fill="#6b7385">127.0.0.1:5432</text>
+  </g>
+  <text x="522" y="410" font-size="10" fill="#6b7385">create aymon_edu once;</text>
+  <text x="522" y="423" font-size="10" fill="#6b7385">the script makes</text>
+  <text x="522" y="436" font-size="10" fill="#6b7385">the table</text>
+
+  <!-- the page -->
+  <path d="M120 392 V414" stroke="#7a5bc4" stroke-width="2"/>
+  <g fill="#fff" stroke="#7a5bc4" stroke-width="1.5"><circle cx="120" cy="398" r="3"/><circle cx="120" cy="408" r="3"/></g>
+  <rect x="16" y="414" width="314" height="56" rx="5" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M16 428 H330" stroke="#1d2330" stroke-width="1"/>
+  <g fill="#9aa3b2"><circle cx="24" cy="421" r="2.5"/><circle cx="32" cy="421" r="2.5"/><circle cx="40" cy="421" r="2.5"/></g>
+  <text x="50" y="425" font-size="9" fill="#6b7385" font-family="ui-monospace, Consolas, monospace">127.0.0.1:8107</text>
+  <text x="24" y="444" font-size="10" fill="#1d2330">the page reads NOW, STATS, RECENT, FOUND and the eng in use;</text>
+  <text x="24" y="459" font-size="10" fill="#1d2330">it writes FIND only, a Guest with one write</text>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 494 H40" stroke="#3b82c4" stroke-width="2"/><text x="46" y="498">SQL, the string in use</text>
+    <path d="M180 494 H204" stroke="#3b82c4" stroke-width="2" stroke-dasharray="6 4"/><text x="210" y="498">after swapping two ids</text>
+    <path d="M354 494 H378" stroke="#7a5bc4" stroke-width="2"/><text x="384" y="498">HTTP + MQTT</text>
+    <path d="M474 494 H498" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/><text x="504" y="498">not installed by it</text>
+  </g>
+  <text x="16" y="518" font-size="11" fill="#6b7385">Move the plant to SQL Server or PostgreSQL by swapping two ids in AyXDB.xml: the script does not change.</text>
+</svg>

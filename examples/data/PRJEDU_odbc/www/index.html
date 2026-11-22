@@ -54,6 +54,11 @@
         <div class="note" id="found">The engine runs <code>SELECT count(*), max(ts) FROM reading WHERE tag = ?</code>
             with what you typed as the one parameter. Try the attack: it finds the rows that carry that text - and the table is still there.</div>
     </section>
+    <section class="card wide">
+        <div class="label">How it works <span class="muted">a sketch; click for full size</span></div>
+        <a href="flow.svg" target="_blank" rel="noopener"><img src="flow.svg" alt="A sketch: main.init() copies the ConnStr entry of the root document into CN_SQL/@con_host; DRIVER=SQLite3i goes to the embedded SQLite, DRIVER=PostgreSQLi to libpq, any other string to ODBC, and the script stays the same"
+           style="display:block;width:100%;max-width:660px;height:auto;margin:0 auto;border-radius:6px"></a>
+    </section>
 </main>
 
 <script src="mqtt-lite.js"></script>

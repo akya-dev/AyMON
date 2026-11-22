@@ -1,0 +1,168 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 550" width="660" height="550" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_robot_mcp: an assistant in a robot cell, inside its rules</title>
+  <!-- A sketch of the two channels into the cell (the assistant over MCP, the person at the page), the rules they share, and the simulated robot. -->
+  <defs>
+    <marker id="arrk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#1d2330"/></marker>
+  </defs>
+  <rect width="660" height="550" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_robot_mcp: an assistant in a robot cell, inside its rules</text>
+
+  <!-- the clients -->
+  <rect x="16" y="50" width="146" height="120" rx="5" fill="#1d2330"/>
+  <g font-size="9.5" fill="#9fe3b0" font-family="ui-monospace, Consolas, monospace">
+    <text x="24" y="68">&gt; Start the pick-and-</text>
+    <text x="36" y="81">place job.</text>
+  </g>
+  <g font-size="10" fill="#d7dbe3">
+    <text x="24" y="98">refused: play needs the</text>
+    <text x="24" y="111">robot RUNNING; it should</text>
+    <text x="24" y="124">ask you to release them</text>
+  </g>
+  <text x="24" y="146" font-size="11" font-weight="600" fill="#fff">Claude Code</text>
+  <text x="24" y="160" font-size="10" fill="#d7dbe3">.mcp.json names the door</text>
+
+  <rect x="16" y="182" width="146" height="56" rx="5" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="24" y="200" font-size="11" font-weight="600" fill="#1d2330">Claude Desktop</text>
+  <text x="24" y="215" font-size="10" fill="#1d2330">through mcp-remote</text>
+  <text x="24" y="228" font-size="10" fill="#1d2330">(Node.js), same URL, key</text>
+
+  <rect x="16" y="250" width="146" height="56" rx="5" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="24" y="268" font-size="11" font-weight="600" fill="#1d2330">try.bat / try.sh</text>
+  <text x="24" y="283" font-size="10" fill="#1d2330">the calls, no assistant;</text>
+  <text x="24" y="296" font-size="10" fill="#1d2330">--run plays the program</text>
+  <text x="16" y="324" font-size="10" fill="#6b7385">JSON-RPC 2.0 over HTTP</text>
+  <text x="16" y="337" font-size="10" fill="#6b7385">POST, Authorization: Bearer</text>
+
+  <!-- the process -->
+  <rect x="176" y="40" width="468" height="356" rx="8" fill="#f8f9fb" stroke="#1d2330" stroke-width="1.5"/>
+  <text x="186" y="56" font-size="10" fill="#6b7385">one AyXDB process · three documents · every port on 127.0.0.1</text>
+
+  <!-- AI/S00 -->
+  <rect x="186" y="64" width="212" height="112" rx="6" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="194" y="82" font-weight="600" fill="#1f5f3b">AI/S00 · the door <tspan font-weight="400" font-size="10" fill="#6b7385">no mcp_pub</tspan></text>
+  <rect x="194" y="90" width="196" height="78" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="202" y="106" font-weight="600" fill="#1d2330">CN_MCP <tspan font-weight="400" font-size="10" fill="#6b7385">127.0.0.1:8099/mcp</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="202" y="120">Bearer demo-robot-key</text>
+    <text x="202" y="133">rw, role 3 Operator, wmax 4</text>
+    <text x="202" y="148">mcp.tools: cell_status,</text>
+    <text x="202" y="161">robot_command, set_speed</text>
+  </g>
+
+  <!-- ROB/S00, simulated -->
+  <rect x="420" y="64" width="214" height="112" rx="6" fill="#f3f5f8" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="430" y="82" font-weight="600" fill="#1d2330">ROB/S00 · the robot</text>
+  <text x="430" y="96" font-size="10" fill="#6b7385">simulated UR5e · no mcp_pub</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="430" y="114">dashboard server,</text>
+    <text x="430" y="127">TCP 29999, a line each</text>
+    <text x="430" y="143">Modbus TCP 1504</text>
+    <text x="430" y="156">(a real UR: 502)</text>
+    <text x="430" y="170">DOOR, BUMP: the stops</text>
+  </g>
+  <rect x="584" y="160" width="38" height="8" rx="2" fill="#9aa3b2"/>
+  <g stroke="#6b7385" stroke-width="7" stroke-linecap="round" fill="none"><path d="M603 160 V136 L582 122 L566 136"/></g>
+  <g fill="#fff" stroke="#1d2330" stroke-width="1.2"><circle cx="603" cy="136" r="4"/><circle cx="582" cy="122" r="4"/></g>
+  <path d="M566 140 V146 M560 146 H572 M560 146 V154 M572 146 V154" stroke="#1d2330" stroke-width="2" fill="none"/>
+
+  <!-- CEL/S00 -->
+  <rect x="186" y="196" width="448" height="190" rx="6" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="196" y="214" font-weight="600" fill="#1f5f3b">CEL/S00 · the cell</text>
+  <text x="346" y="210" font-size="10" fill="#6b7385">the tools write AI_CMD, AI_SPEED</text>
+
+  <rect x="196" y="222" width="164" height="80" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="204" y="238" font-size="11" font-weight="600" fill="#1d2330">the assistant's channel</text>
+  <text x="204" y="252" font-size="9.5" fill="#1d2330" font-family="ui-monospace, Consolas, monospace">AI_CMD, AI_SPEED</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="204" y="265">0xFF113111: role 3 writes</text>
+    <text x="204" y="278">only load, play, pause, stop</text>
+    <text x="204" y="291">speed ≤ AI_SPEED_MAX, 50 %</text>
+  </g>
+
+  <rect x="370" y="222" width="164" height="80" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="378" y="238" font-size="11" font-weight="600" fill="#1d2330">the person's channel</text>
+  <g font-size="9.5" fill="#1d2330" font-family="ui-monospace, Consolas, monospace">
+    <text x="378" y="252">CMD, FEED, SPEED,</text>
+    <text x="378" y="265">AI_ENABLE</text>
+  </g>
+  <g font-size="10" fill="#1d2330">
+    <text x="378" y="278">0xFF111113: role 0 writes</text>
+    <text x="378" y="291">AI_ENABLE 0: the AI is refused</text>
+  </g>
+
+  <rect x="196" y="316" width="324" height="48" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="204" y="332" font-weight="600" fill="#1d2330">main.refusal <tspan font-weight="400" font-size="10" fill="#6b7385">the same rules for both channels</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="204" y="347">play: only with the robot RUNNING and safety NORMAL;</text>
+    <text x="204" y="360">power off: not while a program plays.</text>
+  </g>
+
+  <rect x="544" y="222" width="80" height="142" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="552" y="238" font-size="11" font-weight="600" fill="#1d2330">to the robot</text>
+  <text x="552" y="256" font-size="9.5" fill="#1d2330" font-family="ui-monospace, Consolas, monospace">CN_DASH</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="552" y="269">TCP 29999,</text>
+    <text x="552" y="282">a queue of</text>
+    <text x="552" y="295">commands</text>
+  </g>
+  <text x="552" y="316" font-size="9.5" fill="#1d2330" font-family="ui-monospace, Consolas, monospace">CN_MB</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="552" y="329">Modbus 1504:</text>
+    <text x="552" y="342">handshake,</text>
+    <text x="552" y="355">joints, tool</text>
+  </g>
+  <text x="196" y="378" font-size="10" fill="#6b7385">mcp_pub="1": all the assistant can see</text>
+  <text x="400" y="378" font-size="10" fill="#7a5bc4">CN_WEB :8098 · CN_LIVE /mqtt</text>
+
+  <!-- the arrows inside -->
+  <g stroke="#1d2330" stroke-width="1.5" fill="none">
+    <path d="M162 110 H170 V278 H162 M162 210 H170"/>
+    <path d="M170 128 H192" marker-end="url(#arrk)"/>
+    <path d="M340 176 V220" marker-end="url(#arrk)"/>
+    <path d="M278 302 V314" marker-end="url(#arrk)"/>
+    <path d="M452 302 V314" marker-end="url(#arrk)"/>
+    <path d="M520 340 H542" marker-end="url(#arrk)"/>
+  </g>
+
+  <!-- to the robot: dashboard (text) and Modbus -->
+  <path d="M566 176 V222" stroke="#1d2330" stroke-width="2"/>
+  <g fill="#fff" stroke="#1d2330" stroke-width="1.5"><circle cx="566" cy="183" r="3"/><circle cx="566" cy="191" r="3"/></g>
+  <path d="M604 176 V222" stroke="#3b82c4" stroke-width="2"/>
+  <g fill="#fff" stroke="#3b82c4" stroke-width="1.5"><circle cx="604" cy="183" r="3"/><circle cx="604" cy="191" r="3"/></g>
+
+  <!-- link to the page -->
+  <path d="M470 386 V410" stroke="#7a5bc4" stroke-width="2"/>
+  <g fill="#fff" stroke="#7a5bc4" stroke-width="1.5"><circle cx="470" cy="397" r="3"/><circle cx="470" cy="405" r="3"/></g>
+
+  <!-- the page -->
+  <rect x="176" y="410" width="468" height="84" rx="5" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M176 424 H644" stroke="#1d2330" stroke-width="1"/>
+  <g fill="#9aa3b2"><circle cx="184" cy="417" r="2.5"/><circle cx="192" cy="417" r="2.5"/><circle cx="200" cy="417" r="2.5"/></g>
+  <text x="210" y="421" font-size="9" fill="#6b7385" font-family="ui-monospace, Consolas, monospace">127.0.0.1:8098</text>
+  <text x="184" y="441" font-size="11" font-weight="600" fill="#1d2330">the person at the page: the arm, the cell, every AI request (AI_LOG)</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="184" y="456">writes CMD, FEED, SPEED and "assistant allowed" (AI_ENABLE); opens the</text>
+    <text x="184" y="469">guard door or walks into the arm (ROB/S00 DOOR, BUMP)</text>
+  </g>
+  <text x="184" y="486" font-size="10" fill="#6b7385">power on, brake release and unlocking a protective stop stay with the person</text>
+
+  <!-- a real cell -->
+  <rect x="16" y="410" width="146" height="84" rx="5" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="24" y="428" font-size="11" font-weight="600" fill="#1d2330">a real cell</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="24" y="443">a UR e-Series or URSim:</text>
+    <text x="24" y="456">dashboard 29999, Modbus</text>
+    <text x="24" y="469">502; PRJEDU_robotarm,</text>
+    <text x="24" y="482">"Real hardware"</text>
+  </g>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 516 H40" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/><text x="46" y="520">MCP call, a write</text>
+    <path d="M150 516 H174" stroke="#1d2330" stroke-width="2"/><text x="180" y="520">dashboard, text</text>
+    <path d="M276 516 H300" stroke="#3b82c4" stroke-width="2"/><text x="306" y="520">Modbus TCP</text>
+    <path d="M384 516 H408" stroke="#7a5bc4" stroke-width="2"/><text x="414" y="520">HTTP + MQTT</text>
+    <path d="M500 516 H524" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/><text x="530" y="520">simulated</text>
+  </g>
+  <text x="16" y="540" font-size="11" fill="#6b7385">None of the rules is in the assistant or the page: they are in the engine, where neither can change them.</text>
+</svg>

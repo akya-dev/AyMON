@@ -99,6 +99,12 @@
             <tbody id="browse"><tr><td colspan="3" class="muted">not yet - the engine browses once the anonymous session is up</td></tr></tbody></table></div>
         <div class="small muted">The engine also wrote a draft configuration of the same nodes: log/IMM1_generated.xml (OPC.gen).</div>
     </section>
+
+    <section class="card wide">
+        <div class="label">How it works <span class="muted">a sketch; click for full size</span></div>
+        <a href="flow.svg" target="_blank" rel="noopener"><img src="flow.svg" alt="A sketch: the simulated moulding machine IMM1 (barrel with four heated zones, mould temperature with its set point) behind an asyncua OPC UA server on port 4840, and UA/S00's three sessions with it: a poll, a subscription and a signed and encrypted session that writes and calls methods"
+           style="display:block;width:100%;max-width:660px;height:auto;margin:0 auto;border-radius:6px"></a>
+    </section>
 </main>
 
 <script src="mqtt-lite.js"></script>

@@ -141,6 +141,13 @@
         </table>
         <div class="muted small foot">status questions asked: <b id="polls">0</b> &middot; replies that never came: <b id="tmos">0</b></div>
     </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="card wide">
+        <div class="label">How it works <span class="muted">a sketch; click for full size</span></div>
+        <a href="flow.svg" target="_blank" rel="noopener"><img src="flow.svg" alt="A sketch: an assistant calls the MCP endpoint CN_MCP on 8099 in AI/S00 as an Operator; its tools write AI_CMD and AI_SPEED in the cell CEL/S00, the only published document; the person's page on 8098 writes CMD, FEED, SPEED and AI_ENABLE; both channels pass the same rules before the cell drives the simulated robot ROB/S00 over its dashboard and Modbus TCP"
+           style="display:block;width:100%;max-width:660px;height:auto;margin:0 auto;border-radius:6px"></a>
+    </section>
 </main>
 
 <script src="mqtt-lite.js"></script>

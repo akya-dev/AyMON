@@ -13,6 +13,8 @@ On Linux the same example starts with `./run.sh` (the engine in `../../../bin/li
 
 Stop with CTRL-C. Then open `log\EDU-*.log`.
 
+![A sketch: run.bat starts the engine on the root document, which loads EDU/S00; the thread's clock fires SENSOR's timer once a second, main.read_sensor writes four values, and the write to ALARM runs ATR.rou, ATR.lmt and ALM.onlvl, which set the alarm bits in sta that main.on_alarm logs](flow.svg)
+
 ## What you should see
 
 ```

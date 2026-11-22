@@ -223,7 +223,7 @@
 
 		     ON LINUX there is no H.264 decoder in the engine yet: CN_VID
 		     says so in the log at every attempt (con_rct) and shows nothing. There, Python decodes
-		     (db	ello_video.py, OpenCV) - the README says how to switch.
+		     (db\tello_video.py, OpenCV) - the README says how to switch.
 
 		     frm_typ 0x450E: a blob, not published on MQTT (the page takes
 		     pictures over HTTP). A real camera counts against the licence:

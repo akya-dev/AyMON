@@ -171,6 +171,12 @@
             <div id="video-none" class="muted">no picture - press Video on (the engine decodes on Windows; on Linux see the README)</div>
         </div>
     </section>
+
+    <section class="card" style="grid-column: 1 / -1">
+        <div class="label">How it works <span class="muted">a sketch; click for full size</span></div>
+        <a href="flow.svg" target="_blank" rel="noopener"><img src="flow.svg" alt="A sketch: the Tello's three UDP ports (commands 8889, state 8890, H.264 video 11111) reach TEL/S00's CN_TELLO, CN_STATE and CN_VID; the page on 127.0.0.1:8090 asks through CMD, MISSION and RC and shows the video as MJPEG; SIM/S00 plays the drone in the example"
+           style="display:block;width:100%;max-width:660px;height:auto;margin:0 auto;border-radius:6px"></a>
+    </section>
 </main>
 
 <script src="mqtt-lite.js"></script>

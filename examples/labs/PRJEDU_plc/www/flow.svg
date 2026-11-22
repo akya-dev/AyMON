@@ -1,0 +1,186 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 532" width="660" height="532" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_plc: a filling line, its remote I/O and the PLC</title>
+  <!-- A simple P&ID of the simulated filling line (ISA-style bubbles, not to scale), its remote I/O over Modbus TCP, the PLC's scan and the HMI's two live connections. -->
+  <defs>
+    <marker id="arro" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#d9731a"/></marker>
+    <marker id="arrk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#1d2330"/></marker>
+  </defs>
+  <rect width="660" height="532" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_plc: a filling line and its PLC</text>
+
+  <!-- ============ the machine, simulated ============ -->
+  <rect x="16" y="40" width="628" height="232" rx="8" fill="#f8f9fb" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="28" y="58" font-weight="600" fill="#1d2330">PLT/S00 · the machine <tspan font-weight="400" font-size="10" fill="#6b7385">simulated, ten steps a second</tspan></text>
+
+  <!-- the remote I/O -->
+  <rect x="26" y="68" width="148" height="196" rx="5" fill="#fff" stroke="#9aa3b2"/>
+  <text x="34" y="84" font-size="11" font-weight="600" fill="#1d2330">remote I/O</text>
+  <text x="34" y="99" font-size="10" fill="#1d2330">CN_RIO, Modbus slave</text>
+  <text x="34" y="113" font-size="9" font-family="ui-monospace, Consolas, monospace" fill="#1d2330">127.0.0.1:1503 unit 1</text>
+  <g font-size="9.5" fill="#1d2330">
+    <g font-family="ui-monospace, Consolas, monospace" font-size="9"><text x="34" y="132">reg 0</text><text x="34" y="146">reg 1</text><text x="34" y="160">reg 2</text><text x="34" y="174">reg 3</text></g>
+    <text x="70" y="132">inputs, bits 0-7</text>
+    <text x="70" y="146">bottle level</text>
+    <text x="70" y="160">tank level</text>
+    <text x="70" y="174">outputs, bits 0-3</text>
+    <text x="70" y="187">and life bit 15</text>
+  </g>
+  <g font-size="9.5" fill="#c0392b">
+    <text x="34" y="208">fault state: the life bit</text>
+    <text x="34" y="221">still for 1.5 s, every</text>
+    <text x="34" y="234">output OFF</text>
+  </g>
+  <text x="34" y="254" font-size="9" fill="#6b7385">the PLC sees only this</text>
+
+  <!-- the wiring a real cell would have -->
+  <path d="M214 120 H178" stroke="#d9731a" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arro)"/>
+  <path d="M176 176 H212" stroke="#d9731a" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arro)"/>
+  <g font-size="9" fill="#d9731a" text-anchor="middle"><text x="195" y="113">DI</text><text x="195" y="169">DO</text></g>
+
+  <!-- the operator panel -->
+  <rect x="222" y="68" width="172" height="82" rx="5" fill="#fff" stroke="#9aa3b2"/>
+  <text x="230" y="83" font-size="10" font-weight="600" fill="#1d2330">operator panel</text>
+  <g stroke-width="1.2" font-size="8" text-anchor="middle">
+    <rect x="230" y="90" width="34" height="17" rx="3" fill="#e3f2e6" stroke="#2e8b57"/><text x="247" y="102" fill="#1d2330">START</text>
+    <rect x="268" y="90" width="34" height="17" rx="3" fill="#fbe3df" stroke="#c0392b"/><text x="285" y="102" fill="#1d2330">STOP</text>
+    <rect x="306" y="90" width="34" height="17" rx="3" fill="#f3f5f8" stroke="#6b7385"/><text x="323" y="102" fill="#1d2330">RESET</text>
+  </g>
+  <circle cx="366" cy="99" r="12" fill="#f2c94c" stroke="#9a7d1e"/>
+  <circle cx="366" cy="99" r="8" fill="#c0392b" stroke="#7a1f14"/>
+  <g font-size="8" fill="#6b7385" text-anchor="middle"><text x="285" y="118">NC</text><text x="366" y="122">E-STOP, NC</text></g>
+  <circle cx="238" cy="136" r="6" fill="#bfe3c9" stroke="#2e8b57"/><text x="248" y="140" font-size="9" fill="#1d2330">RUN</text>
+  <circle cx="286" cy="136" r="6" fill="#f4c7c0" stroke="#c0392b"/><text x="296" y="140" font-size="9" fill="#1d2330">FAULT</text>
+
+  <!-- the supply tank, its two instruments -->
+  <rect x="422" y="82" width="68" height="36" fill="#cfe4f7"/>
+  <rect x="420" y="68" width="72" height="50" rx="6" fill="none" stroke="#1d2330" stroke-width="2.5"/>
+  <text x="456" y="98" text-anchor="middle" font-size="9.5" fill="#1d2330">supply tank</text>
+  <path d="M492 82 H509 M492 110 H509" stroke="#1d2330" stroke-width="1.2"/>
+  <!-- valve and nozzle -->
+  <path d="M456 118 V130 M456 148 V158" stroke="#1d2330" stroke-width="2.5"/>
+  <path d="M448 130 H464 L448 148 H464 Z" fill="#fff" stroke="#1d2330" stroke-width="2"/>
+  <path d="M431 139 H452" stroke="#1d2330" stroke-width="1.2"/>
+  <path d="M450 158 H462 L456 167 Z" fill="#1d2330"/>
+  <path d="M456 169 V183" stroke="#3b82c4" stroke-width="2" stroke-dasharray="3 2"/>
+
+  <!-- the bottles and the conveyor -->
+  <g stroke="#1d2330" stroke-width="1.5">
+    <path d="M292 210 V190 L297 182 V176 H303 V182 L308 190 V210 Z" fill="#fff"/>
+    <path d="M364 210 V190 L369 182 V176 H375 V182 L380 190 V210 Z" fill="#fff"/>
+    <rect x="449" y="197" width="14" height="13" fill="#cfe4f7" stroke="none"/>
+    <path d="M448 210 V190 L453 182 V176 H459 V182 L464 190 V210 Z" fill="none"/>
+    <rect x="521" y="188" width="14" height="22" fill="#cfe4f7" stroke="none"/>
+    <path d="M520 210 V190 L525 182 V176 H531 V182 L536 190 V210 Z" fill="none"/>
+  </g>
+  <rect x="216" y="210" width="412" height="10" rx="5" fill="#fff" stroke="#1d2330" stroke-width="2.5"/>
+  <path d="M240 220 V231 M456 220 V232 M576 220 V232" stroke="#1d2330" stroke-width="1.2"/>
+  <circle cx="240" cy="242" r="11" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <text x="240" y="246" text-anchor="middle" font-size="10" font-weight="600" fill="#1d2330">M</text>
+  <text x="258" y="246" font-size="10" fill="#1d2330">conveyor, 10 cm/s</text>
+  <path d="M352 242 H392" stroke="#1d2330" stroke-width="1.2" marker-end="url(#arrk)"/>
+
+  <!-- the field instruments -->
+  <g fill="#fff" stroke="#1d2330" stroke-width="1.5">
+    <circle cx="522" cy="82" r="13"/><circle cx="522" cy="110" r="13"/>
+    <circle cx="418" cy="139" r="13"/>
+    <circle cx="412" cy="196" r="13"/><circle cx="500" cy="196" r="13"/>
+    <circle cx="456" cy="245" r="13"/><circle cx="576" cy="245" r="13"/>
+  </g>
+  <path d="M425 196 H448 M464 196 H487" stroke="#1d2330" stroke-width="1.2"/>
+  <g text-anchor="middle" fill="#1d2330">
+    <g font-size="9" font-weight="600">
+      <text x="522" y="81">LT</text><text x="522" y="109">LSL</text><text x="418" y="138">XV</text>
+      <text x="412" y="195">LT</text><text x="500" y="195">LSH</text><text x="456" y="244">YS</text><text x="576" y="244">YS</text>
+    </g>
+    <g font-size="7.5">
+      <text x="522" y="90">TANK</text><text x="522" y="118">LOW</text><text x="418" y="147">VALVE</text>
+      <text x="412" y="204">BLVL</text><text x="500" y="204">FULL</text><text x="456" y="253">FILL</text><text x="576" y="253">EXIT</text>
+    </g>
+  </g>
+  <g font-size="9" fill="#6b7385">
+    <text x="541" y="86">reg 2, 0.1 %</text>
+    <text x="541" y="114">under 15 %</text>
+    <text x="478" y="177">at 92 %</text>
+    <text x="474" y="249">x = 100, the nozzle</text>
+    <text x="594" y="249">x = 150</text>
+  </g>
+
+  <!-- ============ Modbus TCP ============ -->
+  <path d="M100 272 V304" stroke="#3b82c4" stroke-width="2"/>
+  <g fill="#fff" stroke="#3b82c4" stroke-width="1.5"><circle cx="100" cy="282" r="3"/><circle cx="100" cy="294" r="3"/></g>
+  <text x="110" y="292" font-size="10" fill="#3b82c4">Modbus TCP: function 3 reads registers 0-3 every 100 ms, function 6 writes 3</text>
+
+  <!-- ============ the PLC ============ -->
+  <rect x="16" y="304" width="420" height="180" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="28" y="322" font-weight="600" fill="#1f5f3b">CTL/S00 · the PLC <tspan font-weight="400" font-size="10" fill="#6b7385">it never reads PLT/S00: only Modbus</tspan></text>
+
+  <rect x="26" y="332" width="160" height="142" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="34" y="348" font-size="10.5" font-weight="600" fill="#1d2330">CN_MB, Modbus master</text>
+  <text x="34" y="362" font-size="10" fill="#1d2330">RIO_BLK: reg 0-3, 0.1 s</text>
+  <g font-size="9" font-family="ui-monospace, Consolas, monospace" fill="#1d2330">
+    <text x="34" y="378">I_PE_FILL</text><text x="148" y="378">0.0</text>
+    <text x="34" y="391">I_LS_FULL</text><text x="148" y="391">0.1</text>
+    <text x="34" y="404">.. I_TANK_LOW</text><text x="148" y="404">0.7</text>
+    <text x="34" y="417">I_BLVL, I_TANK</text><text x="148" y="417">1, 2</text>
+    <text x="34" y="430">Q_WORD</text><text x="148" y="430">3</text>
+  </g>
+  <text x="34" y="447" font-size="9.5" fill="#6b7385">pro_adr="0.3": register 0, bit 3</text>
+  <text x="34" y="463" font-size="9.5" fill="#c0392b">no answer for 1 s: FAULT</text>
+
+  <rect x="196" y="332" width="230" height="142" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="204" y="348" font-size="10.5" font-weight="600" fill="#1d2330">main.scan <tspan font-weight="400" font-size="9.5" fill="#6b7385">every 100 ms: a step sequence</tspan></text>
+  <g font-size="9" fill="#1d2330" text-anchor="middle">
+    <rect x="204" y="356" width="64" height="18" rx="2" fill="#f3f5f8" stroke="#1d2330"/><text x="236" y="368">0 IDLE</text>
+    <rect x="282" y="356" width="64" height="18" rx="2" fill="#f3f5f8" stroke="#1d2330"/><text x="314" y="368">1 CONVEY</text>
+    <rect x="356" y="356" width="64" height="18" rx="2" fill="#f3f5f8" stroke="#1d2330"/><text x="388" y="368">2 POSITION</text>
+    <rect x="204" y="392" width="64" height="18" rx="2" fill="#e3f2e6" stroke="#2e8b57" stroke-width="1.5"/><text x="236" y="404">3 FILL</text>
+    <rect x="282" y="392" width="64" height="18" rx="2" fill="#f3f5f8" stroke="#1d2330"/><text x="314" y="404">4 DRIP</text>
+    <rect x="356" y="392" width="64" height="18" rx="2" fill="#f3f5f8" stroke="#1d2330"/><text x="388" y="404">5 RELEASE</text>
+  </g>
+  <g stroke="#1d2330" stroke-width="1.2" fill="none">
+    <path d="M268 365 H282 M346 365 H356 M268 401 H282 M346 401 H356"/>
+    <path d="M388 374 V383 H236 V392"/>
+    <path d="M275 361 V369 M351 361 V369 M275 397 V405 M351 397 V405 M310 379 V387"/>
+  </g>
+  <text x="204" y="425" font-size="9.5" fill="#1d2330">5 → 1 for the next bottle, → 0 after STOP</text>
+  <g font-size="9" text-anchor="middle">
+    <rect x="204" y="432" width="64" height="16" rx="2" fill="#fff" stroke="#c0392b" stroke-dasharray="3 2"/><text x="236" y="443" fill="#c0392b">8 FAULT</text>
+    <rect x="282" y="432" width="64" height="16" rx="2" fill="#fff" stroke="#c0392b" stroke-dasharray="3 2"/><text x="314" y="443" fill="#c0392b">9 E-STOP</text>
+  </g>
+  <text x="354" y="444" font-size="9" fill="#6b7385">RESET → 0</text>
+  <text x="204" y="465" font-size="9.5" fill="#1d2330">valve = step 3 AND PE_FILL; bit 15 flips every 0.5 s</text>
+
+  <!-- ============ the HMI ============ -->
+  <path d="M560 272 V304" stroke="#7a5bc4" stroke-width="2"/>
+  <g fill="#fff" stroke="#7a5bc4" stroke-width="1.5"><circle cx="560" cy="282" r="3"/><circle cx="560" cy="294" r="3"/></g>
+  <text x="568" y="292" font-size="9.5" fill="#7a5bc4">ws :8094/mqtt</text>
+  <path d="M436 334 H460" stroke="#7a5bc4" stroke-width="2"/>
+  <g fill="#fff" stroke="#7a5bc4" stroke-width="1.5"><circle cx="444" cy="334" r="3"/><circle cx="453" cy="334" r="3"/></g>
+
+  <rect x="460" y="304" width="184" height="62" rx="5" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M460 318 H644" stroke="#1d2330" stroke-width="1"/>
+  <g fill="#9aa3b2"><circle cx="468" cy="311" r="2.5"/><circle cx="476" cy="311" r="2.5"/><circle cx="484" cy="311" r="2.5"/></g>
+  <text x="494" y="315" font-size="9" fill="#6b7385" font-family="ui-monospace, Consolas, monospace">127.0.0.1:8093</text>
+  <text x="468" y="334" font-size="10" font-weight="600" fill="#1d2330">the HMI</text>
+  <text x="468" y="348" font-size="9.5" fill="#1d2330">the line, the panel, the steps,</text>
+  <text x="468" y="361" font-size="9.5" fill="#1d2330">the I/O monitor, production</text>
+  <g font-size="9.5" fill="#1d2330">
+    <text x="460" y="384">Two live connections, one per document:</text>
+    <text x="460" y="400"><tspan fill="#7a5bc4">8093</tspan> the PLC: reads all of it, writes</text>
+    <text x="460" y="413">only CABLE (pull the fieldbus cable)</text>
+    <text x="460" y="429"><tspan fill="#7a5bc4">8094</tspan> the machine: its buttons, the</text>
+    <text x="460" y="442">tank refill, the speed, the picture</text>
+    <text x="460" y="458" fill="#6b7385">Both documents serve the same www/.</text>
+  </g>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 506 H40" stroke="#1d2330" stroke-width="2.5"/><text x="46" y="510">process</text>
+    <path d="M96 506 H124" stroke="#3b82c4" stroke-width="2"/><circle cx="104" cy="506" r="3" fill="#fff" stroke="#3b82c4"/><circle cx="116" cy="506" r="3" fill="#fff" stroke="#3b82c4"/><text x="130" y="510">Modbus TCP</text>
+    <path d="M204 506 H228" stroke="#7a5bc4" stroke-width="2"/><text x="234" y="510">HTTP + MQTT</text>
+    <path d="M316 506 H340" stroke="#d9731a" stroke-width="1.5" stroke-dasharray="5 3"/><text x="346" y="510">24 V in a real cell</text>
+    <circle cx="462" cy="506" r="8" fill="#fff" stroke="#1d2330"/><text x="476" y="510">field instrument</text>
+    <rect x="568" y="499" width="20" height="14" rx="2" fill="none" stroke="#6b7385" stroke-dasharray="4 3"/><text x="594" y="510">simulated</text>
+  </g>
+  <text x="16" y="528" font-size="11" fill="#6b7385">In a real cell RIO points at a Modbus TCP remote I/O module (README, Real hardware): the program does not change.</text>
+</svg>

@@ -56,6 +56,12 @@
         <div class="note">The plant sends changes; the unit and the limits came once, with the first bulk sync, and are in the
             mirror anyway - a mirror is a document, not a message queue.</div>
     </section>
+
+    <section class="card wide">
+        <div class="label">How it works <span class="muted">a sketch; click for full size</span></div>
+        <a href="flow.svg" target="_blank" rel="noopener"><img src="flow.svg" alt="A sketch: two engine processes on one machine; PRC/P01 is the plant's (EDGE, from db_proc.xml), the centre holds a mirror with no file (HUB); CN_PLANT, the same row in both files, carries the whole tree once and then each change; the page on 127.0.0.1:8108 reads both"
+           style="display:block;width:100%;max-width:660px;height:auto;margin:0 auto;border-radius:6px"></a>
+    </section>
 </main>
 
 <script src="mqtt-lite.js"></script>

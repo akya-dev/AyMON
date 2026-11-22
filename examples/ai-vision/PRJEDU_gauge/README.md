@@ -53,6 +53,10 @@ functions, in the engine module `AyLIB_vision`, which ships in `../../../bin` be
 the engine (engine 4.3.4.564 or later; before 4.3.4.563 they were the
 plug-in `AyPRO_img`).
 
+![A sketch: Python inside the engine paints the camera's frame of the tank's dial gauge, hands it to FRAME as a blob and reads the needle from a view of the same bytes; PRESS is written only when the reading is trusted; the engine encodes the picture, the page fetches it over HTTP and the values over MQTT](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## What you see
 
 * **What the camera sees**: the picture, with what the reader found drawn

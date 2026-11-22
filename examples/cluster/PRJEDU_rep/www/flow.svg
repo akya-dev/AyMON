@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 524" width="660" height="524" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_rep: two engines, one plant</title>
+  <!-- A sketch of the two engine processes: PRC/P01 is the plant's (EDGE), the centre holds a mirror with no file (HUB), CN_PLANT carries it. -->
+  <defs>
+    <marker id="arrb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82c4"/></marker>
+  </defs>
+  <rect width="660" height="524" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_rep: two engines, one plant</text>
+
+  <!-- the browser -->
+  <rect x="200" y="36" width="260" height="52" rx="5" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M200 50 H460" stroke="#1d2330" stroke-width="1"/>
+  <g fill="#9aa3b2"><circle cx="208" cy="43" r="2.5"/><circle cx="216" cy="43" r="2.5"/><circle cx="224" cy="43" r="2.5"/></g>
+  <text x="234" y="47" font-size="9" fill="#6b7385" font-family="ui-monospace, Consolas, monospace">127.0.0.1:8108</text>
+  <text x="210" y="66" font-size="11" font-weight="600" fill="#1d2330">the page: the source beside the mirror</text>
+  <text x="210" y="80" font-size="10" fill="#6b7385">a /mqtt link to each engine, VIEW from each</text>
+  <g stroke="#7a5bc4" stroke-width="2" fill="none">
+    <path d="M312 88 V180 H258"/>
+    <path d="M348 88 V162 H402"/>
+  </g>
+  <g fill="#fff" stroke="#7a5bc4" stroke-width="1.5"><circle cx="312" cy="100" r="3"/><circle cx="312" cy="112" r="3"/><circle cx="348" cy="100" r="3"/><circle cx="348" cy="112" r="3"/></g>
+
+  <!-- PLANT -->
+  <rect x="16" y="104" width="254" height="274" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="28" y="124" font-weight="600" fill="#1f5f3b">PLANT <tspan font-weight="400" font-size="10" fill="#6b7385">one AyXDB process</tspan></text>
+  <text x="28" y="139" font-size="10" fill="#6b7385">AyXDB_plant.xml · tid="PLANT"</text>
+  <rect x="28" y="148" width="230" height="56" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="36" y="164" font-size="11" font-weight="600" fill="#1d2330">CN_EXT <tspan font-weight="400" font-size="10" fill="#6b7385">127.0.0.1:9180, the one port</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="36" y="180" font-family="ui-monospace, Consolas, monospace">/mqtt</text><text x="72" y="180">CN_LIVE: VIEW for the page</text>
+    <text x="36" y="195" font-family="ui-monospace, Consolas, monospace">/rep</text><text x="66" y="195">CN_PLANT: listens, pro_nid = tid</text>
+  </g>
+  <rect x="28" y="212" width="230" height="48" rx="4" fill="#fff" stroke="#2e8b57"/>
+  <text x="36" y="228" font-size="11" font-weight="600" fill="#1d2330">SYS/S00 <tspan font-weight="400" fill="#6b7385">plain, 0x0300</tspan></text>
+  <text x="36" y="242" font-size="10" fill="#1d2330">main.tick, 1 s: the simulator writes</text>
+  <text x="36" y="255" font-size="10" fill="#1d2330">PRC/P01's values, as a field would</text>
+  <rect x="28" y="268" width="230" height="98" rx="4" fill="#fff" stroke="#2e8b57"/>
+  <text x="36" y="284" font-size="11" font-weight="600" fill="#1d2330">PRC/P01 <tspan font-weight="400" fill="#6b7385">the data</tspan></text>
+  <rect x="170" y="273" width="80" height="16" rx="8" fill="#2e8b57"/>
+  <text x="210" y="285" font-size="9.5" font-weight="600" fill="#fff" text-anchor="middle">EDGE 0x4300</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="36" y="301">src db_proc.xml: the only data file</text>
+    <text x="36" y="316">LEVEL, val_fnc [ATR.rou,ALM.onlvl]:</text>
+    <text x="36" y="330">limits 10 / 20 / 85 / 92 %, the alarm</text>
+    <text x="36" y="344">is set here, in LEVEL's sta</text>
+    <text x="36" y="358">TEMP, PUMP, STARTS, STATE</text>
+  </g>
+
+  <!-- CENTRE -->
+  <rect x="390" y="104" width="254" height="274" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="402" y="124" font-weight="600" fill="#1f5f3b">CENTRE <tspan font-weight="400" font-size="10" fill="#6b7385">another AyXDB process</tspan></text>
+  <text x="402" y="139" font-size="10" fill="#6b7385">AyXDB_centre.xml · tid="CENTRE"</text>
+  <rect x="402" y="148" width="230" height="56" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="410" y="164" font-size="11" font-weight="600" fill="#1d2330">CN_WEB <tspan font-weight="400" font-size="10" fill="#6b7385">127.0.0.1:8108: the page</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="410" y="180" font-family="ui-monospace, Consolas, monospace">/mqtt</text><text x="446" y="180">CN_LIVE: VIEW for the page</text>
+    <text x="410" y="195" font-weight="600">CN_PLANT</text><text x="464" y="195">dials 127.0.0.1:9180/rep</text>
+  </g>
+  <rect x="402" y="212" width="230" height="48" rx="4" fill="#fff" stroke="#2e8b57"/>
+  <text x="410" y="228" font-size="11" font-weight="600" fill="#1d2330">SYS/S00 <tspan font-weight="400" fill="#6b7385">plain, 0x0300</tspan></text>
+  <text x="410" y="242" font-size="10" fill="#1d2330">LINK, the page's switch: CN_PLANT's</text>
+  <text x="410" y="255" font-size="10" fill="#1d2330">sta 0x0303 on, 0x0000 off</text>
+  <rect x="402" y="268" width="230" height="98" rx="4" fill="#fff" stroke="#2e8b57"/>
+  <text x="410" y="284" font-size="11" font-weight="600" fill="#1d2330">PRC/P01 <tspan font-weight="400" fill="#6b7385">the mirror</tspan></text>
+  <rect x="544" y="273" width="80" height="16" rx="8" fill="#3b82c4"/>
+  <text x="584" y="285" font-size="9.5" font-weight="600" fill="#fff" text-anchor="middle">HUB 0x8300</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="410" y="301">no src: four attributes in the root,</text>
+    <text x="410" y="316">empty at the start. The first sync</text>
+    <text x="410" y="330">brings the tree: elements, types,</text>
+    <text x="410" y="344">units, limits. Then each change,</text>
+    <text x="410" y="358">val and sta: the alarm comes with it</text>
+  </g>
+
+  <!-- the connection -->
+  <path d="M258 196 H402" stroke="#1d2330" stroke-width="2"/>
+  <g fill="#fff" stroke="#1d2330" stroke-width="1.5"><circle cx="324" cy="196" r="3"/><circle cx="336" cy="196" r="3"/></g>
+  <g font-size="9.5" fill="#1d2330" text-anchor="middle">
+    <text x="330" y="212" font-weight="600">CN_PLANT</text>
+    <text x="330" y="225">the same row in</text>
+    <text x="330" y="237">both files</text>
+  </g>
+
+  <!-- replication -->
+  <path d="M258 300 H400" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrb)"/>
+  <path d="M402 340 H260" stroke="#3b82c4" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrb)"/>
+  <g font-size="9.5" fill="#3b82c4" text-anchor="middle">
+    <text x="330" y="292" font-weight="600">PRO.rep, PRC/P01</text>
+    <text x="330" y="314">the tree once,</text>
+    <text x="330" y="326">then each change</text>
+    <text x="330" y="354">what the mirror</text>
+    <text x="330" y="366">asks for</text>
+  </g>
+
+  <!-- the direction, and the switch -->
+  <rect x="16" y="392" width="628" height="74" rx="6" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <g font-size="10" fill="#1d2330">
+    <text x="28" y="410" font-size="11" font-weight="600">the direction is in &lt;doc sta&gt;, not in the row</text>
+    <text x="28" y="426"><tspan font-family="ui-monospace, Consolas, monospace">sta = 0xRC00</tspan>: R, bits 14-15 = 0 plain, 1 EDGE, 2 HUB</text>
+    <text x="28" y="441">plant 0x4300 EDGE, centre 0x8300 HUB: swap</text>
+    <text x="28" y="455">the two and the data flows the other way</text>
+    <text x="348" y="410" font-size="11" font-weight="600">switch the link off on the page</text>
+    <text x="348" y="426">the plant goes on, the mirror keeps its last</text>
+    <text x="348" y="441">values; on again: a bulk sync, and the mirror</text>
+    <text x="348" y="455">equals the source in 0.9 to 1.6 s</text>
+  </g>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 484 H40" stroke="#7a5bc4" stroke-width="2"/><text x="46" y="488">HTTP + MQTT</text>
+    <path d="M136 484 H160" stroke="#1d2330" stroke-width="2"/><text x="166" y="488">the connection, a WebSocket</text>
+    <path d="M336 484 H360" stroke="#3b82c4" stroke-width="2"/><text x="366" y="488">replication</text>
+    <path d="M444 484 H468" stroke="#3b82c4" stroke-width="2" stroke-dasharray="6 4"/><text x="474" y="488">the mirror's requests</text>
+  </g>
+  <text x="16" y="506" font-size="11" fill="#6b7385">Both engines run from this one directory, told apart by tid. Replication is not in FREE but runs on</text>
+  <text x="16" y="520" font-size="11" fill="#6b7385">127.0.0.1: an unlicensed feature is a local one. A second machine needs a licence.</text>
+</svg>

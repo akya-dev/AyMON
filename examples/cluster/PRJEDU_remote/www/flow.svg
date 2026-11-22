@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 532" width="660" height="532" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_remote: a document on another node</title>
+  <!-- A sketch of the three engine processes: OPS calls LINE/L1 over PRO.rpc, down its list, on whichever node of the S01/S02 cluster answers. -->
+  <defs>
+    <marker id="arrb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82c4"/></marker>
+  </defs>
+  <rect width="660" height="532" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_remote: a document on another node</text>
+
+  <!-- the browser -->
+  <rect x="16" y="44" width="160" height="66" rx="5" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M16 58 H176" stroke="#1d2330" stroke-width="1"/>
+  <g fill="#9aa3b2"><circle cx="24" cy="51" r="2.5"/><circle cx="32" cy="51" r="2.5"/><circle cx="40" cy="51" r="2.5"/></g>
+  <text x="50" y="55" font-size="9" fill="#6b7385" font-family="ui-monospace, Consolas, monospace">127.0.0.1:8123</text>
+  <text x="24" y="75" font-size="11" font-weight="600" fill="#1d2330">the page</text>
+  <text x="24" y="90" font-size="10" fill="#1d2330">the same call four times,</text>
+  <text x="24" y="103" font-size="10" fill="#1d2330">the writes, what it costs</text>
+  <path d="M176 84 H212" stroke="#7a5bc4" stroke-width="2"/>
+  <g fill="#fff" stroke="#7a5bc4" stroke-width="1.5"><circle cx="188" cy="84" r="3"/><circle cx="199" cy="84" r="3"/></g>
+
+  <!-- what a kill does to the caller -->
+  <rect x="16" y="120" width="164" height="118" rx="6" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="26" y="138" font-size="11" font-weight="600" fill="#c0392b">kill the master</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="26" y="154">S02 is master in about 1 s.</text>
+    <text x="26" y="168">A call on the wire waits</text>
+    <text x="26" y="182">pro_tmo, 2 s: a read goes on</text>
+    <text x="26" y="196">down the list, a write says</text>
+    <text x="26" y="210">UNKNOWN and is not repeated.</text>
+  </g>
+  <text x="26" y="228" font-size="10" fill="#6b7385">next write taken: 0.4 to 3.0 s</text>
+
+  <!-- OPS -->
+  <rect x="200" y="36" width="444" height="186" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="212" y="54" font-weight="600" fill="#1f5f3b">OPS <tspan font-weight="400" font-size="10" fill="#6b7385">one AyXDB process · AyXDB_OPS.xml · tid="OPS"</tspan></text>
+  <rect x="212" y="64" width="206" height="40" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="220" y="80" font-size="11" font-weight="600" fill="#1d2330">CN_WEB <tspan font-weight="400" fill="#6b7385">127.0.0.1:8123</tspan></text>
+  <text x="220" y="96" font-size="10" fill="#1d2330"><tspan font-family="ui-monospace, Consolas, monospace">/</tspan> the page · <tspan font-family="ui-monospace, Consolas, monospace">/mqtt</tspan> CN_LIVE</text>
+  <rect x="212" y="112" width="206" height="64" rx="4" fill="#fff" stroke="#2e8b57"/>
+  <text x="220" y="128" font-size="11" font-weight="600" fill="#1d2330">OPS/S00 <tspan font-weight="400" fill="#6b7385">the script that asks</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="220" y="143">main.tick on TH_CALL, every 0.2 s:</text>
+    <text x="220" y="157">asks api.snap(), writes SEQ</text>
+    <text x="220" y="171">a click: REQ, queued to TH_CALL</text>
+  </g>
+  <rect x="430" y="64" width="202" height="40" rx="4" fill="#fff" stroke="#2e8b57"/>
+  <text x="438" y="80" font-size="11" font-weight="600" fill="#1d2330">LINE/L2 <tspan font-weight="400" fill="#6b7385">here, the twin</tspan></text>
+  <text x="438" y="96" font-size="10" fill="#1d2330">a read: 1.2 to 2.8 us</text>
+  <rect x="430" y="112" width="202" height="64" rx="4" fill="#fff" stroke="#6b7385" stroke-dasharray="5 4"/>
+  <text x="438" y="128" font-size="11" font-weight="600" fill="#1d2330">LINE/L1 <tspan font-weight="400" fill="#6b7385">not here: one line</tspan></text>
+  <text x="438" y="143" font-size="9" font-family="ui-monospace, Consolas, monospace" fill="#1d2330">&lt;doc rpc_con="CN_S01,CN_S02"/&gt;</text>
+  <text x="438" y="157" font-size="10" fill="#1d2330">no object, thread or licence slot</text>
+  <text x="438" y="171" font-size="10" fill="#1d2330">a read there: 60 to 220 us</text>
+  <rect x="212" y="184" width="206" height="28" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="220" y="202" font-size="11" font-weight="600" fill="#1d2330">CN_S01 <tspan font-weight="400" font-size="10" fill="#6b7385">PRO.rpc client, first in the list</tspan></text>
+  <rect x="430" y="184" width="202" height="28" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="438" y="202" font-size="11" font-weight="600" fill="#1d2330">CN_S02 <tspan font-weight="400" font-size="10" fill="#6b7385">PRO.rpc client, second</tspan></text>
+
+  <!-- the calls -->
+  <path d="M250 212 V300" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrb)"/>
+  <path d="M600 212 V300" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrb)"/>
+  <g font-size="9.5" fill="#3b82c4">
+    <text x="258" y="238">PRO.rpc to 127.0.0.1:9221</text>
+    <text x="258" y="251">pro_tmo 2 s</text>
+    <text x="592" y="238" text-anchor="end">PRO.rpc to 127.0.0.1:9222</text>
+    <text x="592" y="251" text-anchor="end">pro_tmo 2 s</text>
+  </g>
+
+  <!-- node S01 -->
+  <rect x="16" y="262" width="254" height="208" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="28" y="280" font-weight="600" fill="#1f5f3b">S01 <tspan font-weight="400" font-size="10" fill="#6b7385">priority 1</tspan></text>
+  <text x="28" y="294" font-size="10" fill="#6b7385">AyXDB_S01.xml · tid="S01"</text>
+  <rect x="28" y="302" width="230" height="48" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="36" y="318" font-size="11" font-weight="600" fill="#1d2330">CN_RPC <tspan font-weight="400" font-size="10" fill="#6b7385">127.0.0.1:9221, serves calls</tspan></text>
+  <text x="36" y="332" font-size="10" fill="#1d2330">con_acl 127.0.0.1 · con_role 3: a caller</text>
+  <text x="36" y="345" font-size="10" fill="#1d2330">is an Operator here · runs on TH_RPC</text>
+  <rect x="28" y="356" width="230" height="34" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="36" y="371" font-size="11" font-weight="600" fill="#1d2330">CN_EXT <tspan font-weight="400" font-size="10" fill="#6b7385">127.0.0.1:9211</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="36" y="384" font-family="ui-monospace, Consolas, monospace">/clt</text><text x="64" y="384">CN_E01, E02</text>
+    <text x="134" y="384" font-family="ui-monospace, Consolas, monospace">/rep</text><text x="162" y="384">CN_R01, R02</text>
+  </g>
+  <text x="36" y="403" font-size="9.5" fill="#6b7385">these rows: SYS/S00, plain, never replicated</text>
+  <rect x="28" y="410" width="230" height="50" rx="4" fill="#fff" stroke="#2e8b57"/>
+  <text x="36" y="426" font-size="11" font-weight="600" fill="#1d2330">LINE/L1 <tspan font-weight="400" fill="#6b7385">the job</tspan></text>
+  <rect x="190" y="415" width="60" height="16" rx="8" fill="#2e8b57"/>
+  <text x="220" y="427" font-size="9.5" font-weight="600" fill="#fff" text-anchor="middle">MASTER</text>
+  <text x="36" y="441" font-size="10" fill="#1d2330">0x1303: main.step, COUNT + RATE a second</text>
+  <text x="36" y="454" font-size="10" fill="#1d2330">RATE, SEQ: Operator · RATE_MAX: Engineer</text>
+
+  <!-- node S02 -->
+  <rect x="390" y="262" width="254" height="208" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="402" y="280" font-weight="600" fill="#1f5f3b">S02 <tspan font-weight="400" font-size="10" fill="#6b7385">priority 2</tspan></text>
+  <text x="402" y="294" font-size="10" fill="#6b7385">AyXDB_S02.xml · tid="S02"</text>
+  <rect x="402" y="302" width="230" height="48" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="410" y="318" font-size="11" font-weight="600" fill="#1d2330">CN_RPC <tspan font-weight="400" font-size="10" fill="#6b7385">127.0.0.1:9222, serves calls</tspan></text>
+  <text x="410" y="332" font-size="10" fill="#1d2330">the same row: con_role 3, TH_RPC</text>
+  <text x="410" y="345" font-size="10" fill="#1d2330">parked: a write goes on down the list</text>
+  <rect x="402" y="356" width="230" height="34" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="410" y="371" font-size="11" font-weight="600" fill="#1d2330">CN_EXT <tspan font-weight="400" font-size="10" fill="#6b7385">127.0.0.1:9212</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="410" y="384" font-family="ui-monospace, Consolas, monospace">/clt</text><text x="438" y="384">CN_E01, E02</text>
+    <text x="508" y="384" font-family="ui-monospace, Consolas, monospace">/rep</text><text x="536" y="384">CN_R01, R02</text>
+  </g>
+  <text x="410" y="403" font-size="9.5" fill="#6b7385">these rows: SYS/S00, plain, never replicated</text>
+  <rect x="402" y="410" width="230" height="50" rx="4" fill="#fff" stroke="#2e8b57"/>
+  <text x="410" y="426" font-size="11" font-weight="600" fill="#1d2330">LINE/L1 <tspan font-weight="400" fill="#6b7385">the job</tspan></text>
+  <rect x="564" y="415" width="60" height="16" rx="8" fill="#3b82c4"/>
+  <text x="594" y="427" font-size="9.5" font-weight="600" fill="#fff" text-anchor="middle">SPARE</text>
+  <text x="410" y="441" font-size="10" fill="#1d2330">0x2202: parked, a mirror; a read is</text>
+  <text x="410" y="454" font-size="10" fill="#1d2330">a write or two behind the master</text>
+
+  <!-- election and replication: PRJEDU_cluster's -->
+  <path d="M258 372 H402" stroke="#1d2330" stroke-width="2"/>
+  <g fill="#fff" stroke="#1d2330" stroke-width="1.5"><circle cx="324" cy="372" r="3"/><circle cx="336" cy="372" r="3"/></g>
+  <text x="330" y="364" font-size="9.5" font-weight="600" fill="#1d2330" text-anchor="middle">PRO.clt election</text>
+  <path d="M258 436 H400" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrb)"/>
+  <g font-size="9.5" fill="#3b82c4" text-anchor="middle">
+    <text x="330" y="428" font-weight="600">PRO.rep, LINE/L1</text>
+    <text x="330" y="450">master to spare</text>
+  </g>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 490 H40" stroke="#7a5bc4" stroke-width="2"/><text x="46" y="494">HTTP + MQTT</text>
+    <path d="M136 490 H160" stroke="#3b82c4" stroke-width="2"/><text x="166" y="494">a call (PRO.rpc), replication</text>
+    <path d="M340 490 H364" stroke="#1d2330" stroke-width="2"/><text x="370" y="494">election</text>
+    <path d="M436 490 H460" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/><text x="466" y="494">a document not in OPS</text>
+  </g>
+  <text x="16" y="512" font-size="11" fill="#6b7385">The script on OPS writes doc('LINE/L1')/id('RATE')/@val as it would its own; the list finds a node.</text>
+  <text x="16" y="526" font-size="11" fill="#6b7385">The far node applies its own gates: xdb_acl, the write mode, the *_fnc chains.</text>
+</svg>

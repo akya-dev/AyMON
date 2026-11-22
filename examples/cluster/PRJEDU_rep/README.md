@@ -21,6 +21,10 @@ both engines and puts the source next to the mirror: six values each, the
 level of both on one trend, what only the first sync carried, and a switch
 for the replication link.
 
+![A sketch: two engine processes on one machine; PRC/P01 is the plant's (EDGE, from db_proc.xml), the centre holds a mirror with no file (HUB); CN_PLANT, the same row in both files, carries the whole tree once and then each change; the page on 127.0.0.1:8108 reads both](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## What you are looking at
 
 The plant window:

@@ -36,6 +36,10 @@ Both run the same two documents from the same files:
 | `APP/S00` | **the job**: `RUN`, `RATE`, `COUNT`, `BATCH`, the list of finished batches. A *cluster member* (`sta="0x3200"`): on the master it runs, on the spare it is a mirror the master keeps up to date |
 | `SYS/S00` | **the node itself**: its listener, the page, the election and replication links. Plain (`0x0300`): each node has its own and it is never replicated |
 
+![A sketch: two engine processes, S01 on 127.0.0.1:9201 and S02 on 127.0.0.1:9202, each with SYS/S00 and APP/S00; PRO.clt elects the master, PRO.rep copies APP/S00 from the master to the spare, and when the master is killed the spare carries on in about a second](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## The page
 
 Two columns, one per node — each column is what *that* node says: its role,

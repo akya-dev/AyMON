@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 500" width="660" height="500" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_gauge: a dial gauge read by a camera, in Python</title>
+  <!-- A sketch of the retrofit: the simulated tank and camera, Python inside the engine, the frame as a blob, the page. -->
+  <defs>
+    <marker id="arrk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#1d2330"/></marker>
+    <marker id="arrs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#6b7385"/></marker>
+  </defs>
+  <rect width="660" height="500" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_gauge: a dial gauge read by a camera, in Python</text>
+
+  <!-- the plant, simulated -->
+  <rect x="16" y="40" width="150" height="290" rx="6" fill="#fff" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="26" y="58" font-weight="600" fill="#1d2330">the tank and its gauge</text>
+  <text x="26" y="72" font-size="10" fill="#6b7385">simulated in this example</text>
+  <rect x="30" y="92" width="52" height="120" rx="14" fill="#f3f5f8" stroke="#1d2330" stroke-width="2"/>
+  <text x="56" y="150" text-anchor="middle" font-size="10" fill="#1d2330">air</text>
+  <text x="56" y="163" text-anchor="middle" font-size="10" fill="#1d2330">tank</text>
+  <path d="M82 118 H94" stroke="#1d2330" stroke-width="2"/>
+  <circle cx="112" cy="118" r="18" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M102.1 127.9 A14 14 0 1 1 121.9 127.9" fill="none" stroke="#9aa3b2" stroke-width="1.5"/>
+  <path d="M112 118 L117.4 107.3" stroke="#1d2330" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="112" cy="118" r="2" fill="#1d2330"/>
+  <text x="112" y="94" text-anchor="middle" font-size="10" fill="#1d2330">dial gauge</text>
+  <path d="M106 160 L98 138 M120 160 L128 138" stroke="#6b7385" stroke-width="1" stroke-dasharray="3 3"/>
+  <rect x="104" y="160" width="18" height="6" fill="#f3f5f8" stroke="#6b7385" stroke-width="1.2"/>
+  <rect x="98" y="166" width="30" height="18" rx="3" fill="#f3f5f8" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <text x="113" y="198" text-anchor="middle" font-size="10" fill="#1d2330">camera</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="26" y="234">TRUE: the real pressure,</text>
+    <text x="26" y="247">main.tick every 0.5 s;</text>
+    <text x="26" y="260">up to the relief at 9.5 bar</text>
+    <text x="26" y="280">the camera: Python paints</text>
+    <text x="26" y="293">the dial; NOISE adds noise,</text>
+    <text x="26" y="306">glare, a shadow, a knock</text>
+  </g>
+  <text x="26" y="322" font-size="10" fill="#6b7385">1 frame/s, or 10 (SIZE 1)</text>
+
+  <!-- the engine -->
+  <rect x="182" y="40" width="462" height="290" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <path d="M128 175 H192" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrs)"/>
+  <text x="194" y="60" font-weight="600" fill="#1f5f3b">GAU/S00 · the engine <tspan font-weight="400" font-size="10" fill="#6b7385">one AyXDB process</tspan></text>
+
+  <!-- Python -->
+  <rect x="194" y="70" width="218" height="128" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="202" y="86" font-weight="600" fill="#1d2330">vision · db_GAU.py</text>
+  <text x="202" y="100" font-size="10" fill="#6b7385">Python 3.11 / 3.13 + numpy</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="202" y="116">AyLIB_Python, inside the engine,</text>
+    <text x="202" y="129">on its own thread, every 100 ms</text>
+    <text x="202" y="148">draw_frame(): the camera's</text>
+    <text x="202" y="161">picture, a uint8 array [h, w]</text>
+    <text x="202" y="178">read_gauge(view): dial, needle,</text>
+    <text x="202" y="191">angle → bar by CAL_*, confidence</text>
+  </g>
+
+  <!-- the frame and the picture -->
+  <rect x="444" y="70" width="188" height="64" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="452" y="86" font-weight="600" fill="#1d2330">FRAME <tspan font-weight="400" font-size="10" fill="#6b7385">a blob, 0x150E</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="452" y="100">SetValue: the one copy</text>
+    <text x="452" y="113">GetValue: a read-only numpy view</text>
+    <text x="452" y="126">on_frame: IMG.stats → LIGHT</text>
+  </g>
+  <rect x="444" y="148" width="188" height="50" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="452" y="164" font-weight="600" fill="#1d2330">PIC <tspan font-weight="400" font-size="10" fill="#6b7385">the same blob, no copy</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="452" y="178">encode: IMG.encode, JPEG q 80</text>
+    <text x="452" y="191">or PNG · AyLIB_vision</text>
+  </g>
+  <g stroke="#1d2330" stroke-width="1.5" fill="none">
+    <path d="M412 90 H442" marker-end="url(#arrk)"/>
+    <path d="M444 112 H414" marker-end="url(#arrk)"/>
+    <path d="M412 172 H442" marker-end="url(#arrk)"/>
+    <path d="M300 198 V210" marker-end="url(#arrk)"/>
+    <path d="M300 262 V274" marker-end="url(#arrk)"/>
+    <path d="M538 198 V274" marker-end="url(#arrk)"/>
+  </g>
+  <text x="530" y="232" font-size="10" fill="#6b7385" text-anchor="end">the encoded bytes,</text>
+  <text x="530" y="245" font-size="10" fill="#6b7385" text-anchor="end">numbered by frame</text>
+
+  <!-- the measurement -->
+  <rect x="194" y="212" width="218" height="50" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="202" y="228" font-weight="600" fill="#1d2330">PRESS <tspan font-weight="400" font-size="10" fill="#6b7385">only when CONF ≥ CONF_MIN 0.3</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="202" y="243">ATR.rou 0.01, ALM.onlvl 8.5 / 9.0 bar</text>
+    <text x="202" y="256">CONF, READ (why not), SEEN, ERR</text>
+  </g>
+
+  <!-- the connections -->
+  <rect x="194" y="276" width="218" height="42" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="202" y="292" font-weight="600" fill="#1d2330">CN_LIVE <tspan font-weight="400" font-size="10" fill="#6b7385">MQTT in a WebSocket, /mqtt</tspan></text>
+  <text x="202" y="307" font-size="10" fill="#1d2330">the values, PIC's descriptor</text>
+  <rect x="444" y="276" width="188" height="42" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="452" y="292" font-weight="600" fill="#1d2330">CN_WEB <tspan font-weight="400" font-size="10" fill="#6b7385">PRO.http, port 8091</tspan></text>
+  <text x="452" y="307" font-size="10" fill="#1d2330">pro_blob="/blob": PIC's bytes</text>
+
+  <!-- links to the page -->
+  <path d="M300 318 V356 M538 318 V356" stroke="#7a5bc4" stroke-width="2"/>
+  <g fill="#fff" stroke="#7a5bc4" stroke-width="1.5">
+    <circle cx="300" cy="337" r="3"/><circle cx="300" cy="347" r="3"/>
+    <circle cx="538" cy="337" r="3"/><circle cx="538" cy="347" r="3"/>
+  </g>
+  <text x="310" y="346" font-size="10" fill="#7a5bc4">MQTT, both ways</text>
+  <text x="548" y="346" font-size="10" fill="#7a5bc4">HTTP</text>
+
+  <!-- the page -->
+  <rect x="182" y="356" width="462" height="84" rx="5" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M182 370 H644" stroke="#1d2330" stroke-width="1"/>
+  <g fill="#9aa3b2"><circle cx="190" cy="363" r="2.5"/><circle cx="198" cy="363" r="2.5"/><circle cx="206" cy="363" r="2.5"/></g>
+  <text x="216" y="367" font-size="9" fill="#6b7385" font-family="ui-monospace, Consolas, monospace">127.0.0.1:8091</text>
+  <text x="190" y="386" font-size="11" font-weight="600" fill="#1d2330">the page: the picture, what the reader found, PRESS against TRUE</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="190" y="401">fetches GET /blob/GAU/S00/PIC/val when the descriptor's seq moves</text>
+    <text x="190" y="415">writes NOISE, PATH, SIZE, METHOD (…/val/set): the four a Guest may write</text>
+  </g>
+  <text x="190" y="430" font-size="10" fill="#6b7385">PATH 0 sends the picture the old way: a base64 PNG in a string, over MQTT</text>
+
+  <!-- a real gauge -->
+  <rect x="16" y="356" width="150" height="84" rx="5" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="24" y="374" font-size="11" font-weight="600" fill="#1d2330">a real gauge</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="24" y="389">a USB webcam or an IP</text>
+    <text x="24" y="402">camera, read in cam_loop:</text>
+    <text x="24" y="416" font-size="9.5" font-family="ui-monospace, Consolas, monospace">cv2.VideoCapture(0)</text>
+    <text x="24" y="431">set ROI_BIG, measure CAL_*</text>
+  </g>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 462 H40" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/><text x="46" y="466">a value or a blob, inside the engine</text>
+    <path d="M256 462 H280" stroke="#7a5bc4" stroke-width="2"/><text x="286" y="466">HTTP + MQTT to the page</text>
+    <path d="M440 462 H464" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/><text x="470" y="466">simulated here</text>
+  </g>
+  <text x="16" y="488" font-size="11" fill="#6b7385">Nothing downstream knows PRESS came from a picture: it is rounded, alarmed and published like any point.</text>
+</svg>

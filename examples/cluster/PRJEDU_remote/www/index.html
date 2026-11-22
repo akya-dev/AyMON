@@ -66,6 +66,12 @@
         <div class="label">What the caller saw <span class="muted">e.message, inside a try</span></div>
         <div class="small" id="notes"></div>
     </section>
+
+    <section class="card wide">
+        <div class="label">How it works <span class="muted">a sketch; click for full size</span></div>
+        <a href="flow.svg" target="_blank" rel="noopener"><img src="flow.svg" alt="A sketch: three engine processes; OPS serves the page on 127.0.0.1:8123 and calls LINE/L1 over PRO.rpc, CN_S01 first, then CN_S02; S01 and S02 run LINE/L1 as a cluster, master and spare, with the election and replication between them"
+           style="display:block;width:100%;max-width:660px;height:auto;margin:0 auto;border-radius:6px"></a>
+    </section>
 </main>
 
 <script src="mqtt-lite.js"></script>

@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 500" width="660" height="500" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJPER_phone: a phone as a device of the engine</title>
+  <!-- A sketch of the two doors, what a phone sends, what the engine makes of it and what goes back. -->
+  <defs>
+    <marker id="arrk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#1d2330"/></marker>
+  </defs>
+  <rect width="660" height="500" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJPER_phone: a phone as a device of the engine</text>
+
+  <!-- the phone -->
+  <rect x="44" y="52" width="96" height="176" rx="14" fill="#1d2330"/>
+  <rect x="50" y="68" width="84" height="146" rx="3" fill="#fff"/>
+  <rect x="80" y="58" width="24" height="4" rx="2" fill="#6b7385"/>
+  <rect x="50" y="68" width="84" height="22" fill="#2e8b57"/>
+  <text x="92" y="83" text-anchor="middle" font-size="10" font-weight="600" fill="#fff">normal</text>
+  <g font-size="9.5" fill="#1d2330">
+    <text x="56" y="106">vibration 0.07</text>
+    <text x="56" y="120">tilt 45°</text>
+    <text x="56" y="134">heading 39°</text>
+    <text x="56" y="148">drops 0</text>
+  </g>
+  <circle cx="92" cy="172" r="14" fill="#f3f5f8" stroke="#9aa3b2"/>
+  <circle cx="96" cy="169" r="4" fill="#2e8b57"/>
+  <rect x="66" y="194" width="52" height="14" rx="3" fill="#3b82c4"/>
+  <text x="92" y="204" text-anchor="middle" font-size="9" fill="#fff">Start</text>
+
+  <text x="16" y="248" font-weight="600" fill="#1d2330">phone.html, no app</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="16" y="263">reads the motion sensor 60 to</text>
+    <text x="16" y="276">100 times a second, and every</text>
+    <text x="16" y="289">0.2 s publishes one line to IN:</text>
+  </g>
+  <g font-size="9" font-family="ui-monospace, Consolas, monospace" fill="#1d2330">
+    <text x="16" y="305">S,sr603i,31,0.07,9.75,</text>
+    <text x="16" y="317">9.87,45.0,45.0,1.0,39</text>
+  </g>
+  <g font-size="10" fill="#6b7385">
+    <text x="16" y="332">id, seq, vib, gmin, gmax, tilt ..</text>
+    <text x="16" y="347">H hello, B battery, X goodbye,</text>
+    <text x="16" y="360">G position if its owner shares it</text>
+  </g>
+  <text x="16" y="380" font-size="10" font-weight="600" fill="#1d2330">it subscribes to its own elements:</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="16" y="394">their sta paints the banner,</text>
+    <text x="16" y="407">buzz makes it vibrate</text>
+  </g>
+
+  <!-- phone to the phones' door -->
+  <path d="M140 98 H200" stroke="#7a5bc4" stroke-width="2"/>
+  <g fill="#fff" stroke="#7a5bc4" stroke-width="1.5"><circle cx="156" cy="98" r="3"/><circle cx="168" cy="98" r="3"/></g>
+  <text x="164" y="88" text-anchor="middle" font-size="10" fill="#7a5bc4">Wi-Fi</text>
+
+  <!-- the engine -->
+  <rect x="188" y="40" width="282" height="384" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="200" y="58" font-weight="600" fill="#1f5f3b">PHN/S00 · the engine</text>
+
+  <g font-size="10" fill="#1d2330">
+    <rect x="200" y="66" width="128" height="62" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="207" y="80" font-weight="600">CN_WEBS + CN_LIVES</text>
+    <text x="207" y="93">https on 0.0.0.0:8110</text>
+    <text x="207" y="106">MQTT in wss /mqtt</text>
+    <text x="207" y="119" fill="#6b7385">role 0, private nets only</text>
+
+    <rect x="332" y="66" width="128" height="62" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="339" y="80" font-weight="600">CN_WEB + CN_LIVE</text>
+    <text x="339" y="93">http on 127.0.0.1:8111</text>
+    <text x="339" y="106">MQTT in ws /mqtt</text>
+    <text x="339" y="119" fill="#6b7385">con_role 3, this PC only</text>
+
+    <rect x="200" y="148" width="128" height="58" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="207" y="162" font-weight="600">IN <tspan font-weight="400" fill="#6b7385">0xFF333333</tspan></text>
+    <text x="207" y="175">every phone writes here</text>
+    <text x="207" y="188">and only here; main.on_in</text>
+    <text x="207" y="201">files the line in INBOX</text>
+
+    <rect x="332" y="148" width="128" height="58" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="339" y="162" font-weight="600">LIMITS BUZZ RESET</text>
+    <text x="339" y="175" fill="#6b7385">0xFF113111: role 3 only</text>
+    <text x="339" y="188">limits into the classes,</text>
+    <text x="339" y="201">buzz +1, drops back to 0</text>
+
+    <rect x="200" y="226" width="260" height="34" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="207" y="240" font-weight="600">INBOX, then main.drain <tspan font-weight="400" fill="#6b7385">T_IN, every 0.1 s on TH_PHN</tspan></text>
+    <text x="207" y="253">every phone's lines in order, on one thread</text>
+  </g>
+  <g stroke="#1d2330" stroke-width="1.5">
+    <path d="M264 128 V146" marker-end="url(#arrk)"/>
+    <path d="M396 128 V146" marker-end="url(#arrk)"/>
+    <path d="M264 206 V224" marker-end="url(#arrk)"/>
+    <path d="M330 260 V278" marker-end="url(#arrk)"/>
+  </g>
+
+  <!-- the phones, made by their first line -->
+  <rect x="200" y="280" width="260" height="104" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="207" y="295" font-size="10" font-weight="600" fill="#1d2330">PHONES <tspan font-weight="400" fill="#6b7385">a phone's first line makes its elements</tspan></text>
+  <g font-size="9.5" font-family="ui-monospace, Consolas, monospace" fill="#1d2330">
+    <text x="207" y="311">P_sr603i</text>
+    <text x="219" y="324">_VIB</text>
+    <text x="219" y="337">_TILT</text>
+    <text x="219" y="350">_PITCH _ROLL _HEAD</text>
+    <text x="219" y="363">_DROP</text>
+    <text x="219" y="376">_BAT _POS</text>
+  </g>
+  <g font-size="9.5" fill="#1d2330">
+    <text x="310" y="311" fill="#6b7385">val: the link, ALM.onin</text>
+    <text x="310" y="324">cls_VIB 1.5 / 4 m/s2</text>
+    <text x="310" y="337">cls_TILT 30 / 60°</text>
+    <text x="334" y="350">cls_ANG</text>
+    <text x="310" y="363">cls_DROP alarm from 1</text>
+    <text x="310" y="376" fill="#6b7385">when the phone tells</text>
+  </g>
+  <g font-size="10" fill="#1f5f3b">
+    <text x="200" y="400">the class holds type, unit and limits; ALM.onlvl sets sta</text>
+    <text x="200" y="414">T_TICK, each 1 s: silent 3 s = link alarm, 60 s = forgotten</text>
+  </g>
+
+  <!-- the dashboard -->
+  <path d="M460 92 H492" stroke="#7a5bc4" stroke-width="2"/>
+  <g fill="#fff" stroke="#7a5bc4" stroke-width="1.5"><circle cx="476" cy="92" r="3"/><circle cx="486" cy="92" r="3"/></g>
+  <rect x="492" y="52" width="152" height="150" rx="5" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M492 66 H644" stroke="#1d2330" stroke-width="1"/>
+  <g fill="#9aa3b2"><circle cx="500" cy="59" r="2.5"/><circle cx="508" cy="59" r="2.5"/><circle cx="516" cy="59" r="2.5"/></g>
+  <text x="526" y="63" font-size="9" fill="#6b7385" font-family="ui-monospace, Consolas, monospace">127.0.0.1:8111</text>
+  <text x="500" y="84" font-size="11" font-weight="600" fill="#1d2330">the dashboard</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="500" y="100">a card per phone: the last</text>
+    <text x="500" y="113">minute of vibration with its</text>
+    <text x="500" y="126">limits, tilt, heading, battery,</text>
+    <text x="500" y="139">drops, link, position</text>
+    <text x="500" y="158">Apply limits, buzz, reset</text>
+    <text x="500" y="171">drops: written as role 3</text>
+    <text x="500" y="190" fill="#6b7385">MSG: what the engine decided</text>
+  </g>
+
+  <!-- the simulated phone -->
+  <path d="M492 268 H480 V116 H460" fill="none" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <rect x="492" y="226" width="152" height="80" rx="5" fill="#fff" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <path d="M492 240 H644" stroke="#6b7385" stroke-width="1"/>
+  <g fill="#9aa3b2"><circle cx="500" cy="233" r="2.5"/><circle cx="508" cy="233" r="2.5"/><circle cx="516" cy="233" r="2.5"/></g>
+  <text x="526" y="237" font-size="9" fill="#6b7385" font-family="ui-monospace, Consolas, monospace">../phone.html?sim=1</text>
+  <text x="500" y="258" font-size="11" font-weight="600" fill="#1d2330">a simulated phone</text>
+  <g font-size="10" fill="#6b7385">
+    <text x="500" y="273">shake, tilt and drop buttons;</text>
+    <text x="500" y="286">each tab is another phone,</text>
+    <text x="500" y="299">no sensor needed on the PC</text>
+  </g>
+  <g font-size="10" fill="#6b7385">
+    <text x="492" y="332">The same dashboard opened on</text>
+    <text x="492" y="345">the phone, through 8110, is</text>
+    <text x="492" y="358">read-only: role 0 may write IN</text>
+    <text x="492" y="371">and nothing else.</text>
+  </g>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 446 H40" stroke="#7a5bc4" stroke-width="2"/><text x="46" y="450">MQTT in a WebSocket</text>
+    <path d="M184 446 H208" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/><text x="214" y="450">inside the engine</text>
+    <path d="M330 446 H354" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/><text x="360" y="450">the simulated phone, on the PC</text>
+  </g>
+  <text x="16" y="472" font-size="11" fill="#6b7385">The page knows no limit: the colour is the sta the engine publishes. Nothing is sent to a phone;</text>
+  <text x="16" y="488" font-size="11" fill="#6b7385">it subscribes to its own elements. https, because a browser shows its sensors to a secure page only.</text>
+</svg>

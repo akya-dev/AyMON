@@ -22,6 +22,10 @@ The PLC never reads the machine's document. Everything it knows comes over
 Modbus, as it would from a real remote I/O. Point `<dev id="RIO">` at a real
 one and the program does not change.
 
+![A sketch: the simulated filling line PLT/S00 (supply tank, valve, conveyor, photo-eyes, level switches, operator panel) behind a Modbus TCP remote I/O on port 1503; the PLC CTL/S00 polls it, runs its step sequence every 100 ms and writes the outputs back; the HMI on port 8093 listens to both documents](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## The machine
 
 ```

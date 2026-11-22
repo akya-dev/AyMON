@@ -32,6 +32,10 @@ Needs engine **4.3.4.568** or later and its module **`AyLIB_net`** (in `bin`;
 time a `<con>` names `PRO.smtp` or `PRO.ftp`, or a script calls `FILE.*` — no
 `xdb_lib` needed.
 
+![A sketch: PLT/S00 writes a mail or an FTP job to a point on TH_MAIL; CN_MAIL and CN_FILES carry it to the servers written in script, MBX/S00 on port 2525 and FTP/S00 on port 2121, and the answer comes back into the same point](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## A mail is a write to a point
 
 ```xml

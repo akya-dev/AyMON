@@ -22,6 +22,10 @@ Three people have an account:
 Nobody else should see or change anything. (The passwords are in this
 README because this is a lab; the page's access test uses them too.)
 
+![A sketch of the lab: the page on 127.0.0.1:8101 reaches PLT/S00 through CN_WEB and CN_LIVE; seven numbered weaknesses (no con_acl, no login, no xdb_acl, the trip level and the recipe open, clear-text passwords, unlimited guesses) and the fix for each](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## The task
 
 The seven questions — each has a wrong answer in the configuration as

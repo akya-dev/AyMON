@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 510" width="660" height="510" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_net: mail and files from the engine</title>
+  <!-- A sketch of the three documents: the plant writes a mail or an FTP job to a point, the servers in script answer into the same point. -->
+  <defs>
+    <marker id="arrb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82c4"/></marker>
+    <marker id="arrg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#2e8b57"/></marker>
+    <marker id="arrk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#1d2330"/></marker>
+    <marker id="arrs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#6b7385"/></marker>
+  </defs>
+  <rect width="660" height="510" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_net: the engine writes mail and files</text>
+
+  <!-- the plant -->
+  <rect x="16" y="40" width="330" height="294" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="28" y="60" font-weight="600" fill="#1f5f3b">PLT/S00 · the plant <tspan font-weight="400" font-size="10" fill="#6b7385">and the page</tspan></text>
+
+  <!-- the mail lane -->
+  <rect x="28" y="72" width="164" height="98" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="36" y="89" font-size="11" font-weight="600" fill="#1d2330">LEVEL <tspan font-weight="400" font-size="10" fill="#6b7385">once a second</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="36" y="105">warning 80 %, <tspan fill="#c0392b">alarm 90 %</tspan></text>
+    <text x="36" y="122">main.on_alarm writes NOTE:</text>
+    <text x="36" y="136">a mail when the alarm comes,</text>
+    <text x="36" y="150">one when it is gone</text>
+  </g>
+  <!-- a small tank -->
+  <rect x="164" y="95" width="18" height="15" fill="#cfe4f7"/>
+  <rect x="162" y="78" width="22" height="34" rx="4" fill="none" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M162 82 H184" stroke="#c0392b" stroke-width="1" stroke-dasharray="2 2"/>
+
+  <path d="M192 112 H228" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+  <text x="211" y="106" text-anchor="middle" font-size="9" fill="#6b7385">NOTE</text>
+
+  <rect x="230" y="72" width="104" height="98" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="238" y="89" font-size="11" font-weight="600" fill="#1d2330">MAIL <tspan font-weight="400" font-size="10" fill="#6b7385">a point</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="238" y="105">the message as</text>
+    <text x="238" y="118">JSON to its pro;</text>
+    <text x="238" y="131">the answer comes</text>
+    <text x="238" y="144">back into it</text>
+  </g>
+  <text x="238" y="162" font-size="9.5" fill="#3b82c4">CN_MAIL · PRO.smtp</text>
+
+  <!-- the file lane -->
+  <rect x="28" y="182" width="164" height="98" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="36" y="199" font-size="11" font-weight="600" fill="#1d2330">REPORT <tspan font-weight="400" font-size="10" fill="#6b7385">the page's press</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="36" y="215">the tank's timer, as the engine:</text>
+    <text x="36" y="229">the samples into a CSV,</text>
+    <text x="36" y="243">FILE.mkdir, FILE.zip</text>
+    <text x="36" y="257">writes FTPJOB</text>
+  </g>
+  <text x="36" y="272" font-size="9.5" fill="#6b7385">FILE.* wants an Engineer</text>
+
+  <path d="M192 222 H228" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+  <text x="211" y="216" text-anchor="middle" font-size="9" fill="#6b7385">FTPJOB</text>
+
+  <rect x="230" y="182" width="104" height="98" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="238" y="199" font-size="11" font-weight="600" fill="#1d2330">FTP, FTP_LS</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="238" y="215">put as .part, then</text>
+    <text x="238" y="228">renamed; the zip</text>
+    <text x="238" y="241">moved to out/sent;</text>
+    <text x="238" y="254">then a list</text>
+  </g>
+  <text x="238" y="272" font-size="9.5" fill="#3b82c4">CN_FILES · PRO.ftp</text>
+
+  <g font-size="10" fill="#1d2330">
+    <text x="56" y="298">NOTE and FTPJOB run queued on</text>
+    <text x="56" y="311"><tspan font-weight="600">TH_MAIL</tspan>: sending waits for the</text>
+    <text x="56" y="324">server, not on the tank's thread.</text>
+  </g>
+
+  <!-- the mail server -->
+  <rect x="446" y="72" width="198" height="98" rx="6" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="456" y="90" font-weight="600" fill="#1f5f3b">MBX/S00 · mail server</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="456" y="106">CN_SMTP · PRO.raw · 127.0.0.1:2525</text>
+    <text x="456" y="121">pro_onaccept: "220" first</text>
+    <text x="456" y="135">pro_onparse: the lines, DATA</text>
+    <text x="456" y="149">up to a lone dot; the last ten</text>
+  </g>
+  <text x="456" y="163" font-size="9.5" fill="#6b7385">a sink: no relay, no login, no TLS</text>
+
+  <!-- the file server -->
+  <rect x="446" y="182" width="198" height="98" rx="6" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="456" y="200" font-weight="600" fill="#1f5f3b">FTP/S00 · file server</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="456" y="216">CN_FTP · PRO.raw · 127.0.0.1:2121</text>
+    <text x="456" y="231">commands and EPSV data on</text>
+    <text x="456" y="245">the same port; pro_onclose:</text>
+    <text x="456" y="259">the file is complete, "226"</text>
+  </g>
+  <text x="456" y="273" font-size="9.5" fill="#6b7385">a sink: keeps names and sizes</text>
+
+  <!-- links: mail -->
+  <path d="M334 98 H444" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrb)"/>
+  <path d="M446 124 H336" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrb)"/>
+  <path d="M446 154 H348" stroke="#2e8b57" stroke-width="1.5" marker-end="url(#arrg)"/>
+  <g font-size="9.5" text-anchor="middle">
+    <text x="390" y="92" fill="#3b82c4">SMTP: the message</text>
+    <text x="390" y="118" fill="#3b82c4">the answer: 250</text>
+    <text x="397" y="148" fill="#2e8b57">INBOX, role 3</text>
+  </g>
+  <!-- links: files -->
+  <path d="M334 208 H444" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrb)"/>
+  <path d="M446 234 H336" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrb)"/>
+  <path d="M446 264 H348" stroke="#2e8b57" stroke-width="1.5" marker-end="url(#arrg)"/>
+  <g font-size="9.5" text-anchor="middle">
+    <text x="390" y="202" fill="#3b82c4">FTP: put, list</text>
+    <text x="390" y="228" fill="#3b82c4">226, the listing</text>
+    <text x="397" y="258" fill="#2e8b57">FTP_FILES</text>
+  </g>
+
+  <!-- the folder -->
+  <rect x="16" y="368" width="170" height="72" rx="6" fill="#f3f5f8" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M26 378 h16 l5 5 h22 v13 h-43 z" fill="#f2c94c" stroke="#9a7d1e"/>
+  <text x="76" y="392" font-size="11" font-weight="600" fill="#1d2330">%PRJ%/out</text>
+  <g font-size="9" font-family="ui-monospace, Consolas, monospace" fill="#1d2330">
+    <text x="26" y="412">shift_..zip</text>
+    <text x="26" y="428">sent/shift_..zip</text>
+  </g>
+  <g font-size="9.5" fill="#6b7385">
+    <text x="104" y="412">the report</text>
+    <text x="124" y="428">after put</text>
+  </g>
+  <path d="M40 280 V366" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+  <text x="46" y="354" font-size="9.5" fill="#6b7385">FILE.zip</text>
+  <path d="M186 404 H256 V282" fill="none" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+  <text x="196" y="398" font-size="9.5" fill="#6b7385">src, move</text>
+
+  <!-- the page -->
+  <path d="M330 334 V362" stroke="#7a5bc4" stroke-width="2"/>
+  <g fill="#fff" stroke="#7a5bc4" stroke-width="1.5"><circle cx="330" cy="342" r="3"/><circle cx="330" cy="354" r="3"/></g>
+  <rect x="266" y="362" width="180" height="78" rx="5" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M266 376 H446" stroke="#1d2330" stroke-width="1"/>
+  <g fill="#9aa3b2"><circle cx="274" cy="369" r="2.5"/><circle cx="282" cy="369" r="2.5"/><circle cx="290" cy="369" r="2.5"/></g>
+  <text x="300" y="373" font-size="9" fill="#6b7385" font-family="ui-monospace, Consolas, monospace">127.0.0.1:8114</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="274" y="392">Overfill once · Send a test mail</text>
+    <text x="274" y="406">Make and upload a shift report</text>
+    <text x="274" y="420">writes OVERFILL, TEST, REPORT;</text>
+    <text x="274" y="433" fill="#6b7385">reads the rest over MQTT</text>
+  </g>
+
+  <!-- a real installation -->
+  <path d="M545 280 V356" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrs)"/>
+  <text x="551" y="330" font-size="9.5" fill="#6b7385">instead</text>
+  <rect x="466" y="362" width="178" height="78" rx="6" fill="#fff" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="476" y="379" font-size="11" font-weight="600" fill="#1d2330">a real installation</text>
+  <g font-size="9.5" fill="#6b7385">
+    <text x="476" y="394">CN_MAIL: smtp.example.org:587,</text>
+    <text x="476" y="407">STARTTLS, an app password</text>
+    <text x="476" y="420">CN_FILES: port 21 with AUTH TLS,</text>
+    <text x="476" y="433">or SFTP: [CON.ssh,PRO.sftp]</text>
+  </g>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 466 H40" stroke="#3b82c4" stroke-width="2"/><text x="46" y="470">SMTP, FTP on loopback</text>
+    <path d="M178 466 H202" stroke="#2e8b57" stroke-width="1.5"/><text x="208" y="470">a write into PLT/S00</text>
+    <path d="M330 466 H354" stroke="#7a5bc4" stroke-width="2"/><text x="360" y="470">HTTP + MQTT</text>
+    <path d="M448 466 H472" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/><text x="478" y="470">not in the example</text>
+  </g>
+  <text x="16" y="494" font-size="11" fill="#6b7385">One engine, three documents. Without the licence feature net: 20 mails and FTP jobs a day, then code 0.</text>
+</svg>

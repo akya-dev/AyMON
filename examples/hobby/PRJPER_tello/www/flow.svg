@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 500" width="660" height="500" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJPER_tello: a ground station for a Tello drone</title>
+  <!-- A sketch of the drone's three UDP ports, the ground station's connections and rules, the page, and the simulated drone. -->
+  <defs>
+    <marker id="arrb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#3b82c4"/></marker>
+    <marker id="arrk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#1d2330"/></marker>
+    <marker id="arrs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#6b7385"/></marker>
+  </defs>
+  <rect width="660" height="500" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJPER_tello: a ground station for a Tello drone</text>
+
+  <!-- the drone and its three ports -->
+  <rect x="16" y="40" width="170" height="276" rx="6" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <g stroke="#1d2330" stroke-width="2"><path d="M30 54 L58 82 M58 54 L30 82"/></g>
+  <g fill="#f3f5f8" stroke="#1d2330" stroke-width="1.5">
+    <circle cx="30" cy="54" r="8"/><circle cx="58" cy="54" r="8"/><circle cx="30" cy="82" r="8"/><circle cx="58" cy="82" r="8"/>
+  </g>
+  <rect x="36" y="60" width="16" height="16" rx="3" fill="#1d2330"/>
+  <text x="76" y="62" font-weight="600" fill="#1d2330">a Tello</text>
+  <text x="76" y="76" font-size="10" fill="#6b7385">Ryze / DJI, Tello SDK:</text>
+  <text x="76" y="89" font-size="10" fill="#6b7385">plain text over UDP</text>
+
+  <g font-size="10" fill="#1d2330">
+    <text x="26" y="116" font-weight="600" font-family="ui-monospace, Consolas, monospace">UDP 8889</text>
+    <text x="26" y="130">commands in; the answer</text>
+    <text x="26" y="143">to a move when it ends</text>
+    <text x="26" y="168" fill="#6b7385">a real one: 192.168.10.1,</text>
+    <text x="26" y="181" fill="#6b7385">its own Wi-Fi network</text>
+    <text x="26" y="220" font-weight="600" font-family="ui-monospace, Consolas, monospace">UDP 8890</text>
+    <text x="26" y="234">the state line out,</text>
+    <text x="26" y="247">ten times a second</text>
+    <text x="26" y="282" font-weight="600" font-family="ui-monospace, Consolas, monospace">UDP 11111</text>
+    <text x="26" y="296">H.264 after streamon, no</text>
+    <text x="26" y="309">RTP, no container</text>
+  </g>
+
+  <!-- the ground station -->
+  <rect x="242" y="40" width="402" height="288" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="254" y="58" font-weight="600" fill="#1f5f3b">TEL/S00 · the ground station</text>
+
+  <!-- the three lanes -->
+  <g stroke="#3b82c4" stroke-width="2" fill="none">
+    <path d="M188 112 H260" marker-start="url(#arrb)" marker-end="url(#arrb)"/>
+    <path d="M186 216 H260" marker-end="url(#arrb)"/>
+    <path d="M186 278 H260" marker-end="url(#arrb)"/>
+  </g>
+  <g font-size="10" fill="#3b82c4" text-anchor="middle">
+    <text x="214" y="104">commands</text>
+    <text x="214" y="208">state line</text>
+    <text x="214" y="270">video</text>
+  </g>
+
+  <g font-size="10" fill="#1d2330">
+    <rect x="262" y="84" width="136" height="58" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="270" y="98" font-weight="600">CN_TELLO</text>
+    <text x="270" y="111">UDP client, PRO.raw</text>
+    <text x="270" y="124">tello_send out,</text>
+    <text x="270" y="137">on_reply reads answers</text>
+
+    <rect x="262" y="194" width="136" height="44" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="270" y="208" font-weight="600">CN_STATE</text>
+    <text x="270" y="221">UDP server, PRO.raw</text>
+    <text x="270" y="234">main.on_state</text>
+
+    <rect x="262" y="252" width="136" height="62" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="270" y="266" font-weight="600">CN_VID <tspan font-weight="400" fill="#6b7385">CON.cam</tspan></text>
+    <text x="270" y="279" font-size="9" font-family="ui-monospace, Consolas, monospace">udp:127.0.0.1:11111</text>
+    <text x="270" y="293">decodes every picture,</text>
+    <text x="270" y="306">newest JPEG in frm, 10/s</text>
+
+    <rect x="414" y="66" width="218" height="120" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="422" y="80" font-weight="600">CMD · MISSION · RC <tspan font-weight="400" fill="#6b7385">0xFF111113</tspan></text>
+    <text x="422" y="93">the only elements a page may write;</text>
+    <text x="422" y="106">main.on_cmd refuses a word that is</text>
+    <text x="422" y="119">no Tello command, queues the rest</text>
+    <text x="422" y="137" font-weight="600">main.tick <tspan font-weight="400" fill="#6b7385">10 a second on TH_TEL</tspan></text>
+    <text x="422" y="150">one command at a time; no climb past</text>
+    <text x="422" y="163">MAX_H 300 cm; at 20 % battery: land;</text>
+    <text x="422" y="176">no state for 1.5 s: LINK alarm</text>
+
+    <rect x="414" y="194" width="218" height="44" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="422" y="208" font-weight="600">16 &lt;var&gt;s, one per field</text>
+    <text x="422" y="221" font-family="ui-monospace, Consolas, monospace" font-size="9">H BAT TEMPH PITCH ROLL YAW ..</text>
+    <text x="422" y="234">alarms in sta: H, BAT, TEMPH, LINK</text>
+
+    <rect x="414" y="252" width="218" height="62" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="422" y="266" font-weight="600">CN_WEB + CN_LIVE <tspan font-weight="400" fill="#6b7385">127.0.0.1:8090</tspan></text>
+    <text x="422" y="279">http, and MQTT in ws /mqtt</text>
+    <text x="422" y="292">pro_blob /blob: frm as MJPEG</text>
+    <text x="422" y="305">pro_retain: a late page sees all</text>
+  </g>
+  <g stroke="#1d2330" stroke-width="1.5">
+    <path d="M414 124 H400" marker-end="url(#arrk)"/>
+    <path d="M398 216 H412" marker-end="url(#arrk)"/>
+    <path d="M398 284 H412" marker-end="url(#arrk)"/>
+    <path d="M600 238 V250" marker-end="url(#arrk)"/>
+  </g>
+
+  <!-- the page -->
+  <path d="M523 314 V350" stroke="#7a5bc4" stroke-width="2"/>
+  <g fill="#fff" stroke="#7a5bc4" stroke-width="1.5"><circle cx="523" cy="335" r="3"/><circle cx="523" cy="343" r="3"/></g>
+  <rect x="250" y="350" width="394" height="80" rx="5" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M250 364 H644" stroke="#1d2330" stroke-width="1"/>
+  <g fill="#9aa3b2"><circle cx="258" cy="357" r="2.5"/><circle cx="266" cy="357" r="2.5"/><circle cx="274" cy="357" r="2.5"/></g>
+  <text x="284" y="361" font-size="9" fill="#6b7385" font-family="ui-monospace, Consolas, monospace">127.0.0.1:8090</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="258" y="380" font-size="11" font-weight="600">Fly, Missions, Sticks</text>
+    <text x="258" y="395">each button publishes to</text>
+    <text x="258" y="408">CMD, MISSION or RC</text>
+    <text x="258" y="421" fill="#6b7385">square, box, hop, tower</text>
+    <text x="392" y="380" font-size="11" font-weight="600">Seen from above</text>
+    <text x="392" y="395">attitude, height, battery:</text>
+    <text x="392" y="408">the values, coloured</text>
+    <text x="392" y="421">by the engine's sta</text>
+    <text x="526" y="380" font-size="11" font-weight="600">Camera</text>
+    <text x="526" y="395">an &lt;img&gt; on the MJPEG:</text>
+    <text x="526" y="408" font-size="8.5" font-family="ui-monospace, Consolas, monospace">/blob/TEL/S00/CN_VID</text>
+    <text x="526" y="420" font-size="8.5" font-family="ui-monospace, Consolas, monospace">/frm?stream=1</text>
+  </g>
+
+  <!-- the simulated drone -->
+  <rect x="16" y="350" width="214" height="80" rx="6" fill="#fff" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <path d="M100 350 V320" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrs)"/>
+  <text x="108" y="340" font-size="10" fill="#6b7385">plays the drone</text>
+  <text x="26" y="368" font-weight="600" fill="#1d2330">in the example: SIM/S00</text>
+  <g font-size="10" fill="#6b7385">
+    <text x="26" y="383">a Tello in script on 127.0.0.1: CN_SIM</text>
+    <text x="26" y="396">answers on 8889, CN_SIMST and</text>
+    <text x="26" y="409">CN_SIMVID send to 8890 and 11111;</text>
+    <text x="26" y="422">the video is sim/tello_clip.bin</text>
+  </g>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 454 H40" stroke="#3b82c4" stroke-width="2"/><text x="46" y="458">UDP, the Tello SDK</text>
+    <path d="M168 454 H192" stroke="#7a5bc4" stroke-width="2"/><text x="198" y="458">HTTP + MQTT in a WebSocket</text>
+    <path d="M374 454 H398" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/><text x="404" y="458">the simulated drone</text>
+  </g>
+  <text x="16" y="478" font-size="11" fill="#6b7385">The page asks, the engine decides: a move is answered when it ends, so commands wait in a queue.</text>
+  <text x="16" y="494" font-size="11" fill="#6b7385">A real Tello: three con_host change and SIM/S00 is switched off. Not yet tried against a real drone.</text>
+</svg>

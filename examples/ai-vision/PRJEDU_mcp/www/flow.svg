@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 510" width="660" height="510" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_mcp: two MCP doors into a tank plant</title>
+  <!-- A sketch of who calls which MCP endpoint, with which key and role, and what xdb_acl lets each role do. -->
+  <defs>
+    <marker id="arrk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#1d2330"/></marker>
+    <clipPath id="tank"><rect x="590" y="122" width="30" height="62" rx="7"/></clipPath>
+  </defs>
+  <rect width="660" height="510" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_mcp: two MCP doors into a tank plant</text>
+
+  <!-- the clients -->
+  <rect x="16" y="50" width="150" height="100" rx="5" fill="#1d2330"/>
+  <g font-size="9.5" fill="#9fe3b0" font-family="ui-monospace, Consolas, monospace">
+    <text x="24" y="68">&gt; How is the tank doing?</text>
+    <text x="24" y="82">&gt; Set the level to 10.</text>
+    <text x="36" y="96" fill="#d7dbe3">refused: xdb_acl</text>
+  </g>
+  <text x="24" y="118" font-size="11" font-weight="600" fill="#fff">Claude Code</text>
+  <text x="24" y="132" font-size="10" fill="#d7dbe3">.mcp.json names both doors;</text>
+  <text x="24" y="144" font-size="10" fill="#d7dbe3">start it in this directory</text>
+
+  <rect x="16" y="162" width="150" height="72" rx="5" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="24" y="180" font-size="11" font-weight="600" fill="#1d2330">Claude Desktop</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="24" y="195">speaks to a process: the</text>
+    <text x="24" y="208">mcp-remote bridge (Node.js)</text>
+    <text x="24" y="221">or aymon_mcp_stdio.py</text>
+  </g>
+
+  <rect x="16" y="246" width="150" height="56" rx="5" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="24" y="264" font-size="11" font-weight="600" fill="#1d2330">try.bat / try.sh</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="24" y="279">every call an assistant</text>
+    <text x="24" y="292">makes, as raw JSON-RPC</text>
+  </g>
+  <text x="16" y="320" font-size="10" fill="#6b7385">JSON-RPC 2.0 over HTTP</text>
+  <text x="16" y="333" font-size="10" fill="#6b7385">POST, Authorization: Bearer</text>
+
+  <!-- the process -->
+  <rect x="190" y="40" width="454" height="298" rx="8" fill="#f8f9fb" stroke="#1d2330" stroke-width="1.5"/>
+  <text x="200" y="56" font-size="10" fill="#6b7385">one AyXDB process · its root loads AI/S00 and PLT/S00 · every port on 127.0.0.1</text>
+
+  <!-- AI/S00: the doors -->
+  <rect x="200" y="66" width="190" height="262" rx="6" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="210" y="84" font-weight="600" fill="#1f5f3b">AI/S00 · the doors</text>
+  <text x="210" y="98" font-size="10" fill="#6b7385">no mcp_pub: MCP cannot see it</text>
+  <rect x="210" y="108" width="170" height="70" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="218" y="124" font-weight="600" fill="#1d2330">CN_MCP <tspan font-weight="400" font-size="10" fill="#6b7385">:8095/mcp</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="218" y="138">Bearer demo-read-key</text>
+    <text x="218" y="151">role 2, Monitor</text>
+    <text x="218" y="164">ro: no write tool is listed</text>
+  </g>
+  <rect x="210" y="188" width="170" height="70" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="218" y="204" font-weight="600" fill="#1d2330">CN_MCPW <tspan font-weight="400" font-size="10" fill="#6b7385">:8096/mcp</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="218" y="218">Bearer demo-write-key</text>
+    <text x="218" y="231">role 3, Operator</text>
+    <text x="218" y="244">rw: set_value .., wmax 10</text>
+  </g>
+  <rect x="210" y="268" width="170" height="52" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="218" y="284" font-weight="600" fill="#1d2330">mcp.tools <tspan font-weight="400" font-size="10" fill="#6b7385">the project's</tspan></text>
+  <g font-size="10" fill="#1d2330">
+    <text x="218" y="298">plant_status, set_setpoint;</text>
+    <text x="218" y="311">run with the endpoint's role</text>
+  </g>
+
+  <!-- the calls -->
+  <g stroke="#1d2330" stroke-width="1.5" fill="none">
+    <path d="M166 100 H176 V274 H166 M166 198 H176"/>
+    <path d="M176 143 H208" marker-end="url(#arrk)"/>
+    <path d="M176 223 H208" marker-end="url(#arrk)"/>
+    <path d="M380 143 H400" marker-end="url(#arrk)"/>
+    <path d="M380 223 H400" marker-end="url(#arrk)"/>
+  </g>
+
+  <!-- PLT/S00: the plant -->
+  <rect x="402" y="66" width="230" height="262" rx="6" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="412" y="84" font-weight="600" fill="#1f5f3b">PLT/S00 · the plant</text>
+  <text x="412" y="98" font-size="10" fill="#6b7385">mcp_pub="1": on the whitelist;</text>
+  <text x="412" y="111" font-size="10" fill="#6b7385">mcp_desc: what it is, in a sentence</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="412" y="136">main.tick, once a second:</text>
+    <text x="412" y="149">the tank fills and drains;</text>
+    <text x="412" y="162">the pump holds LEVEL near</text>
+    <text x="412" y="175">SETPOINT unless MAINT is 1</text>
+  </g>
+  <rect x="590" y="146" width="30" height="38" fill="#cfe4f7" clip-path="url(#tank)"/>
+  <rect x="590" y="122" width="30" height="62" rx="7" fill="none" stroke="#1d2330" stroke-width="1.5"/>
+  <text x="605" y="118" text-anchor="middle" font-size="9" fill="#1d2330">LEVEL</text>
+  <path d="M556 196 H568 M584 196 H605 V184" fill="none" stroke="#1d2330" stroke-width="1.5"/>
+  <circle cx="576" cy="196" r="8" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M572 191 L582 196 L572 201 Z" fill="#1d2330"/>
+  <text x="576" y="216" text-anchor="middle" font-size="9" fill="#1d2330">PUMP</text>
+  <text x="412" y="216" font-size="10" fill="#6b7385">xdb_acl decides, not MCP:</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="412" y="232">root 0xFF111111: roles 0..5 read;</text>
+    <text x="412" y="245">LEVEL, PUMP, MAINT inherit it</text>
+    <text x="412" y="261">SETPOINT 0xFF333111: 3 and up write;</text>
+    <text x="412" y="274">ATR.lmt holds it in 20..90 %</text>
+    <text x="412" y="290">VENDOR_NOTE 0xF0000000: Admin</text>
+    <text x="412" y="303">only; MCP answers "not found"</text>
+  </g>
+  <text x="412" y="320" font-size="10" fill="#7a5bc4">CN_WEB :8109 · CN_LIVE /mqtt</text>
+
+  <!-- link to the page -->
+  <path d="M548 328 V356" stroke="#7a5bc4" stroke-width="2"/>
+  <g fill="#fff" stroke="#7a5bc4" stroke-width="1.5"><circle cx="548" cy="343" r="3"/><circle cx="548" cy="351" r="3"/></g>
+  <text x="556" y="350" font-size="10" fill="#7a5bc4">HTTP + MQTT</text>
+
+  <!-- who may do what -->
+  <rect x="16" y="356" width="420" height="96" rx="6" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <g font-size="10" fill="#1d2330">
+    <g fill="#6b7385"><text x="26" y="373">who asks</text><text x="150" y="373">8095, Monitor (2)</text><text x="246" y="373">8096, Operator (3)</text><text x="346" y="373">page, Guest (0)</text></g>
+    <path d="M26 379 H426" stroke="#dfe3ea"/>
+    <text x="26" y="394">read LEVEL, PUMP</text><text x="150" y="394" fill="#2e8b57">yes</text><text x="246" y="394" fill="#2e8b57">yes</text><text x="346" y="394" fill="#2e8b57">yes</text>
+    <text x="26" y="410">read VENDOR_NOTE</text><text x="150" y="410" fill="#c0392b">not found</text><text x="246" y="410" fill="#c0392b">not found</text><text x="346" y="410" fill="#c0392b">never sent</text>
+    <text x="26" y="426">write SETPOINT 150</text><text x="150" y="426" fill="#6b7385">no write tools</text><text x="246" y="426" fill="#d9731a">OKY, it is 90</text><text x="346" y="426" fill="#6b7385">reads only</text>
+    <text x="26" y="442">write LEVEL 10</text><text x="150" y="442" fill="#6b7385">no write tools</text><text x="246" y="442" fill="#c0392b">refused</text><text x="346" y="442" fill="#6b7385">reads only</text>
+  </g>
+
+  <!-- the page -->
+  <rect x="452" y="356" width="192" height="96" rx="5" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M452 370 H644" stroke="#1d2330" stroke-width="1"/>
+  <g fill="#9aa3b2"><circle cx="460" cy="363" r="2.5"/><circle cx="468" cy="363" r="2.5"/><circle cx="476" cy="363" r="2.5"/></g>
+  <text x="486" y="367" font-size="9" fill="#6b7385" font-family="ui-monospace, Consolas, monospace">127.0.0.1:8109</text>
+  <text x="460" y="388" font-size="11" font-weight="600" fill="#1d2330">the person beside the AI</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="460" y="403">level, set point, pump, a trend</text>
+    <text x="460" y="417">and every change it saw</text>
+  </g>
+  <text x="460" y="438" font-size="10" fill="#6b7385">reads only, as a Guest</text>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 476 H40" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/><text x="46" y="480">MCP call, with the door's key</text>
+    <path d="M236 476 H260" stroke="#7a5bc4" stroke-width="2"/><text x="266" y="480">HTTP + MQTT for the page</text>
+  </g>
+  <text x="16" y="500" font-size="11" fill="#6b7385">MCP decides nothing itself: the door's role meets each element's xdb_acl, as for any other caller.</text>
+</svg>

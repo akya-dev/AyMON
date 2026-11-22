@@ -23,6 +23,10 @@ To fly a **real** Tello instead, change three connections and switch the
 simulator off. See [Flying a real Tello](#flying-a-real-tello), and read the
 safety notes there first.
 
+![A sketch: the Tello's three UDP ports (commands 8889, state 8890, H.264 video 11111) reach TEL/S00's CN_TELLO, CN_STATE and CN_VID; the page on 127.0.0.1:8090 asks through CMD, MISSION and RC and shows the video as MJPEG; SIM/S00 plays the drone in the example](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## What you see
 
 * **Seen from above**: the path of the flight. The Tello does not report

@@ -47,6 +47,10 @@ says **master**.
 The election and the replication are [PRJEDU_cluster](../PRJEDU_cluster/)'s, unchanged.
 This example is about the third engine.
 
+![A sketch: three engine processes; OPS serves the page on 127.0.0.1:8123 and calls LINE/L1 over PRO.rpc, CN_S01 first, then CN_S02; S01 and S02 run LINE/L1 as a cluster, master and spare, with the election and replication between them](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## The page
 
 **The same call, four times.** `main.ask` is one function. It asks `api.snap()` through

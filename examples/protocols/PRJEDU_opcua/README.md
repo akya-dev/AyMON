@@ -14,6 +14,10 @@ code it has never seen.
 Needs engine **4.3.4.494** or later (an array as JSON text, `OPC.cert` with
 `%DB%`, `OPC.gen` drafts that run as written).
 
+![A sketch: the simulated moulding machine IMM1 (barrel with four heated zones, mould temperature with its set point) behind an asyncua OPC UA server on port 4840, and UA/S00's three sessions with it: a poll, a subscription and a signed and encrypted session that writes and calls methods](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## Run it
 
 Once, to give the machine its Python environment (Python 3.10 or later and
@@ -201,7 +205,7 @@ RUNNING 30 s after Start.
 
 ```
 UA/S00:UA: no certificate yet - making one
-UA/S00:OPC.cert: generated. cert='C:\AyMON\AyMON\PRJEDU_opcua\db\pkiymon_cert.pem' key='...ymon_key.pem' uri='urn:AyMON:PRJEDU_opcua' ...
+UA/S00:OPC.cert: generated. cert='C:\AyMON\AyMON\examples\protocols\PRJEDU_opcua\db\pki\aymon_cert.pem' key='...\aymon_key.pem' uri='urn:AyMON:PRJEDU_opcua' ...
 UA/S00:IMM:PRO.opc(1).connect: session active
 UA/S00:IMMP_SUB:PRO.opc(1).sub: subscription 78 set up -- period 100 ms, keepalive 20
 UA/S00:IMMS:PRO.opc(1).session: refused 0x801A0000

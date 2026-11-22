@@ -24,11 +24,16 @@ picked from a short list in the root document when the history document
 starts. Move the plant to SQL Server or PostgreSQL by swapping two ids — the
 script does not change.
 
+![A sketch: main.init() copies the ConnStr entry of the root document into CN_SQL/@con_host; DRIVER=SQLite3i goes to the embedded SQLite, DRIVER=PostgreSQLi to libpq, any other string to ODBC, and the script stays the same](www/flow.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## What it teaches
 
 * **the connection string is the whole choice** — `DRIVER=SQLite3i;...`
-  reaches the embedded SQLite, anything no driver claims goes to ODBC. Both
-  drivers are plug-ins (`AyPRO_sqlite.dll`, `AyPRO_odbc.dll`) that attach
+  reaches the embedded SQLite, `DRIVER=PostgreSQLi;...` PostgreSQL over libpq,
+  anything no driver claims goes to ODBC. The drivers are plug-ins
+  (`AyPRO_sqlite.dll`, `AyPRO_pgsql.dll`, `AyPRO_odbc.dll`) that attach
   themselves on first use; neither is named anywhere in the XML
 * **connection strings kept in one place** — `<var id="ConnStr">` in
   `AyXDB.xml`, read by every document that needs the database, written into

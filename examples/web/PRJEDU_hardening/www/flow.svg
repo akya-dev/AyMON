@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 518" width="660" height="518" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_hardening: a plant delivered weak, on purpose</title>
+  <!-- A sketch of the lab: what the delivered configuration leaves open, where each of the seven weaknesses sits and what the solution puts in its place. -->
+  <defs>
+    <g id="bdg"><circle r="8" fill="#c0392b"/></g>
+  </defs>
+  <rect width="660" height="518" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_hardening: a plant delivered weak, on purpose</text>
+  <rect x="512" y="10" width="132" height="20" rx="10" fill="#fdecea" stroke="#c0392b"/>
+  <text x="578" y="24" text-anchor="middle" font-size="10.5" font-weight="600" fill="#c0392b">a lab, not a model</text>
+
+  <!-- the page -->
+  <rect x="16" y="44" width="164" height="104" rx="5" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M16 58 H180" stroke="#1d2330" stroke-width="1"/>
+  <g fill="#9aa3b2"><circle cx="24" cy="51" r="2.5"/><circle cx="32" cy="51" r="2.5"/><circle cx="40" cy="51" r="2.5"/></g>
+  <text x="50" y="55" font-size="9" fill="#6b7385" font-family="ui-monospace, Consolas, monospace">127.0.0.1:8101</text>
+  <text x="24" y="75" font-size="11" font-weight="600" fill="#1d2330">the page</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="24" y="90">the tank: level, valve, pump,</text>
+    <text x="24" y="103">setpoint, trip level, recipe</text>
+    <text x="24" y="120">Self-check: the configuration</text>
+    <text x="24" y="133">Access test: four identities</text>
+  </g>
+
+  <!-- who comes in -->
+  <rect x="16" y="160" width="164" height="88" rx="5" fill="#f3f5f8" stroke="#9aa3b2"/>
+  <text x="24" y="176" font-size="10" font-weight="600" fill="#1d2330">who logs in, as delivered</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="24" y="194">no user name</text><text x="132" y="194" fill="#c0392b" font-weight="600">role 3</text>
+    <g font-family="ui-monospace, Consolas, monospace" font-size="9.5"><text x="24" y="210">mon</text><text x="24" y="226">opr</text><text x="24" y="242">eng</text></g>
+    <text x="54" y="210">monitor</text><text x="132" y="210">role 2</text>
+    <text x="54" y="226">operator</text><text x="132" y="226">role 3</text>
+    <text x="54" y="242">engineer</text><text x="132" y="242">role 6</text>
+  </g>
+
+  <!-- the engine -->
+  <rect x="198" y="38" width="446" height="212" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="210" y="56" font-weight="600" fill="#1f5f3b">PLT/S00 · the plant</text>
+  <text x="336" y="56" font-size="10" fill="#6b7385">no xdb_acl on the document</text>
+
+  <path d="M180 92 H210" stroke="#7a5bc4" stroke-width="2"/>
+  <g fill="#fff" stroke="#7a5bc4" stroke-width="1.5"><circle cx="188" cy="92" r="3"/><circle cx="198" cy="92" r="3"/></g>
+
+  <g font-size="10" fill="#1d2330">
+    <rect x="210" y="68" width="152" height="44" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="218" y="83" font-weight="600">CN_WEB <tspan font-weight="400" fill="#6b7385">http</tspan></text>
+    <text x="218" y="97">127.0.0.1:8101, the page's</text>
+    <text x="218" y="109" fill="#6b7385">files; no con_acl</text>
+
+    <rect x="210" y="122" width="152" height="56" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="218" y="137" font-weight="600">CN_LIVE <tspan font-weight="400" fill="#6b7385">MQTT in ws /mqtt</tspan></text>
+    <text x="218" y="151">no con_auth: nobody logs in</text>
+    <text x="218" y="165">con_role 3: all are Operators</text>
+
+    <rect x="210" y="188" width="152" height="54" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="218" y="203" font-weight="600">A_PLANT <tspan font-weight="400" fill="#6b7385">the accounts</tspan></text>
+    <text x="218" y="217" font-size="9" font-family="ui-monospace, Consolas, monospace">usr_pwd="opr123"</text>
+    <text x="218" y="232">no auth_try; all may read it</text>
+  </g>
+  <path d="M240 112 V122" stroke="#7a5bc4" stroke-width="2"/>
+
+  <!-- the process -->
+  <path d="M382 84 H417 V104" fill="none" stroke="#1d2330" stroke-width="2"/>
+  <path d="M394 78 L394 90 L406 78 L406 90 Z" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <rect x="393" y="164" width="48" height="39" fill="#cfe4f7"/>
+  <rect x="392" y="104" width="50" height="100" rx="5" fill="none" stroke="#1d2330" stroke-width="2"/>
+  <path d="M392 109 H442" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <path d="M417 204 V218" stroke="#1d2330" stroke-width="2"/>
+  <circle cx="417" cy="226" r="8" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M412 221 L424 226 L412 231 Z" fill="#1d2330"/>
+  <path d="M425 226 H450" stroke="#1d2330" stroke-width="2"/>
+  <text x="417" y="70" text-anchor="middle" font-size="9" fill="#6b7385">inlet valve</text>
+  <text x="417" y="246" text-anchor="middle" font-size="9" fill="#6b7385">pump</text>
+
+  <rect x="462" y="68" width="170" height="174" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <g font-size="9.5" font-family="ui-monospace, Consolas, monospace" fill="#1d2330">
+    <text x="470" y="84">LEVEL</text>
+    <text x="470" y="104">SETPOINT</text>
+    <text x="470" y="124">PUMP_CMD</text>
+    <text x="470" y="148">TRIP_LEVEL</text>
+    <text x="470" y="196">RECIPE</text>
+  </g>
+  <g font-size="10" fill="#1d2330">
+    <text x="548" y="84">the tank, in %</text>
+    <text x="548" y="104">the operator's</text>
+    <text x="548" y="124">the operator's</text>
+    <text x="548" y="148">the engineer's</text>
+    <text x="470" y="162" fill="#c0392b">own xdb_acl 0xFF113110:</text>
+    <text x="470" y="175" fill="#c0392b">the operator may move it</text>
+    <text x="548" y="196">the secret</text>
+    <text x="470" y="210" fill="#c0392b">no xdb_acl: every role,</text>
+    <text x="470" y="223" fill="#c0392b">even no name, reads it</text>
+  </g>
+
+  <!-- the weaknesses, where they sit -->
+  <g font-size="10" font-weight="600" fill="#fff" text-anchor="middle">
+    <use href="#bdg" x="362" y="80"/><text x="362" y="84">1</text>
+    <use href="#bdg" x="362" y="138"/><text x="362" y="142">1</text>
+    <use href="#bdg" x="362" y="160"/><text x="362" y="164">2</text>
+    <use href="#bdg" x="362" y="204"/><text x="362" y="208">6</text>
+    <use href="#bdg" x="362" y="226"/><text x="362" y="230">7</text>
+    <use href="#bdg" x="500" y="52"/><text x="500" y="56">3</text>
+    <use href="#bdg" x="632" y="144"/><text x="632" y="148">4</text>
+    <use href="#bdg" x="632" y="192"/><text x="632" y="196">5</text>
+    <use href="#bdg" x="180" y="190"/><text x="180" y="194">2</text>
+  </g>
+
+  <!-- the seven questions -->
+  <rect x="16" y="260" width="628" height="186" rx="6" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <g font-size="10.5" fill="#6b7385">
+    <text x="48" y="278">the question</text>
+    <text x="214" y="278" fill="#c0392b">as delivered: run.bat</text>
+    <text x="430" y="278" fill="#2e8b57">one fix: run_solution.bat</text>
+  </g>
+  <path d="M24 284 H636" stroke="#dfe3ea"/>
+  <g font-size="10" font-weight="600" fill="#fff" text-anchor="middle">
+    <use href="#bdg" x="30" y="298"/><text x="30" y="302">1</text>
+    <use href="#bdg" x="30" y="320"/><text x="30" y="324">2</text>
+    <use href="#bdg" x="30" y="342"/><text x="30" y="346">3</text>
+    <use href="#bdg" x="30" y="364"/><text x="30" y="368">4</text>
+    <use href="#bdg" x="30" y="386"/><text x="30" y="390">5</text>
+    <use href="#bdg" x="30" y="408"/><text x="30" y="412">6</text>
+    <use href="#bdg" x="30" y="430"/><text x="30" y="434">7</text>
+  </g>
+  <g font-size="10.5" fill="#1d2330">
+    <text x="48" y="302">Who may connect?</text>
+    <text x="48" y="324">Must anybody log in?</text>
+    <text x="48" y="346">An element nobody thought of</text>
+    <text x="48" y="368">Who moves the trip level?</text>
+    <text x="48" y="390">Who reads the recipe?</text>
+    <text x="48" y="412">How are passwords kept?</text>
+    <text x="48" y="434">How many guesses?</text>
+  </g>
+  <g font-size="10" fill="#c0392b">
+    <text x="214" y="302">no con_acl: any address on the port</text>
+    <text x="214" y="324">no con_auth; a session is an Operator</text>
+    <text x="214" y="346">no xdb_acl: open to every role</text>
+    <text x="214" y="368">0xFF113110 lets the operator write it</text>
+    <text x="214" y="390">every role, Guest too</text>
+    <text x="214" y="412">clear text; every role reads A_PLANT</text>
+    <text x="214" y="434">as many as anyone likes</text>
+  </g>
+  <g font-size="10" fill="#2e8b57">
+    <text x="430" y="302">con_acl="127.0.0.1" on both listeners</text>
+    <text x="430" y="324">con_auth="A_PLANT"; start as Guest</text>
+    <text x="430" y="346">document 0xFF111110: Guest nothing</text>
+    <text x="430" y="368">its own xdb_acl gone: roles 6 and 7</text>
+    <text x="430" y="390">0xFF000000: engineer and admin</text>
+    <text x="430" y="412">PBKDF2 hashes; A_PLANT admin only</text>
+    <text x="430" y="434">auth_try 5, auth_lock 60 s</text>
+  </g>
+
+  <text x="16" y="466" font-size="11" fill="#1d2330">As delivered, a page without a password moved the trip to 120 and stopped the pump: the tank overflowed.</text>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 486 H40" stroke="#7a5bc4" stroke-width="2"/><text x="46" y="490">HTTP + MQTT in a WebSocket</text>
+    <use href="#bdg" x="234" y="486"/><text x="234" y="490" font-size="10" font-weight="600" fill="#fff" text-anchor="middle">n</text>
+    <text x="248" y="490">a weakness as delivered, numbered as in the README</text>
+  </g>
+  <text x="16" y="510" font-size="11" fill="#6b7385">Weak on purpose, to be fixed in db/db_PLT.xml: the page's Self-check and Access test say what is still open.</text>
+</svg>

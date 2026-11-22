@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 520" width="660" height="520" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_101: first steps</title>
+  <!-- A sketch of the smallest project: a root document, one document, a thread, a timer, a script and a value whose chain sets the alarm. -->
+  <defs>
+    <marker id="arrk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#1d2330"/></marker>
+  </defs>
+  <rect width="660" height="520" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_101: first steps</text>
+
+  <!-- the start -->
+  <rect x="16" y="40" width="190" height="60" rx="5" fill="#1d2330"/>
+  <g font-size="10" fill="#9fe3b0" font-family="ui-monospace, Consolas, monospace">
+    <text x="24" y="56">&gt; run.bat</text>
+    <text x="24" y="70">AyXDB.exe -console</text>
+    <text x="36" y="83">db\AyXDB.xml</text>
+  </g>
+  <text x="24" y="95" font-size="9.5" fill="#d7dbe3">CTRL-C stops it</text>
+  <path d="M206 70 H234" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+
+  <!-- the root document -->
+  <rect x="236" y="40" width="216" height="60" rx="6" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="246" y="57" font-weight="600" fill="#1f5f3b">XDB <tspan font-weight="400" font-size="10" fill="#6b7385">the root document</tspan></text>
+  <text x="246" y="73" font-size="10" fill="#1d2330">db\AyXDB.xml, tid="S01": the engine</text>
+  <text x="246" y="88" font-size="10" fill="#1d2330">lists one child document: EDU/S00</text>
+  <path d="M344 100 V114" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+  <text x="352" y="111" font-size="9.5" fill="#6b7385">loads</text>
+
+  <!-- the three files -->
+  <text x="470" y="52" font-size="10" fill="#6b7385">the three files, in reading order</text>
+  <g font-size="10" fill="#1d2330">
+    <text x="470" y="68">1</text><text x="482" y="68" font-family="ui-monospace, Consolas, monospace" font-size="9.5">db\AyXDB.xml</text><text x="568" y="68">the root</text>
+    <text x="470" y="82">2</text><text x="482" y="82" font-family="ui-monospace, Consolas, monospace" font-size="9.5">db\db_EDU.xml</text><text x="568" y="82">the elements</text>
+    <text x="470" y="96">3</text><text x="482" y="96" font-family="ui-monospace, Consolas, monospace" font-size="9.5">db\db_EDU.js</text><text x="568" y="96">the script</text>
+  </g>
+
+  <!-- the document -->
+  <rect x="16" y="116" width="628" height="208" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="28" y="136" font-weight="600" fill="#1f5f3b">EDU/S00 <tspan font-weight="400" font-size="10" fill="#6b7385">a document: its elements in db\db_EDU.xml, its functions in db\db_EDU.js (main)</tspan></text>
+
+  <!-- row 1: clock, timer, script, the four values -->
+  <rect x="28" y="148" width="120" height="58" rx="4" fill="#fff" stroke="#2e8b57"/>
+  <text x="36" y="164" font-size="11" font-weight="600" fill="#1d2330">TH_MAIN <tspan font-weight="400" font-size="10" fill="#6b7385">&lt;thr&gt;</tspan></text>
+  <text x="36" y="179" font-size="10" fill="#1d2330">a thread with its</text>
+  <text x="36" y="193" font-size="10" fill="#1d2330">own clock, 100 ms</text>
+  <path d="M148 177 H170" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+
+  <rect x="172" y="148" width="150" height="58" rx="4" fill="#fff" stroke="#2e8b57"/>
+  <text x="180" y="164" font-size="11" font-weight="600" fill="#1d2330">SENSOR <tspan font-weight="400" font-size="10" fill="#6b7385">&lt;var&gt;, a timer</tspan></text>
+  <text x="180" y="179" font-size="10" fill="#1d2330">evt_per="1": once a second</text>
+  <text x="180" y="193" font-size="10" fill="#1d2330">evt_fnc runs the script</text>
+  <path d="M322 177 H344" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+
+  <rect x="346" y="148" width="130" height="58" rx="4" fill="#fff" stroke="#6b7385" stroke-dasharray="5 4"/>
+  <text x="354" y="164" font-size="11" font-weight="600" fill="#1d2330">main.read_sensor</text>
+  <text x="354" y="179" font-size="10" fill="#1d2330">a sine plus noise, °C,</text>
+  <text x="354" y="193" font-size="10" fill="#6b7385">in place of a sensor</text>
+  <path d="M476 177 H498" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+
+  <rect x="500" y="148" width="132" height="60" rx="4" fill="#fff" stroke="#2e8b57"/>
+  <g font-size="10">
+    <text x="508" y="163" font-weight="600" fill="#1d2330">SENSOR <tspan font-weight="400" fill="#6b7385">the raw °C</tspan></text>
+    <text x="508" y="176" font-weight="600" fill="#1d2330">SENSOR_F <tspan font-weight="400" fill="#6b7385">°F</tspan></text>
+    <text x="508" y="189" font-weight="600" fill="#c0392b">ALARM <tspan font-weight="400" fill="#6b7385">the same °C</tspan></text>
+    <text x="508" y="202" font-weight="600" fill="#1d2330">COUNT <tspan font-weight="400" fill="#6b7385">+1</tspan></text>
+  </g>
+
+  <!-- the write to ALARM runs its chain -->
+  <path d="M566 208 V220 H78 V240" fill="none" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+  <text x="300" y="233" font-size="10" fill="#1d2330" text-anchor="middle">a write to ALARM/@val runs its val_fnc chain, on every write</text>
+
+  <!-- row 2: the chain -->
+  <rect x="28" y="242" width="100" height="44" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="36" y="259" font-size="11" font-weight="600" fill="#1d2330">ATR.rou</text>
+  <text x="36" y="275" font-size="10" fill="#1d2330">rounds to 0.1</text>
+  <path d="M128 264 H148" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+  <rect x="150" y="242" width="100" height="44" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="158" y="259" font-size="11" font-weight="600" fill="#1d2330">ATR.lmt</text>
+  <text x="158" y="275" font-size="10" fill="#1d2330">clamps -50 .. 150</text>
+  <path d="M250 264 H270" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+  <rect x="272" y="242" width="120" height="44" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="280" y="259" font-size="11" font-weight="600" fill="#1d2330">ALM.onlvl</text>
+  <text x="280" y="275" font-size="10" fill="#1d2330">limits 10 / 14 / 26 / 30</text>
+  <path d="M392 264 H412" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+  <rect x="414" y="242" width="100" height="44" rx="4" fill="#fff" stroke="#c0392b"/>
+  <text x="422" y="259" font-size="11" font-weight="600" fill="#c0392b">sta</text>
+  <text x="422" y="275" font-size="10" fill="#1d2330">its alarm bits</text>
+  <path d="M514 264 H534" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+  <rect x="536" y="242" width="96" height="44" rx="4" fill="#fff" stroke="#9aa3b2"/>
+  <text x="544" y="259" font-size="11" font-weight="600" fill="#1d2330">main.on_alarm</text>
+  <text x="544" y="275" font-size="10" fill="#1d2330">sta_fnc: logs it</text>
+
+  <text x="28" y="310" font-size="10" fill="#6b7385">Nothing polls: a write runs a chain, and the chain may write again. The engine rounds and clamps, not the script.</text>
+  <path d="M584 286 V344" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/>
+  <text x="592" y="304" font-size="9.5" fill="#6b7385">evt.Log</text>
+
+  <!-- the reading over time -->
+  <rect x="16" y="346" width="290" height="112" rx="6" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="26" y="362" font-size="10" fill="#6b7385">ALARM, one reading a second</text>
+  <g stroke-width="1" stroke-dasharray="4 3">
+    <path d="M50 380.9 H292" stroke="#c0392b"/>
+    <path d="M50 391.7 H292" stroke="#d9731a"/>
+    <path d="M50 424.3 H292" stroke="#d9731a"/>
+    <path d="M50 435.1 H292" stroke="#c0392b"/>
+  </g>
+  <g font-size="9" text-anchor="end">
+    <text x="44" y="384" fill="#c0392b">30</text>
+    <text x="44" y="395" fill="#d9731a">26</text>
+    <text x="44" y="427" fill="#d9731a">14</text>
+    <text x="44" y="438" fill="#c0392b">10</text>
+  </g>
+  <path d="M50.0 408.0 L54.4 402.6 L58.7 397.3 L63.1 392.4 L67.5 387.9 L71.8 383.9 L76.2 380.6 L80.5 378.1 L84.9 376.3 L89.3 375.5 L93.6 375.6 L98.0 376.5 L102.4 378.4 L106.7 381.0 L111.1 384.4 L115.5 388.5 L119.8 393.1 L124.2 398.1 L128.5 403.4 L132.9 408.8 L137.3 414.2 L141.6 419.4 L146.0 424.3 L150.4 428.8 L154.7 432.7 L159.1 435.8 L163.5 438.3 L167.8 439.8 L172.2 440.5 L176.5 440.3 L180.9 439.2 L185.3 437.3 L189.6 434.5 L194.0 431.0 L198.4 426.8 L202.7 422.2 L207.1 417.1 L211.5 411.8 L215.8 406.4 L220.2 401.0 L224.5 395.8 L228.9 391.0 L233.3 386.6 L237.6 382.8 L242.0 379.7 L246.4 377.4 L250.7 376.0 L255.1 375.4 L259.5 375.8 L263.8 377.0 L268.2 379.1 L272.5 382.0 L276.9 385.6 L281.3 389.8 L285.6 394.6 L290.0 399.7" fill="none" stroke="#3b82c4" stroke-width="2"/>
+  <text x="26" y="452" font-size="9.5" fill="#6b7385">warning 14 / 26, alarm 10 / 30 °C</text>
+
+  <!-- the log -->
+  <rect x="316" y="346" width="328" height="112" rx="5" fill="#1d2330"/>
+  <text x="326" y="362" font-size="10" fill="#d7dbe3">log\EDU-*.log, and the console</text>
+  <g font-size="9" fill="#9fe3b0" font-family="ui-monospace, Consolas, monospace">
+    <text x="326" y="378">reading 0: stored 20.1 C, raw 20.1411734284627 C, ..</text>
+    <text x="326" y="391">ALARM sta 0x0303 -&gt; 0x034B value 30.2 C</text>
+    <text x="326" y="404">ALARM sta 0x034B -&gt; 0x0347 value 29.8 C</text>
+    <text x="326" y="417">reading 20: stored 29.9 C, raw 29.90110235669 C, ..</text>
+    <text x="326" y="430">ALARM sta 0x0347 -&gt; 0x0343 value 21.8 C</text>
+  </g>
+  <text x="326" y="450" font-size="9.5" fill="#d7dbe3">sta 0x0343 normal · 0x0347 warning · 0x034B alarm</text>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 480 H40" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arrk)"/><text x="46" y="484">a write and what it runs</text>
+    <rect x="198" y="474" width="24" height="12" rx="2" fill="#fff" stroke="#6b7385" stroke-dasharray="5 4"/><text x="228" y="484">the simulation</text>
+    <path d="M330 480 H354" stroke="#d9731a" stroke-dasharray="4 3"/><text x="360" y="484">warning limit</text>
+    <path d="M456 480 H480" stroke="#c0392b" stroke-dasharray="4 3"/><text x="486" y="484">alarm limit</text>
+  </g>
+  <text x="16" y="502" font-size="11" fill="#6b7385">No network, no database, no hardware. A real project puts equipment where the sine is:</text>
+  <text x="16" y="516" font-size="11" fill="#6b7385">&lt;con&gt; / &lt;dev&gt; / &lt;bi&gt; / &lt;io&gt; read a device, and the same chain sets the alarm (PRJEDU_modbus).</text>
+</svg>
