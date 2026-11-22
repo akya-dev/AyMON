@@ -62,6 +62,93 @@ squawk is an alarm, set in configuration.
 </tr>
 </table>
 
+Every example comes with a drawing of how it is put together, at the bottom of its page and in its
+README:
+
+<table>
+<tr>
+<td width="50%" valign="top">
+<a href="examples/labs/PRJEDU_plc/"><img src="examples/labs/PRJEDU_plc/www/flow.svg" width="420" alt="a filling line, its remote I/O and the PLC"></a><br>
+<b><a href="examples/labs/PRJEDU_plc/">PRJEDU_plc</a></b> — a filling line as a simple P&amp;ID, the remote I/O's registers and the PLC's step sequence, the HMI on two ports.
+</td>
+<td width="50%" valign="top">
+<a href="examples/board/PRJHW_fan/"><img src="examples/board/PRJHW_fan/www/wiring.svg" width="420" alt="how the parts are wired to a Raspberry Pi"></a><br>
+<b><a href="examples/board/PRJHW_fan/">PRJHW_fan</a></b> — how the parts go to a Raspberry Pi's pins: each bus in its own colour, the 3.3 V and 5 V warnings.
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<a href="examples/data/PRJEDU_mirror/"><img src="examples/data/PRJEDU_mirror/www/flow.svg" width="420" alt="a list that is a table"></a><br>
+<b><a href="examples/data/PRJEDU_mirror/">PRJEDU_mirror</a></b> — a list that is a SQL table: what the mirror writes, what it loads back, and another program writing the table.
+</td>
+<td width="50%" valign="top">
+<a href="examples/hosting/PRJEDU_sites/"><img src="examples/hosting/PRJEDU_sites/www/flow.svg" width="420" alt="one engine, one port, several projects"></a><br>
+<b><a href="examples/hosting/PRJEDU_sites/">PRJEDU_sites</a></b> — one process, one port: the door hands each request to its project by the Host header; what each may see of the others.
+</td>
+</tr>
+</table>
+
+<details>
+<summary><b>All 36 drawings</b>, in the order of <a href="#the-examples">the examples</a></summary>
+
+<table>
+<tr>
+<td width="25%" valign="top" align="center"><a href="examples/start/PRJEDU_101/"><img src="examples/start/PRJEDU_101/flow.svg" width="200" alt="first steps"></a><br><sub><a href="examples/start/PRJEDU_101/">PRJEDU_101</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/protocols/PRJEDU_modbus/"><img src="examples/protocols/PRJEDU_modbus/www/pid.svg" width="200" alt="the tank, its points and who reads them"></a><br><sub><a href="examples/protocols/PRJEDU_modbus/">PRJEDU_modbus</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/protocols/PRJEDU_mqtt/"><img src="examples/protocols/PRJEDU_mqtt/www/pid.svg" width="200" alt="the tank, its topics and who reads them"></a><br><sub><a href="examples/protocols/PRJEDU_mqtt/">PRJEDU_mqtt</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/protocols/PRJEDU_snmp/"><img src="examples/protocols/PRJEDU_snmp/www/pid.svg" width="200" alt="the tank, its OIDs and who reads them"></a><br><sub><a href="examples/protocols/PRJEDU_snmp/">PRJEDU_snmp</a></sub></td>
+</tr>
+<tr>
+<td width="25%" valign="top" align="center"><a href="examples/protocols/PRJEDU_opcua/"><img src="examples/protocols/PRJEDU_opcua/www/flow.svg" width="200" alt="a moulding machine over OPC UA"></a><br><sub><a href="examples/protocols/PRJEDU_opcua/">PRJEDU_opcua</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/data/PRJEDU_sqlite/"><img src="examples/data/PRJEDU_sqlite/www/flow.svg" width="200" alt="three timers and the page, one file"></a><br><sub><a href="examples/data/PRJEDU_sqlite/">PRJEDU_sqlite</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/data/PRJEDU_odbc/"><img src="examples/data/PRJEDU_odbc/www/flow.svg" width="200" alt="one connection string picks the database"></a><br><sub><a href="examples/data/PRJEDU_odbc/">PRJEDU_odbc</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/data/PRJEDU_records/"><img src="examples/data/PRJEDU_records/www/flow.svg" width="200" alt="the engine keeps the history"></a><br><sub><a href="examples/data/PRJEDU_records/">PRJEDU_records</a></sub></td>
+</tr>
+<tr>
+<td width="25%" valign="top" align="center"><a href="examples/data/PRJEDU_mirror/"><img src="examples/data/PRJEDU_mirror/www/flow.svg" width="200" alt="a list that is a table"></a><br><sub><a href="examples/data/PRJEDU_mirror/">PRJEDU_mirror</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/data/PRJEDU_xdbsql/"><img src="examples/data/PRJEDU_xdbsql/www/flow.svg" width="200" alt="SQL on the tree"></a><br><sub><a href="examples/data/PRJEDU_xdbsql/">PRJEDU_xdbsql</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/data/PRJEDU_sqlxdb/"><img src="examples/data/PRJEDU_sqlxdb/www/flow.svg" width="200" alt="names from the tree in a query"></a><br><sub><a href="examples/data/PRJEDU_sqlxdb/">PRJEDU_sqlxdb</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/data/PRJEDU_durable/"><img src="examples/data/PRJEDU_durable/www/flow.svg" width="200" alt="values that come back after a crash"></a><br><sub><a href="examples/data/PRJEDU_durable/">PRJEDU_durable</a></sub></td>
+</tr>
+<tr>
+<td width="25%" valign="top" align="center"><a href="examples/data/PRJEDU_net/"><img src="examples/data/PRJEDU_net/www/flow.svg" width="200" alt="mail and files from the engine"></a><br><sub><a href="examples/data/PRJEDU_net/">PRJEDU_net</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/web/PRJEDU_web/"><img src="examples/web/PRJEDU_web/www/flow.svg" width="200" alt="one port, three services"></a><br><sub><a href="examples/web/PRJEDU_web/">PRJEDU_web</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/web/PRJEDU_pages/"><img src="examples/web/PRJEDU_pages/www/flow.svg" width="200" alt="a page the engine writes"></a><br><sub><a href="examples/web/PRJEDU_pages/">PRJEDU_pages</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/web/PRJEDU_telnet/"><img src="examples/web/PRJEDU_telnet/flow.svg" width="200" alt="a shell into a running engine"></a><br><sub><a href="examples/web/PRJEDU_telnet/">PRJEDU_telnet</a></sub></td>
+</tr>
+<tr>
+<td width="25%" valign="top" align="center"><a href="examples/web/PRJEDU_hardening/"><img src="examples/web/PRJEDU_hardening/www/flow.svg" width="200" alt="a plant delivered weak, on purpose"></a><br><sub><a href="examples/web/PRJEDU_hardening/">PRJEDU_hardening</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/cluster/PRJEDU_rep/"><img src="examples/cluster/PRJEDU_rep/www/flow.svg" width="200" alt="two engines, one plant"></a><br><sub><a href="examples/cluster/PRJEDU_rep/">PRJEDU_rep</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/cluster/PRJEDU_cluster/"><img src="examples/cluster/PRJEDU_cluster/www/flow.svg" width="200" alt="two engines, one job, and a failover"></a><br><sub><a href="examples/cluster/PRJEDU_cluster/">PRJEDU_cluster</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/cluster/PRJEDU_remote/"><img src="examples/cluster/PRJEDU_remote/www/flow.svg" width="200" alt="a document on another node"></a><br><sub><a href="examples/cluster/PRJEDU_remote/">PRJEDU_remote</a></sub></td>
+</tr>
+<tr>
+<td width="25%" valign="top" align="center"><a href="examples/hosting/PRJEDU_sites/"><img src="examples/hosting/PRJEDU_sites/www/flow.svg" width="200" alt="one engine, one port, several projects"></a><br><sub><a href="examples/hosting/PRJEDU_sites/">PRJEDU_sites</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/labs/PRJEDU_plc/"><img src="examples/labs/PRJEDU_plc/www/flow.svg" width="200" alt="a filling line, its remote I/O and the PLC"></a><br><sub><a href="examples/labs/PRJEDU_plc/">PRJEDU_plc</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/labs/PRJEDU_pid/"><img src="examples/labs/PRJEDU_pid/www/pid.svg" width="200" alt="the heater block and its control loop"></a><br><sub><a href="examples/labs/PRJEDU_pid/">PRJEDU_pid</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/labs/PRJEDU_oee/"><img src="examples/labs/PRJEDU_oee/www/pid.svg" width="200" alt="one machine, seven registers, and the MES that reads them"></a><br><sub><a href="examples/labs/PRJEDU_oee/">PRJEDU_oee</a></sub></td>
+</tr>
+<tr>
+<td width="25%" valign="top" align="center"><a href="examples/labs/PRJEDU_robotarm/"><img src="examples/labs/PRJEDU_robotarm/www/wiring.svg" width="200" alt="how a real cell is wired"></a><br><sub><a href="examples/labs/PRJEDU_robotarm/">PRJEDU_robotarm</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/ai-vision/PRJEDU_mcp/"><img src="examples/ai-vision/PRJEDU_mcp/www/flow.svg" width="200" alt="two MCP doors into a tank plant"></a><br><sub><a href="examples/ai-vision/PRJEDU_mcp/">PRJEDU_mcp</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/ai-vision/PRJEDU_robot_mcp/"><img src="examples/ai-vision/PRJEDU_robot_mcp/www/flow.svg" width="200" alt="an assistant in a robot cell, inside its rules"></a><br><sub><a href="examples/ai-vision/PRJEDU_robot_mcp/">PRJEDU_robot_mcp</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/ai-vision/PRJEDU_gauge/"><img src="examples/ai-vision/PRJEDU_gauge/www/flow.svg" width="200" alt="a dial gauge read by a camera, in Python"></a><br><sub><a href="examples/ai-vision/PRJEDU_gauge/">PRJEDU_gauge</a></sub></td>
+</tr>
+<tr>
+<td width="25%" valign="top" align="center"><a href="examples/ai-vision/PRJEDU_pycall/"><img src="examples/ai-vision/PRJEDU_pycall/www/flow.svg" width="200" alt="two queued calls into Python"></a><br><sub><a href="examples/ai-vision/PRJEDU_pycall/">PRJEDU_pycall</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/ai-vision/PRJEDU_vision/"><img src="examples/ai-vision/PRJEDU_vision/www/line.svg" width="200" alt="the filling line, the camera and what the engine does with its pictures"></a><br><sub><a href="examples/ai-vision/PRJEDU_vision/">PRJEDU_vision</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/hobby/PRJPER_tello/"><img src="examples/hobby/PRJPER_tello/www/flow.svg" width="200" alt="a ground station for a Tello drone"></a><br><sub><a href="examples/hobby/PRJPER_tello/">PRJPER_tello</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/hobby/PRJPER_adsb/"><img src="examples/hobby/PRJPER_adsb/www/chain.svg" width="200" alt="from the aircraft to the map"></a><br><sub><a href="examples/hobby/PRJPER_adsb/">PRJPER_adsb</a></sub></td>
+</tr>
+<tr>
+<td width="25%" valign="top" align="center"><a href="examples/hobby/PRJPER_phone/"><img src="examples/hobby/PRJPER_phone/www/flow.svg" width="200" alt="a phone as a device of the engine"></a><br><sub><a href="examples/hobby/PRJPER_phone/">PRJPER_phone</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/board/PRJHW_fan/"><img src="examples/board/PRJHW_fan/www/wiring.svg" width="200" alt="how the parts are wired to a Raspberry Pi"></a><br><sub><a href="examples/board/PRJHW_fan/">PRJHW_fan</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/board/PRJHW_lock/"><img src="examples/board/PRJHW_lock/www/wiring.svg" width="200" alt="how the parts are wired to a Raspberry Pi"></a><br><sub><a href="examples/board/PRJHW_lock/">PRJHW_lock</a></sub></td>
+<td width="25%" valign="top" align="center"><a href="examples/board/PRJHW_reverse/"><img src="examples/board/PRJHW_reverse/www/wiring.svg" width="200" alt="how the parts are wired to a Raspberry Pi"></a><br><sub><a href="examples/board/PRJHW_reverse/">PRJHW_reverse</a></sub></td>
+</tr>
+</table>
+</details>
+
 This repository is where you get AyMON: the engine for Windows and Linux in
 `bin/`, and runnable projects for learning, teaching and hobby use. Every example starts with one
 command and needs **no licence, no hardware and no database** unless its own
