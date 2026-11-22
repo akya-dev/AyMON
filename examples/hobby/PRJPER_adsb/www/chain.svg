@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 440" width="660" height="440" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJPER_adsb: from the aircraft to the map</title>
+  <!-- A sketch of a real receiving chain and of what the example puts in its place. -->
+  <defs>
+    <marker id="arrb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82c4"/></marker>
+    <marker id="arrs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#6b7385"/></marker>
+    <path id="plane" d="M0 -14 L3 -4 L14 2 L14 5 L3 2 L2 10 L6 13 L6 15 L0 13 L-6 15 L-6 13 L-2 10 L-3 2 L-14 5 L-14 2 L-3 -4 Z"/>
+  </defs>
+  <rect width="660" height="440" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJPER_adsb: from the aircraft to the map</text>
+
+  <!-- the aircraft and their broadcasts -->
+  <rect x="16" y="36" width="628" height="96" rx="8" fill="#eef4fb"/>
+  <use href="#plane" x="96" y="70" fill="#1d2330" transform="rotate(30 96 70)"/>
+  <use href="#plane" x="210" y="96" fill="#1d2330" transform="rotate(-60 210 96)"/>
+  <use href="#plane" x="330" y="64" fill="#c0392b" transform="rotate(100 330 64)"/>
+  <g stroke="#3b82c4" stroke-width="1.2" fill="none" opacity="0.8">
+    <path d="M110 82 a14 14 0 0 1 0 20 M116 76 a22 22 0 0 1 0 32"/>
+    <path d="M222 106 a14 14 0 0 1 0 20 M228 100 a22 22 0 0 1 0 32"/>
+  </g>
+  <text x="348" y="60" font-size="11" fill="#c0392b">squawk 7700: an alarm</text>
+  <text x="400" y="88" font-size="11" fill="#1d2330" font-weight="600">ADS-B on 1090 MHz</text>
+  <text x="400" y="104" font-size="11" fill="#1d2330">twice a second: identity, position,</text>
+  <text x="400" y="119" font-size="11" fill="#1d2330">altitude, speed, squawk</text>
+
+  <!-- the antenna, the stick, the decoder -->
+  <path d="M70 150 V230 M58 158 H82 M62 170 H78" stroke="#1d2330" stroke-width="2.5" fill="none"/>
+  <path d="M70 230 V262" stroke="#6b7385" stroke-width="1.5"/>
+  <text x="90" y="168" font-size="11" font-weight="600">antenna</text>
+  <text x="90" y="182" font-size="10" fill="#6b7385">1090 MHz, or a 69 mm wire;</text>
+  <text x="90" y="194" font-size="10" fill="#6b7385">high and outside hears far</text>
+  <path d="M70 262 C70 290 100 296 130 296" stroke="#1d2330" stroke-width="2" fill="none"/>
+  <text x="80" y="254" font-size="10" fill="#6b7385">coax</text>
+  <rect x="130" y="284" width="70" height="24" rx="5" fill="#1d2330"/>
+  <rect x="200" y="290" width="14" height="12" fill="#9aa3b2"/>
+  <text x="165" y="300" text-anchor="middle" font-size="10" fill="#fff">RTL-SDR</text>
+  <text x="165" y="326" text-anchor="middle" font-size="10" fill="#6b7385">USB stick, $30-50</text>
+  <path d="M214 296 H244" stroke="#1d2330" stroke-width="2"/>
+  <rect x="244" y="258" width="150" height="76" rx="6" fill="#f3f5f8" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="254" y="278" font-weight="600" fill="#1d2330">dump1090 or readsb</text>
+  <text x="254" y="294" font-size="11" fill="#1d2330">decodes the messages</text>
+  <text x="254" y="310" font-size="10" fill="#6b7385">on a Raspberry Pi or the PC</text>
+  <text x="254" y="324" font-size="10" fill="#6b7385">SBS-1 lines on TCP 30003</text>
+
+  <!-- the tracker -->
+  <path d="M394 296 H460" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrb)"/>
+  <g fill="#fff" stroke="#3b82c4" stroke-width="1.5"><circle cx="414" cy="296" r="3"/><circle cx="428" cy="296" r="3"/></g>
+  <text x="427" y="286" text-anchor="middle" font-size="10" fill="#3b82c4">TCP 30003</text>
+  <rect x="462" y="168" width="182" height="190" rx="6" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="474" y="188" font-weight="600" fill="#1d2330">AyMON · TRK/S00</text>
+  <text x="474" y="204" font-size="11" fill="#1d2330">the tracker: dials 30003</text>
+  <g font-size="11" fill="#1d2330">
+    <text x="474" y="228">one element per aircraft,</text>
+    <text x="474" y="243">made and deleted as they come</text>
+    <text x="474" y="258">and go (60 s not heard)</text>
+    <text x="474" y="282">squawk 7500 / 7600 / 7700:</text>
+    <text x="474" y="297">the element's alarm</text>
+    <text x="474" y="321">the map, distance and bearing</text>
+    <text x="474" y="336">from the antenna</text>
+  </g>
+
+  <!-- what the example puts in the receiver's place -->
+  <rect x="244" y="358" width="150" height="46" rx="6" fill="#fff" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="254" y="376" font-weight="600" fill="#1d2330">SRC/S00</text>
+  <text x="254" y="393" font-size="10" fill="#6b7385">a dump1090 in script</text>
+  <path d="M394 381 H440 V318 H458" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4" fill="none" marker-end="url(#arrs)"/>
+  <text x="16" y="376" font-size="11" fill="#1d2330" font-weight="600">in the example:</text>
+  <text x="16" y="392" font-size="11" fill="#1d2330">no radio; a dozen aircraft flown</text>
+  <text x="16" y="406" font-size="11" fill="#1d2330">around Istanbul Airport</text>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 428 H40" stroke="#1d2330" stroke-width="2"/><text x="46" y="432">radio, coax, USB</text>
+    <path d="M150 428 H174" stroke="#3b82c4" stroke-width="2"/><text x="180" y="432">text lines over TCP</text>
+    <path d="M300 428 H324" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="5 4"/><text x="330" y="432">the simulated receiver, the same lines</text>
+  </g>
+</svg>

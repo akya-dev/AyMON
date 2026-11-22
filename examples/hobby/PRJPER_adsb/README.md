@@ -29,6 +29,10 @@ On Linux the same example starts with `./run.sh` (the engine in `../../../bin/li
 The tracker never reads the receiver's document. Everything it knows
 arrives as text over TCP, as it would from a real dump1090.
 
+![The receiving chain: the aircraft broadcast ADS-B on 1090 MHz, an antenna and an RTL-SDR stick hear them, dump1090 or readsb decodes them and serves SBS-1 lines on TCP 30003, and the tracker TRK/S00 keeps one element per aircraft and raises an alarm on squawk 7500, 7600 or 7700. In the example SRC/S00, a dump1090 in script, sends the same lines](www/chain.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## The stream
 
 A line per decoded message, 22 comma-separated fields; a message type

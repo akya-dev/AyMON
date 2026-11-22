@@ -26,6 +26,10 @@ camera device and `PRO.vision` came in 4.3.4.570 .. 576, and 4.3.4.577 frees a
 camera device at the stop. Up to 4.3.4.562 the camera and the image functions
 were the two plug-ins `AyPRO_cam` and `AyPRO_img`.
 
+![The filling line: filler, capper, the bottles on the conveyor, the camera with its light, and where an ejector would reject a bottle on a real line. Inside the engine, CN_CAM opens the source and three views take its frames: CN_INS for the inspection script, CN_VIEW for the page's live picture, CN_SEN with PRO.vision for four numbers and their alarms](www/line.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## What you see
 
 * **The line, live**: what the camera sees, five times a second, with the

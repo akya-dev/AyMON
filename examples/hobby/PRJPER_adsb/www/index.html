@@ -86,6 +86,11 @@
             </table>
         </div>
     </section>
+    <section class="card wide">
+        <div class="label">From the aircraft to the map <span style="text-transform:none;letter-spacing:0">- a sketch of a real receiver and of what the example puts in its place; click for full size</span></div>
+        <a href="chain.svg" target="_blank" rel="noopener"><img src="chain.svg" alt="The receiving chain: the aircraft broadcast ADS-B on 1090 MHz, an antenna and an RTL-SDR stick hear them, dump1090 or readsb decodes them and serves SBS-1 lines on TCP 30003, and the tracker TRK/S00 keeps one element per aircraft and raises an alarm on squawk 7500, 7600 or 7700. In the example SRC/S00, a dump1090 in script, sends the same lines"
+           style="display:block;width:100%;max-width:660px;height:auto;margin:8px auto 0;border-radius:6px"></a>
+    </section>
 </main>
 
 <script src="mqtt-lite.js"></script>

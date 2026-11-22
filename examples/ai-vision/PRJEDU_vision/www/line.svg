@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 520" width="660" height="520" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_vision: the filling line, the camera and what the engine does with its pictures</title>
+  <!-- A sketch of what the example's recording shows and how the engine is set up; not to scale. -->
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#1d2330"/></marker>
+    <marker id="arrb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82c4"/></marker>
+    <g id="bottle">
+      <rect x="-9" y="-46" width="18" height="40" rx="4" fill="#e8b765" stroke="#8a6a2a" stroke-width="1"/>
+      <rect x="-5" y="-54" width="10" height="9" fill="#e8b765" stroke="#8a6a2a" stroke-width="1"/>
+      <rect x="-6" y="-58" width="12" height="6" rx="1" fill="#d0402b"/>
+      <rect x="-9" y="-46" width="18" height="10" fill="#fff6e6" opacity="0.7"/>
+    </g>
+  </defs>
+  <rect width="660" height="520" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_vision: the line and the camera</text>
+
+  <!-- the line: filler, capper, conveyor, camera, reject -->
+  <rect x="24" y="74" width="70" height="44" rx="4" fill="#f3f5f8" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="59" y="100" text-anchor="middle" font-size="11">filler</text>
+  <path d="M59 118 V134" stroke="#9aa3b2" stroke-width="4"/>
+  <rect x="112" y="74" width="70" height="44" rx="4" fill="#f3f5f8" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="147" y="100" text-anchor="middle" font-size="11">capper</text>
+  <path d="M147 118 V128" stroke="#9aa3b2" stroke-width="4"/>
+  <rect x="16" y="196" width="628" height="12" rx="6" fill="#e4e7ec" stroke="#6b7385" stroke-width="1.5"/>
+  <g fill="#fff" stroke="#6b7385" stroke-width="1.5"><circle cx="24" cy="202" r="5"/><circle cx="636" cy="202" r="5"/></g>
+  <use href="#bottle" x="59" y="196"/>
+  <use href="#bottle" x="147" y="196"/>
+  <use href="#bottle" x="240" y="196"/>
+  <use href="#bottle" x="380" y="196"/>
+  <use href="#bottle" x="590" y="196"/>
+  <path d="M220 228 H300" stroke="#1d2330" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="306" y="232" font-size="11" fill="#6b7385">a bottle every 0.8 s</text>
+  <!-- the camera and its light -->
+  <rect x="362" y="50" width="36" height="24" rx="3" fill="#1d2330"/>
+  <circle cx="380" cy="80" r="7" fill="#3b82c4" stroke="#1d2330" stroke-width="2"/>
+  <rect x="318" y="64" width="30" height="8" rx="2" fill="#f2c94c" stroke="#9a7d1e"/>
+  <path d="M380 87 L334 190 M380 87 L426 190" stroke="#3b82c4" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <text x="406" y="58" font-weight="600" fill="#1d2330">camera</text>
+  <text x="406" y="72" font-size="11" fill="#6b7385">and a light</text>
+  <text x="380" y="252" text-anchor="middle" font-size="11" fill="#1d2330">red cap? pressed down? filled to the line?</text>
+  <!-- the reject -->
+  <rect x="470" y="140" width="26" height="22" rx="2" fill="#fff" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <path d="M496 151 H516" stroke="#6b7385" stroke-width="3" stroke-dasharray="4 3"/>
+  <path d="M520 208 V236 H570 V208" fill="none" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="470" y="120" font-size="11" fill="#1d2330" font-weight="600">reject</text>
+  <text x="470" y="134" font-size="10" fill="#6b7385">a real line: an ejector</text>
+  <text x="520" y="252" font-size="10" fill="#6b7385">here: the verdict, the count</text>
+
+  <!-- inside the engine -->
+  <rect x="16" y="268" width="628" height="194" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="28" y="288" font-weight="600" fill="#1f5f3b">inside the engine: VIS/S00</text>
+  <path d="M380 92 C380 120 120 150 100 306" stroke="#3b82c4" stroke-width="2" fill="none" marker-end="url(#arrb)"/>
+  <rect x="28" y="308" width="150" height="74" rx="5" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="38" y="326" font-weight="600" fill="#1d2330">CN_CAM</text>
+  <text x="38" y="342" font-size="11" fill="#1d2330">opens the source</text>
+  <text x="38" y="358" font-size="10" fill="#6b7385">the recording (frames/),</text>
+  <text x="38" y="371" font-size="10" fill="#6b7385">usb:0, rtsp://, http://</text>
+  <g stroke="#3b82c4" stroke-width="2" fill="none">
+    <path d="M178 330 H214 V312 H228" marker-end="url(#arrb)"/>
+    <path d="M178 345 H228" marker-end="url(#arrb)"/>
+    <path d="M178 360 H214 V420 H228" marker-end="url(#arrb)"/>
+  </g>
+  <text x="234" y="390" font-size="10" fill="#3b82c4">each one link:CN_CAM</text>
+  <!-- three views -->
+  <g font-size="11" fill="#1d2330">
+    <rect x="230" y="298" width="128" height="32" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="238" y="312" font-weight="600">CN_INS</text><text x="238" y="325" font-size="10" fill="#6b7385">crop, colour, 10 a second</text>
+    <rect x="230" y="336" width="128" height="32" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="238" y="350" font-weight="600">CN_VIEW</text><text x="238" y="363" font-size="10" fill="#6b7385">JPEG 480x360, 5 a second</text>
+    <rect x="230" y="404" width="128" height="44" rx="4" fill="#fff" stroke="#9aa3b2"/>
+    <text x="238" y="418" font-weight="600">CN_SEN · DV_SEN</text><text x="238" y="431" font-size="10" fill="#6b7385">grey, PRO.vision,</text><text x="238" y="443" font-size="10" fill="#6b7385">every frame, no script</text>
+  </g>
+  <g stroke="#1d2330" stroke-width="1.5" fill="none">
+    <path d="M358 314 H376" marker-end="url(#arr)"/><path d="M358 352 H376" marker-end="url(#arr)"/><path d="M358 426 H376" marker-end="url(#arr)"/>
+  </g>
+  <g font-size="11" fill="#1d2330">
+    <text x="382" y="312">the inspection: twenty lines of script,</text>
+    <text x="382" y="326" fill="#6b7385">IMG.* on the picture; a reject rate alarm</text>
+    <text x="382" y="350">the page's live picture, an MJPEG stream</text>
+    <text x="382" y="364" fill="#6b7385">/blob/VIS/S00/CN_VIEW/frm?stream=1</text>
+    <text x="382" y="418">is the line moving? a light barrier,</text>
+    <text x="382" y="432">the light, has the camera moved?</text>
+    <text x="382" y="446" fill="#6b7385">each an &lt;io&gt; with its alarm</text>
+  </g>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 488 H40" stroke="#3b82c4" stroke-width="2"/><text x="46" y="492">frames</text>
+    <path d="M100 488 H124" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="4 3"/><text x="130" y="492">not in the example: on a real line</text>
+  </g>
+  <text x="16" y="510" font-size="11" fill="#6b7385">No camera needed: CN_CAM plays a recording of the line, ten frames a second, in a loop.</text>
+</svg>
