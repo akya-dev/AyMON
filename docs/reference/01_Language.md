@@ -91,8 +91,11 @@ What that means in detail, measured:
 2 * Math.PI    // 6
 Math.PI * 2    // 6.28318530717959
 1 + "5"        // "15": text on either side of + joins
-"5" * 2        // "5": text on the left keeps the text
+"5" * 2        // 10: text on the left is a number for - * / % and bitwise
+"5" / 2        // 2.5: ... a JavaScript number (a float), whatever its digits
+"abc" * 2      // NaN; "" * 2 is 0, as JavaScript
 2 * "5"        // 10: text on the right is read as a number
+null + 1       // 1; null + "a" is "nulla"
 true + 1       // 0: a boolean stays one bit
 5 / 0          // 0, 5.0 / 0 is 0 too
 9223372036854775807 + 1   // -9223372036854775808: no overflow error
@@ -110,6 +113,13 @@ Two more of the same kind:
   boolean, `1 == 1.0` the integer `1`. It does not matter in an `if`; it shows in
   JSON: `JSON.stringify({t: 1 == 1})` is `{"t":1}`.
 
+A text on the left of `-`, `*`, `/`, `%`, `**` or a bitwise operator, and `+x`,
+`-x`, `x++` on a text, read it as JavaScript does (`Number(x)`: the whole text must
+be a number, else NaN) from engine 4.4.3.775; before, the left text came back
+unchanged with no message (`"5" * 2` was `"5"`). This is what a value read from an
+untyped attribute, a JSON text or a form field is. `undefined` keeps the engine's
+rule (`undefined + 1` is `1`).
+
 Floats print with 15 significant digits and no exponent until the number is very
 large or very small: `0.1 + 0.2` prints `0.3`, `123456789.123456789` prints
 `123456789.123457`. Text joined to anything else: `"n=" + 5 + 2.5` is `"n=52.5"`,
@@ -121,6 +131,27 @@ large or very small: `0.1 + 0.2` prints `0.3`, `123456789.123456789` prints
 ## Global functions
 
 Called bare, with no scope in front: `parseInt(x)`. `Global.help` lists them.
+
+### Number() and String()
+
+`Number(v)` → number, `String(v)` → text (from engine 4.4.3.775)
+
+JavaScript's conversions. `Number` reads a text whole: `Number("12")` is `12`,
+`Number(" 0x1F ")` `31`, `Number("1e3")` `1000`, `Number("")` `0`,
+`Number("12abc")` NaN (`parseInt` would answer 12); `Number(null)` is `0`,
+`Number(undefined)` NaN, `Number(true)` `1`, `Number()` `0`. A number comes back as it
+is. `String` writes `undefined` as `"undefined"`, `null` as `"null"`, a boolean as
+`"true"` / `"false"`, an array as its elements joined by `,` (undefined and null as
+nothing), any other object as `"[object Object]"`, a number as the engine prints it;
+`String()` is `""`. Joining with `"" + x` keeps the engine's own rules (`"" + undefined`
+is `""`, `"" + true` is `"1"`). `String.replace(..)` and `Number.toFixed(..)` stay where
+they were: `String` and `Number` are still the scopes of those functions.
+
+```js
+Number("42") + 1        // 43
+String(undefined)       // "undefined"
+String([1, "x", null])  // "1,x,"
+```
 
 ### parseInt
 
@@ -491,17 +522,20 @@ the text: `Number.toFixed(v, 1)` works for an untyped attribute, `v.toFixed(1)` 
 | `v` | a number, or text that starts with one |
 | `digits` | 0 .. 20; absent or negative: 0, above 20: 20 |
 
-Returns `"NaN"` when `v` is no number, `"Infinity"` / `"-Infinity"` for those. The
-rounding is the float's own: the stored value decides, and **an exact half goes to
-the even digit**, unlike `Math.round`.
+Returns `"NaN"` when `v` is no number, `"Infinity"` / `"-Infinity"` for those; from
+`1e21` up the number's own text, as JavaScript. The stored value decides, as in
+JavaScript, and **an exact half goes away from zero** (from engine 4.4.3.775; before,
+to the even digit). `(1e100).toFixed(2)` ended the process before 775.
 
 ```js
 Number.toFixed(3.14159, 2)    // "3.14"
 (2.5).toFixed(3)              // "2.500"
 Number.toFixed(5, 2)          // "5.00"
 Number.toFixed("7.1", 3)      // "7.100"
-Number.toFixed(2.5, 0)        // "2": a half to even
-Number.toFixed(0.125, 2)      // "0.12": the same
+Number.toFixed(2.5, 0)        // "3": an exact half away from zero
+Number.toFixed(-2.5, 0)       // "-3"
+Number.toFixed(0.125, 2)      // "0.13": the same
+Number.toFixed(1.005, 2)      // "1.00": 1.005 is stored a little below
 Number.toFixed(2.345, 2)      // "2.35": 2.345 is stored a little above
 Number.toFixed(sta, 1)        // "771.0" for sta = 0x0303
 ```
@@ -640,17 +674,17 @@ The number of bytes in UTF-8 (UTF-16 units for UTF-16 text).
 
 `String.substr(s, pos [, len])` / `s.substr(pos [, len])` → text
 
-`len` characters from character `pos`; without `len`, to the end.
+`len` characters from character `pos`; without `len`, to the end. A negative `pos`
+counts from the end, a `len` of 0 or less gives `""` (from engine 4.4.3.775; before, a
+negative `pos` gave `""`).
 
 ```js
 "Hello, World".substr(7)       // "World"
 "Hello, World".substr(7, 3)    // "Wor"
 "Çay şekeri".substr(4, 2)      // "şe"
-"Hello, World".substr(-5)      // "": a negative position is not from the end
+"Hello, World".substr(-5)      // "World": from the end
 "Hello, World".substr(50)      // ""
 ```
-
-For "from the end", use `slice`.
 
 ### String.slice
 
@@ -916,13 +950,14 @@ The arguments joined, each read as text.
 `String.split(s [, sep])` / `s.split(sep)` → array of text
 
 `s` cut at every `sep`. Two separators side by side give an empty element. Without a
-separator, **or with an empty one**, the whole text is one element (JavaScript splits
-into characters). A limit argument is ignored.
+separator the whole text is one element; an empty separator gives one element per
+character, as JavaScript (from engine 4.4.3.775; before, the whole text). A limit
+argument is ignored.
 
 ```js
 "Hello, World".split(", ")   // ["Hello","World"]
 "a,,b".split(",")            // ["a","","b"]
-"abc".split("")              // ["abc"]
+"abc".split("")              // ["a","b","c"]
 "".split(",")                // [""]
 ```
 
@@ -955,8 +990,9 @@ delete a[0];         // removes the element and closes the gap
 for (var k in a) {}  // k = 0, 1, 2 ..
 ```
 
-Two differences from JavaScript: **`a.length = 2` does nothing** (use `a.resize(2)`),
-and **`a.length` is unsigned**, so `for (var i = a.length - 1; i >= 0; i--)` never ends;
+`a.length = 2` cuts the array to two elements and `a.length = 5` grows it with
+undefined, as JavaScript (from engine 4.4.3.775; before, the write did nothing). One
+difference from JavaScript: **`a.length` is unsigned**, so `for (var i = a.length - 1; i >= 0; i--)` never ends;
 write `a.length.toINT() - 1`.
 
 An array also answers these members of its own:
@@ -1248,6 +1284,20 @@ undefined.
 var o = {b: "two", c: [1, 2]};
 Object.item(o, 0)     // "two"
 Object.item(o, 1)     // [1,2]
+```
+
+### Object.hasOwnProperty
+
+`Object.hasOwnProperty(o, key)` / `o.hasOwnProperty(key)` → boolean (from engine 4.4.3.775)
+
+`true` when `o` holds `key` itself, also when its value is undefined. A key the
+object answers without holding it (`length`) is `false`.
+
+```js
+var o = {a: 1, u: undefined};
+o.hasOwnProperty("a")        // true
+o.hasOwnProperty("u")        // true
+o.hasOwnProperty("length")   // false
 ```
 
 ### Object.toUNS

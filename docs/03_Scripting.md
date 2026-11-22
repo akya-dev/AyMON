@@ -187,6 +187,12 @@ There is no error and no log line. A decimal point on the **right** changes
 nothing: make the **left** operand a float, with `0.0 + c` or `c.toFLT()`. A
 value read from a `0x0308` attribute is a float already.
 
+A **text** on the left is the exception since engine 4.4.3.775: for `-`, `*`, `/`,
+`%` and the bitwise operators it is read as a JavaScript number (`"5" * 2` is 10,
+`"5" / 2` is 2.5, `+"5"` is 5); before, the text came back unchanged. `+` with a text
+still joins. `Number(x)` and `String(x)` work as in JavaScript, and a function called
+with more arguments than it declares drops the extra ones (it was an error).
+
 **2 — `x == ""` does not catch a missing value.** A missing JSON key, an
 element that is not there, an attribute read as a member (`elm.nope`) and an
 SQL NULL all arrive as `undefined`. One case does not: `evt.GetValue` of an
