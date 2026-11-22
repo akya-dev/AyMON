@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 530" width="660" height="530" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_oee: one machine, seven registers, and the MES that reads them</title>
+  <!-- A signal sketch of what the example simulates and where its registers would come from on a real line. -->
+  <defs>
+    <marker id="arrs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#6b7385"/></marker>
+    <marker id="arrb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82c4"/></marker>
+  </defs>
+  <rect width="660" height="530" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_oee: one machine, seven registers</text>
+
+  <!-- the machine -->
+  <rect x="16" y="40" width="230" height="250" rx="6" fill="#f3f5f8" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="28" y="60" font-weight="600" fill="#1d2330">LINE/S00 · the machine</text>
+  <text x="28" y="76" font-size="11" fill="#6b7385">simulated · Modbus slave 127.0.0.1:1505</text>
+  <g font-size="11" fill="#1d2330">
+    <text x="28" y="104">HR0 state: 0 stopped, 1 running, 2 held</text>
+    <text x="28" y="126">HR1 the reason it gives (0 = none)</text>
+    <text x="28" y="148">HR2 all parts, 16-bit counter</text>
+    <text x="28" y="170">HR3 bad parts, 16-bit counter</text>
+    <text x="28" y="192">HR4 bad at startup, 16-bit counter</text>
+    <text x="28" y="214">HR5 product: 1 = A, 2 = B</text>
+    <text x="28" y="250" fill="#d9731a">HR6 hold, written by the MES</text>
+  </g>
+  <text x="28" y="276" font-size="11" fill="#6b7385" font-style="italic">breakdowns, jams, slow spells, lots</text>
+
+  <!-- the data link: read twice a second, hold written back -->
+  <path d="M246 150 H426" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrb)"/>
+  <g fill="#fff" stroke="#3b82c4" stroke-width="1.5"><circle cx="300" cy="150" r="3"/><circle cx="314" cy="150" r="3"/></g>
+  <text x="336" y="142" font-size="11" fill="#3b82c4" text-anchor="middle">Modbus TCP</text>
+  <text x="336" y="166" font-size="11" fill="#3b82c4" text-anchor="middle">HR0-HR5, twice a second</text>
+  <path d="M430 246 H250" stroke="#d9731a" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrs)"/>
+  <text x="340" y="240" font-size="11" fill="#d9731a" text-anchor="middle">HR6 = 1: the planned break</text>
+
+  <!-- the MES -->
+  <rect x="430" y="40" width="214" height="250" rx="6" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="442" y="60" font-weight="600" fill="#1d2330">OEE/S00 · the MES</text>
+  <g font-size="11" fill="#1d2330">
+    <text x="442" y="84">every stop timed, with its reason;</text>
+    <text x="442" y="100">a stop the machine cannot explain</text>
+    <text x="442" y="116">waits for the operator on this page</text>
+    <text x="442" y="144">A = run time / planned time</text>
+    <text x="442" y="162">P = ideal time / run time</text>
+    <text x="442" y="180">Q = good parts / all parts</text>
+    <text x="442" y="200" font-weight="600">OEE = A × P × Q, per shift</text>
+  </g>
+  <g fill="#fff" stroke="#1d2330" stroke-width="1.5">
+    <path d="M446 228 v34 a16 6 0 0 0 32 0 v-34"/><ellipse cx="462" cy="228" rx="16" ry="6"/>
+  </g>
+  <text x="486" y="244" font-size="11" fill="#1d2330">log/oee.db (SQLite)</text>
+  <text x="486" y="260" font-size="11" fill="#6b7385">every stop, every shift</text>
+
+  <!-- on a real line -->
+  <path d="M16 310 H644" stroke="#dfe3ea" stroke-width="1"/>
+  <text x="16" y="332" font-weight="600" fill="#1d2330">On a real line the registers come from the machine's own PLC, or from wires:</text>
+  <!-- the machine's cabinet with a dry contact -->
+  <rect x="16" y="350" width="70" height="90" rx="4" fill="#f3f5f8" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="51" y="368" text-anchor="middle" font-size="11" font-weight="600">machine</text>
+  <path d="M32 396 H44 M58 396 H70 M44 396 L58 388" stroke="#1d2330" stroke-width="1.5" fill="none"/>
+  <text x="51" y="418" text-anchor="middle" font-size="10" fill="#6b7385">running</text>
+  <text x="51" y="430" text-anchor="middle" font-size="10" fill="#6b7385">(dry contact)</text>
+  <!-- the outfeed conveyor, the parts, a photo-eye and a reject gate -->
+  <rect x="86" y="420" width="250" height="10" rx="5" fill="#e4e7ec" stroke="#6b7385" stroke-width="1.5"/>
+  <g fill="#cfe4f7" stroke="#3b82c4" stroke-width="1"><rect x="110" y="406" width="14" height="14"/><rect x="150" y="406" width="14" height="14"/><rect x="236" y="406" width="14" height="14"/></g>
+  <rect x="190" y="366" width="18" height="14" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M199 380 V418" stroke="#c0392b" stroke-width="1.2" stroke-dasharray="3 3"/>
+  <text x="214" y="378" font-size="10" fill="#1d2330">part sensor: all parts</text>
+  <path d="M296 420 L326 452" stroke="#1d2330" stroke-width="2"/>
+  <rect x="306" y="452" width="34" height="18" fill="#fff" stroke="#9aa3b2" stroke-width="1.2"/>
+  <text x="298" y="486" font-size="10" fill="#1d2330">reject chute sensor: bad parts</text>
+  <!-- the remote I/O module -->
+  <rect x="400" y="356" width="150" height="64" rx="5" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="412" y="376" font-size="11" font-weight="600">remote I/O</text>
+  <text x="412" y="392" font-size="10" fill="#6b7385">a digital input, counter</text>
+  <text x="412" y="405" font-size="10" fill="#6b7385">inputs; Modbus TCP</text>
+  <g stroke="#d9731a" stroke-width="1.5" fill="none">
+    <path d="M70 396 H86 V346 H380 V372 H400"/>
+    <path d="M199 366 V356 H376 V386 H400"/>
+    <path d="M340 461 H388 V404 H400"/>
+  </g>
+  <!-- and from there to the MES -->
+  <path d="M590 388 V294" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrb)"/>
+  <path d="M550 388 H590" stroke="#3b82c4" stroke-width="2"/>
+  <g fill="#fff" stroke="#3b82c4" stroke-width="1.5"><circle cx="590" cy="340" r="3"/><circle cx="590" cy="326" r="3"/></g>
+  <text x="598" y="338" font-size="10" fill="#3b82c4">Modbus TCP</text>
+  <text x="400" y="440" font-size="10" fill="#6b7385">no reason codes this way: every stop</text>
+  <text x="400" y="453" font-size="10" fill="#6b7385">waits for the operator on the page</text>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 504 H40" stroke="#3b82c4" stroke-width="2"/><text x="46" y="508">Modbus TCP</text>
+    <path d="M126 504 H150" stroke="#d9731a" stroke-width="1.5"/><text x="156" y="508">a wire, 24 V signal</text>
+  </g>
+  <text x="16" y="524" font-size="11" fill="#6b7385">Wires into a machine's cabinet are its owner's and an electrician's decision; a dry contact, never a safety circuit.</text>
+</svg>

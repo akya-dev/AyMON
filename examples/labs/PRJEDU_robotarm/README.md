@@ -167,6 +167,10 @@ cell would need its own connection for it.
 
 ### The network
 
+![A real cell: AyMON (CEL/S00) and the UR control box on one Ethernet switch (dashboard 29999, Modbus TCP 502); the emergency stop and the guard door switch on the robot's two-channel safety inputs, never through AyMON; the teach pendant, the arm on its robot cable, the gripper on the tool connector](www/wiring.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ```
  AyMON (CEL/S00)                                     UR control box
  PC / Raspberry Pi  --Ethernet--  switch  --Ethernet--  LAN port

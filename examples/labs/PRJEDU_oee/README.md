@@ -22,6 +22,10 @@ On Linux: `./run.sh`. Then open **http://127.0.0.1:8100/**.
 A shift lasts **eight minutes** here (`SHIFT_S`), with a 30 s planned break
 after four — so a lesson sees several shifts. Everything else is real seconds.
 
+![One machine, LINE/S00, serves seven registers (state, reason, three counters, the product, and a hold the MES writes back); the MES OEE/S00 reads them twice a second over Modbus TCP and works out OEE per shift. Below: where the registers come from on a real line, a PLC or a remote I/O with a running contact, a part sensor and a reject sensor](www/pid.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## OEE in one picture
 
 The page draws it as a waterfall, live for the running shift:

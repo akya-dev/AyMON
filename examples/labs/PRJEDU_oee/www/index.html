@@ -108,6 +108,11 @@
         </div>
         <div class="small muted">0 = never. The machine made <b id="made">--</b> parts since it started, <b id="madebad">--</b> of them bad - what the MES counts should add up to that.</div>
     </section>
+    <section class="card wide">
+        <div class="label">The machine and its registers <span class="muted">a sketch of one machine and its signals; click for full size</span></div>
+        <a href="pid.svg" target="_blank" rel="noopener"><img src="pid.svg" alt="One machine, LINE/S00, serves seven registers (state, reason, three counters, the product, and a hold the MES writes back); the MES OEE/S00 reads them twice a second over Modbus TCP and works out OEE per shift. Below: where the registers come from on a real line, a PLC or a remote I/O with a running contact, a part sensor and a reject sensor"
+           style="display:block;width:100%;max-width:660px;height:auto;margin:0 auto;border-radius:6px"></a>
+    </section>
 </main>
 
 <script src="mqtt-lite.js"></script>
