@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 450" width="660" height="450" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_mqtt: the tank, its topics and who reads them</title>
+  <!-- A simple P&ID of what the example simulates; ISA-style symbols, not to scale. -->
+  <defs>
+    <clipPath id="vessel"><rect x="170" y="90" width="100" height="200" rx="22"/></clipPath>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#1d2330"/></marker>
+    <marker id="arrs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#6b7385"/></marker>
+  </defs>
+  <rect width="660" height="450" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_mqtt: the tank and its topics</text>
+
+  <!-- process: supply, pump, tank, a consumer -->
+  <g stroke="#1d2330" stroke-width="2.5" fill="none">
+    <path d="M20 130 H74"/><path d="M106 130 H170"/>
+    <path d="M220 290 V330 H396" marker-end="url(#arr)"/>
+  </g>
+  <text x="20" y="122" font-size="11" fill="#6b7385">supply</text>
+  <text x="250" y="322" font-size="11" fill="#6b7385">to a consumer, all the time</text>
+  <circle cx="90" cy="130" r="16" fill="#fff" stroke="#1d2330" stroke-width="2"/>
+  <path d="M82 120 L102 130 L82 140 Z" fill="#1d2330"/>
+  <text x="90" y="172" text-anchor="middle" font-weight="600">P-101 pump</text>
+  <text x="90" y="186" text-anchor="middle" font-size="11" fill="#6b7385">on 3 % below the set point,</text>
+  <text x="90" y="200" text-anchor="middle" font-size="11" fill="#6b7385">off 3 % above</text>
+
+  <rect x="172" y="168" width="96" height="124" fill="#cfe4f7" clip-path="url(#vessel)"/>
+  <rect x="170" y="90" width="100" height="200" rx="22" fill="none" stroke="#1d2330" stroke-width="2.5"/>
+  <path d="M176 168 H264" stroke="#3b82c4" stroke-width="1.5"/>
+  <text x="220" y="132" text-anchor="middle" font-weight="600">T-101</text>
+  <text x="220" y="148" text-anchor="middle" font-size="11" fill="#6b7385">tank</text>
+
+  <!-- field instruments: level and temperature -->
+  <path d="M270 150 H323 M270 240 H323" stroke="#1d2330" stroke-width="1.5"/>
+  <g fill="#fff" stroke="#1d2330" stroke-width="1.5"><circle cx="340" cy="150" r="17"/><circle cx="340" cy="240" r="17"/></g>
+  <g text-anchor="middle" fill="#1d2330">
+    <text x="340" y="148" font-size="11" font-weight="600">LT</text><text x="340" y="160" font-size="10">101</text>
+    <text x="340" y="238" font-size="11" font-weight="600">TT</text><text x="340" y="250" font-size="10">102</text>
+  </g>
+  <text x="340" y="182" text-anchor="middle" font-size="11" fill="#6b7385">level</text>
+  <text x="340" y="272" text-anchor="middle" font-size="11" fill="#6b7385">temperature</text>
+
+  <!-- LIC 101: on/off level control in FLD/S00's script; it starts and stops the pump -->
+  <rect x="72" y="42" width="36" height="36" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <circle cx="90" cy="60" r="17" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M73 60 H107" stroke="#1d2330" stroke-width="1"/>
+  <text x="90" y="56" text-anchor="middle" font-size="11" font-weight="600">LIC</text>
+  <text x="90" y="73" text-anchor="middle" font-size="10">101</text>
+  <path d="M340 133 V60 H110" fill="none" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrs)"/>
+  <path d="M90 78 V112" fill="none" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrs)"/>
+  <text x="124" y="52" font-size="11" fill="#6b7385">in FLD/S00's script: the pump holds the set point</text>
+
+  <!-- signals to the broker's document -->
+  <path d="M357 150 H430 M357 240 H430" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="6 4"/>
+
+  <!-- the field: the broker -->
+  <rect x="430" y="96" width="214" height="190" rx="6" fill="#f3f5f8" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="442" y="116" font-weight="600" fill="#1d2330">FLD/S00 · MQTT broker</text>
+  <text x="442" y="132" font-size="11" fill="#6b7385">127.0.0.1:1884 · every change published</text>
+  <g font-size="11" fill="#1d2330" font-family="ui-monospace, Consolas, monospace">
+    <text x="442" y="156">FLD/S00/LEVEL/val</text>
+    <text x="442" y="172">FLD/S00/TEMP/val</text>
+    <text x="442" y="188">FLD/S00/PUMP/val</text>
+    <text x="442" y="204">FLD/S00/SETPOINT/val</text>
+    <text x="442" y="228">…/SETPOINT/val/set</text>
+  </g>
+  <text x="442" y="244" font-size="11" fill="#6b7385">a write: rounded, clamped, then</text>
+  <text x="442" y="258" font-size="11" fill="#6b7385">published like any change</text>
+  <text x="442" y="278" font-size="11" fill="#6b7385" font-style="italic">here it simulates the tank too</text>
+
+  <!-- the data link to the client -->
+  <path d="M537 286 V318" stroke="#3b82c4" stroke-width="2"/>
+  <g fill="#fff" stroke="#3b82c4" stroke-width="1.5"><circle cx="537" cy="296" r="3"/><circle cx="537" cy="308" r="3"/></g>
+  <text x="548" y="306" font-size="11" fill="#3b82c4">MQTT, both ways</text>
+
+  <!-- the monitoring side: the client -->
+  <rect x="430" y="318" width="214" height="80" rx="6" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="442" y="338" font-weight="600" fill="#1d2330">MON/S00 · MQTT client</text>
+  <text x="442" y="356" font-size="11" fill="#1d2330">subscribes FLD/S00/+/val</text>
+  <text x="442" y="372" font-size="11" fill="#1d2330">level alarms 10 / 20 / 80 / 90 %</text>
+  <text x="442" y="389" font-size="11" fill="#6b7385">sends the set point from this page</text>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 426 H40" stroke="#1d2330" stroke-width="2.5"/><text x="46" y="430">process</text>
+    <path d="M100 426 H124" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="6 4"/><text x="130" y="430">signal</text>
+    <path d="M182 426 H210" stroke="#3b82c4" stroke-width="2"/><circle cx="190" cy="426" r="3" fill="#fff" stroke="#3b82c4"/><circle cx="202" cy="426" r="3" fill="#fff" stroke="#3b82c4"/><text x="216" y="430">data link</text>
+    <circle cx="290" cy="426" r="8" fill="#fff" stroke="#1d2330"/><text x="304" y="430">field instrument</text>
+    <rect x="396" y="418" width="16" height="16" fill="#fff" stroke="#1d2330"/><circle cx="404" cy="426" r="7" fill="#fff" stroke="#1d2330"/><text x="418" y="430">in the engine (LIC level control)</text>
+  </g>
+</svg>

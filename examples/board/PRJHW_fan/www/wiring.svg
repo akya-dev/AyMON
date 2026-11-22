@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 480" width="660" height="480" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJHW_fan: how the parts are wired to a Raspberry Pi</title>
+  <!-- Drawn from the README's table "With real parts". A wiring sketch, not a circuit diagram. -->
+  <rect width="660" height="480" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJHW_fan: the wiring</text>
+
+  <!-- the Pi: only the pins the example uses -->
+  <rect x="16" y="40" width="158" height="344" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="28" y="58" font-weight="600" fill="#1f5f3b">Raspberry Pi</text>
+  <g fill="#1d2330" text-anchor="end">
+    <text x="162" y="76">GPIO2 · SDA</text>
+    <text x="162" y="100">GPIO3 · SCL</text>
+    <text x="162" y="144">GPIO8 · CE0</text>
+    <text x="162" y="168">GPIO11 · SCLK</text>
+    <text x="162" y="192">GPIO10 · MOSI</text>
+    <text x="162" y="216">GPIO9 · MISO</text>
+    <text x="162" y="266">GPIO17</text>
+    <text x="162" y="316">GPIO18 · PWM</text>
+    <text x="162" y="340">GPIO23</text>
+    <text x="162" y="364">GPIO24</text>
+  </g>
+
+  <!-- wires: I2C purple, SPI blue, GPIO / PWM orange -->
+  <g stroke-width="2.5" fill="none">
+    <path d="M174 72 H330 M174 96 H330" stroke="#7a5bc4"/>
+    <path d="M174 140 H330 M174 164 H330 M174 188 H330 M174 212 H330" stroke="#3b82c4"/>
+    <path d="M174 262 H330 M174 312 H330 M174 336 H330 M174 360 H330" stroke="#d9731a"/>
+  </g>
+  <g fill="#1d2330">
+    <circle cx="174" cy="72" r="3.5"/><circle cx="174" cy="96" r="3.5"/>
+    <circle cx="174" cy="140" r="3.5"/><circle cx="174" cy="164" r="3.5"/><circle cx="174" cy="188" r="3.5"/><circle cx="174" cy="212" r="3.5"/>
+    <circle cx="174" cy="262" r="3.5"/><circle cx="174" cy="312" r="3.5"/><circle cx="174" cy="336" r="3.5"/><circle cx="174" cy="360" r="3.5"/>
+  </g>
+
+  <!-- LCD1602 on its I2C backpack -->
+  <text x="330" y="50" font-weight="600" fill="#1d2330">LCD1602 + PCF8574, I²C 0x27</text>
+  <rect x="330" y="56" width="150" height="56" rx="5" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="338" y="76">SDA</text><text x="338" y="100">SCL</text>
+  <rect x="378" y="64" width="94" height="40" rx="3" fill="#2d4a9a"/>
+  <text x="425" y="82" text-anchor="middle" fill="#dfe8ff" font-family="ui-monospace, Consolas, monospace" font-size="10">Temp 24.1</text>
+  <text x="425" y="96" text-anchor="middle" fill="#dfe8ff" font-family="ui-monospace, Consolas, monospace" font-size="10">Fan 40%</text>
+  <text x="490" y="66" fill="#1d2330">VCC 5 V, GND</text>
+  <text x="490" y="81" fill="#c0392b" font-size="11">measure SDA, SCL first:</text>
+  <text x="490" y="94" fill="#c0392b" font-size="11">no 5 V to the Pi</text>
+
+  <!-- ADC0834 with the thermistor and the knob -->
+  <text x="330" y="122" font-weight="600" fill="#1d2330">ADC0834, SPI0</text>
+  <rect x="330" y="128" width="110" height="96" rx="5" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="338" y="144">CS</text><text x="338" y="168">CLK</text><text x="338" y="192">DI</text><text x="338" y="216">DO</text>
+  <g text-anchor="end"><text x="432" y="160">CH0</text><text x="432" y="208">CH1</text></g>
+  <text x="330" y="238" font-size="11" fill="#6b7385">VCC and VREF to 3.3 V, GND</text>
+  <!-- CH0: 10 kΩ to 3.3 V over an NTC to ground -->
+  <path d="M440 156 H496" stroke="#1d2330" stroke-width="1.5"/>
+  <circle cx="496" cy="156" r="2.5" fill="#1d2330"/>
+  <path d="M496 156 V144 M496 120 V114 M496 156 V166 M496 190 V196" stroke="#1d2330" stroke-width="1.5"/>
+  <rect x="490" y="120" width="12" height="24" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <rect x="490" y="166" width="12" height="24" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M486 186 L506 170" stroke="#1d2330" stroke-width="1.2"/>
+  <text x="496" y="110" text-anchor="middle" fill="#c0392b" font-size="11">3.3 V</text>
+  <text x="508" y="136" font-size="11">10 kΩ</text>
+  <text x="508" y="176" font-size="11">thermistor</text>
+  <text x="508" y="189" font-size="11">NTC 10 kΩ</text>
+  <path d="M488 196 H504 M491 200 H501 M494 204 H498" stroke="#444" stroke-width="1.5"/>
+  <!-- CH1: the knob, 10 kΩ across 3.3 V and ground -->
+  <path d="M440 208 H594" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M594 208 l-8 -4 v8 z" fill="#1d2330"/>
+  <rect x="594" y="190" width="12" height="36" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M600 190 V178 M600 226 V238" stroke="#1d2330" stroke-width="1.5"/>
+  <text x="600" y="172" text-anchor="middle" fill="#c0392b" font-size="11">3.3 V</text>
+  <path d="M592 238 H608 M595 242 H605 M598 246 H602" stroke="#444" stroke-width="1.5"/>
+  <text x="614" y="204" font-size="11">knob</text>
+  <text x="614" y="217" font-size="11">10 kΩ</text>
+
+  <!-- the button: to ground, the pull-up is inside the Pi -->
+  <text x="412" y="258" font-weight="600" fill="#1d2330">Button</text>
+  <circle cx="334" cy="262" r="3" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <circle cx="366" cy="262" r="3" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M330 254 H370 M350 254 V248" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M369 262 H392 V268" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M384 268 H400 M387 272 H397 M390 276 H394" stroke="#444" stroke-width="1.5"/>
+  <text x="412" y="272" font-size="11" fill="#6b7385">to GND; the pull-up is inside the Pi</text>
+
+  <!-- the L293D and the fan -->
+  <text x="330" y="292" font-weight="600" fill="#1d2330">L293D motor driver</text>
+  <rect x="330" y="298" width="120" height="78" rx="5" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="338" y="316">EN1</text><text x="338" y="340">IN1</text><text x="338" y="364">IN2</text>
+  <g text-anchor="end"><text x="442" y="326">OUT1</text><text x="442" y="354">OUT2</text></g>
+  <path d="M450 322 H520 V318 M450 350 H520 V354" stroke="#1d2330" stroke-width="1.5" fill="none"/>
+  <circle cx="540" cy="336" r="22" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <text x="540" y="341" text-anchor="middle" font-weight="600">M</text>
+  <text x="540" y="372" text-anchor="middle" font-size="11">the fan</text>
+  <text x="330" y="392" font-size="11" fill="#6b7385">VCC1 5 V; the motor's supply (VS) from the power module,</text>
+  <text x="330" y="405" font-size="11" fill="#6b7385">never the Pi's 5 V pin; every ground joined</text>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 432 H40" stroke="#7a5bc4" stroke-width="3"/><text x="46" y="436">I²C</text>
+    <path d="M86 432 H110" stroke="#3b82c4" stroke-width="3"/><text x="116" y="436">SPI</text>
+    <path d="M156 432 H180" stroke="#d9731a" stroke-width="3"/><text x="186" y="436">GPIO, PWM</text>
+    <text x="268" y="436" fill="#c0392b">3.3 V</text><text x="306" y="436">and GND: any of the Pi's 3.3 V and GND pins</text>
+  </g>
+  <text x="16" y="462" font-size="11" fill="#6b7385">A sketch drawn from the README's table; not tried with real parts yet. The Pi's pins take 3.3 V only.</text>
+</svg>

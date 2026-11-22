@@ -37,6 +37,10 @@ Then open **http://127.0.0.1:8121/**. The code is `1234`. On Linux: `./run.sh`.
 
 `dtoverlay=pwm-2chan` gives GPIO18 its PWM; it holds GPIO19 as well, so nothing here uses that pin. Put your own card's number in `CARD`: the page shows that a card was seen, and `RC_UID` holds its number (`DEADBEEF` is 3735928559).
 
+![The wiring: the LCD1602 on I2C, the MFRC522 on SPI0 with RST on GPIO25, the keypad's rows on GPIO5, 6, 13, 26 and columns on GPIO12, 22, 20, 21, the buzzer on GPIO17, the servo on GPIO18](www/wiring.svg)
+
+The same sketch is at the bottom of the example's page. The table says it in full:
+
 | Part | Pin | Goes to |
 |---|---|---|
 | Keypad rows | GPIO5, 6, 13, 26 | the first four pins of most keypads |

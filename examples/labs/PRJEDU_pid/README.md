@@ -25,6 +25,10 @@ That is where a real heater would be wired in instead.
 The rig starts **warm and in balance**: 40 °C, held by 28.3 % of heater power.
 The first set-point step can be made at once.
 
+![A simple P&ID: TT 1 measures the heater block, TIC 1 (the PID in CTL/S00) sets the heater power, the fan is the disturbance and the room takes the heat](www/pid.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## The plant
 
 ```

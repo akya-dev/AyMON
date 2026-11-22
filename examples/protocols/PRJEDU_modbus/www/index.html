@@ -51,6 +51,11 @@
         <div class="note">The device only knows counts: 723 in register 0 is 72.3 % because <code>val_cnv_dlt="0.1"</code> says so.
             The limits and the alarm state are configuration too (<code>ALM.onlvl</code>) - the colour comes from the point's sta.</div>
     </section>
+    <section class="card wide">
+        <div class="label">The process <span class="muted">a simple P&amp;ID; click for full size</span></div>
+        <a href="pid.svg" target="_blank" rel="noopener"><img src="pid.svg" alt="A simple P&ID: the pump P-101 fills the tank T-101, the valve XV-102 drains it, LT 101 and TT 102 measure it; PLC/S00 holds them in four registers and MON/S00 reads them over Modbus TCP"
+           style="display:block;width:100%;max-width:660px;height:auto;margin:0 auto;border-radius:6px"></a>
+    </section>
 </main>
 
 <script src="mqtt-lite.js"></script>

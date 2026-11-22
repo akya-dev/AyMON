@@ -27,6 +27,10 @@ connect to. Read `db\db_MON.xml` first if AyMON is to connect to a broker that
 The port is 1884 rather than 1883 so the example never collides with a
 mosquitto already running on this machine.
 
+![A simple P&ID: the pump P-101 fills the tank T-101 under LIC 101, a consumer drains it, LT 101 and TT 102 measure it; the broker FLD/S00 publishes every change and MON/S00 subscribes and sends the set point](www/pid.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## What it teaches
 
 * **the broker publishes its own document**. `FLD/S00` has no list of topics.

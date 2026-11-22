@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 460" width="660" height="460" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJHW_reverse: how the parts are wired to a Raspberry Pi</title>
+  <!-- Drawn from the README's table "With real parts". A wiring sketch, not a circuit diagram. -->
+  <rect width="660" height="460" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJHW_reverse: the wiring</text>
+
+  <!-- the Pi: only the pins the example uses -->
+  <rect x="16" y="40" width="158" height="340" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="28" y="58" font-weight="600" fill="#1f5f3b">Raspberry Pi</text>
+  <g fill="#1d2330" text-anchor="end">
+    <text x="162" y="76">GPIO2 · SDA</text>
+    <text x="162" y="100">GPIO3 · SCL</text>
+    <text x="162" y="144">GPIO10 · MOSI</text>
+    <text x="162" y="168">GPIO8 · CE0</text>
+    <text x="162" y="192">GPIO11 · SCLK</text>
+    <text x="162" y="236">GPIO23</text>
+    <text x="162" y="260">GPIO24</text>
+    <text x="162" y="324">GPIO4</text>
+    <text x="162" y="364">GPIO18 · PWM</text>
+  </g>
+
+  <!-- wires: I2C purple, SPI blue, GPIO / PWM orange; ECHO goes through a divider -->
+  <g stroke-width="2.5" fill="none">
+    <path d="M174 72 H330 M174 96 H330" stroke="#7a5bc4"/>
+    <path d="M174 140 H330 M174 164 H330 M174 188 H330" stroke="#3b82c4"/>
+    <path d="M174 232 H330 M174 256 H244 M284 256 H330 M174 320 H330 M174 360 H330" stroke="#d9731a"/>
+  </g>
+  <g fill="#1d2330">
+    <circle cx="174" cy="72" r="3.5"/><circle cx="174" cy="96" r="3.5"/>
+    <circle cx="174" cy="140" r="3.5"/><circle cx="174" cy="164" r="3.5"/><circle cx="174" cy="188" r="3.5"/>
+    <circle cx="174" cy="232" r="3.5"/><circle cx="174" cy="256" r="3.5"/>
+    <circle cx="174" cy="320" r="3.5"/><circle cx="174" cy="360" r="3.5"/>
+  </g>
+  <!-- the divider on ECHO: 1 kΩ from ECHO to the pin, 2 kΩ from the pin to ground -->
+  <rect x="244" y="250" width="40" height="12" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <text x="264" y="245" text-anchor="middle" font-size="11">1 kΩ</text>
+  <circle cx="214" cy="256" r="2.5" fill="#1d2330"/>
+  <path d="M214 256 V268 M214 292 V298" stroke="#1d2330" stroke-width="1.5"/>
+  <rect x="208" y="268" width="12" height="24" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <text x="226" y="285" font-size="11">2 kΩ</text>
+  <path d="M206 298 H222 M209 302 H219 M212 306 H216" stroke="#444" stroke-width="1.5"/>
+
+  <!-- MPU6050 -->
+  <text x="330" y="50" font-weight="600" fill="#1d2330">MPU6050, I²C 0x68</text>
+  <rect x="330" y="56" width="150" height="56" rx="5" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="338" y="76">SDA</text><text x="338" y="100">SCL</text>
+  <g stroke="#6b7385" stroke-width="1.5" fill="none">
+    <path d="M430 96 V68 M430 96 H462 M430 96 L414 108"/>
+  </g>
+  <g font-size="9" fill="#6b7385"><text x="433" y="70">z</text><text x="456" y="92">x</text><text x="404" y="108">y</text></g>
+  <text x="490" y="72" fill="#1d2330">VCC 3.3 V, GND</text>
+  <text x="490" y="88" font-size="11" fill="#6b7385">AD0 to GND = 0x68</text>
+
+  <!-- MAX7219 with its 8x8 matrix -->
+  <text x="330" y="122" font-weight="600" fill="#1d2330">MAX7219 + 8×8 matrix, SPI0</text>
+  <rect x="330" y="128" width="150" height="72" rx="5" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="338" y="144">DIN</text><text x="338" y="168">CS</text><text x="338" y="192">CLK</text>
+  <rect x="404" y="134" width="60" height="60" rx="3" fill="#2b2b2b"/>
+  <g fill="#c0392b">
+    <circle cx="411" cy="141" r="2.4"/><circle cx="418" cy="141" r="2.4"/><circle cx="425" cy="141" r="2.4"/><circle cx="432" cy="141" r="2.4"/><circle cx="439" cy="141" r="2.4"/><circle cx="446" cy="141" r="2.4"/><circle cx="453" cy="141" r="2.4"/><circle cx="460" cy="141" r="2.4"/>
+    <circle cx="411" cy="148" r="2.4"/><circle cx="460" cy="148" r="2.4"/>
+    <circle cx="411" cy="155" r="2.4"/><circle cx="460" cy="155" r="2.4"/>
+    <circle cx="411" cy="162" r="2.4"/><circle cx="460" cy="162" r="2.4"/>
+    <circle cx="411" cy="169" r="2.4"/><circle cx="460" cy="169" r="2.4"/>
+    <circle cx="411" cy="176" r="2.4"/><circle cx="460" cy="176" r="2.4"/>
+    <circle cx="411" cy="183" r="2.4"/><circle cx="460" cy="183" r="2.4"/>
+    <circle cx="411" cy="190" r="2.4"/><circle cx="418" cy="190" r="2.4"/><circle cx="425" cy="190" r="2.4"/><circle cx="432" cy="190" r="2.4"/><circle cx="439" cy="190" r="2.4"/><circle cx="446" cy="190" r="2.4"/><circle cx="453" cy="190" r="2.4"/><circle cx="460" cy="190" r="2.4"/>
+  </g>
+  <text x="490" y="144" fill="#1d2330">VCC 5 V, GND</text>
+  <text x="490" y="160" font-size="11" fill="#c0392b">the Pi's 3.3 V inputs are marginal:</text>
+  <text x="490" y="174" font-size="11" fill="#c0392b">noise or nothing? suspect this</text>
+
+  <!-- HC-SR04 -->
+  <text x="330" y="210" font-weight="600" fill="#1d2330">HC-SR04 distance</text>
+  <rect x="330" y="216" width="150" height="56" rx="5" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="338" y="236">TRIG</text><text x="338" y="260">ECHO</text>
+  <circle cx="414" cy="244" r="15" fill="#f3f5f8" stroke="#6b7385" stroke-width="1.5"/>
+  <circle cx="452" cy="244" r="15" fill="#f3f5f8" stroke="#6b7385" stroke-width="1.5"/>
+  <circle cx="414" cy="244" r="6" fill="#9aa3b2"/><circle cx="452" cy="244" r="6" fill="#9aa3b2"/>
+  <text x="490" y="236" fill="#1d2330">VCC 5 V, GND</text>
+  <text x="490" y="252" font-size="11" fill="#c0392b" font-weight="600">ECHO is 5 V: never to</text>
+  <text x="490" y="266" font-size="11" fill="#c0392b" font-weight="600">the pin without the divider</text>
+
+  <!-- DHT11 -->
+  <rect x="330" y="306" width="56" height="28" rx="4" fill="#e8f1fb" stroke="#3b82c4" stroke-width="1.5"/>
+  <text x="358" y="324" text-anchor="middle">DHT11</text>
+  <text x="400" y="318" font-weight="600" fill="#1d2330">temperature and humidity, VCC 3.3 V</text>
+  <text x="400" y="332" font-size="11" fill="#6b7385">10 kΩ from data to 3.3 V if the module has none</text>
+
+  <!-- the passive buzzer -->
+  <circle cx="352" cy="360" r="13" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <text x="352" y="364" text-anchor="middle" font-size="12">~</text>
+  <path d="M330 360 H339 M365 360 H384 V366" stroke="#1d2330" stroke-width="1.5" fill="none"/>
+  <path d="M376 366 H392 M379 370 H389 M382 374 H386" stroke="#444" stroke-width="1.5"/>
+  <text x="400" y="358" font-weight="600" fill="#1d2330">Passive buzzer</text>
+  <text x="400" y="372" font-size="11" fill="#6b7385">through a transistor if it draws over a few mA</text>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 408 H40" stroke="#7a5bc4" stroke-width="3"/><text x="46" y="412">I²C</text>
+    <path d="M86 408 H110" stroke="#3b82c4" stroke-width="3"/><text x="116" y="412">SPI</text>
+    <path d="M156 408 H180" stroke="#d9731a" stroke-width="3"/><text x="186" y="412">GPIO, PWM</text>
+    <text x="268" y="412" fill="#c0392b">3.3 V</text><text x="306" y="412">and GND: any of the Pi's 3.3 V and GND pins</text>
+  </g>
+  <text x="16" y="440" font-size="11" fill="#6b7385">A sketch drawn from the README's table; not tried with real parts yet. The Pi's pins take 3.3 V only.</text>
+</svg>

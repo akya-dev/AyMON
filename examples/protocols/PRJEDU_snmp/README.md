@@ -24,6 +24,10 @@ AyMON does not know yet.
 
 Needs engine **4.3.4.444** or later.
 
+![A simple P&ID: the pump P-101 fills the tank T-101, a consumer drains it, LT 101 and TT 102 measure it; the agent AGT/S00 serves them as six OIDs and MON/S00 reads them with SNMP GET](www/pid.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## Why the agent is script
 
 AyMON's `PRO.snmp` is a manager: it asks, it does not answer. The other

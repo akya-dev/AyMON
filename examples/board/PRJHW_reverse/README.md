@@ -35,6 +35,10 @@ The block `B_SON` starts 1.5 s late (`evt_dly`) because in memory the echoes com
 
 `dtoverlay=pwm-2chan` gives GPIO18 its PWM (and holds GPIO19). **No `dtoverlay=w1-gpio`:** it holds GPIO4, the DHT11's pin.
 
+![The wiring: the MPU6050 on I2C, the MAX7219 on SPI0, the HC-SR04 on GPIO23 and GPIO24 through a divider, the DHT11 on GPIO4, the buzzer on GPIO18](www/wiring.svg)
+
+The same sketch is at the bottom of the example's page. The table says it in full:
+
 | Part | Pin | Goes to |
 |---|---|---|
 | HC-SR04 TRIG | GPIO23 | directly |

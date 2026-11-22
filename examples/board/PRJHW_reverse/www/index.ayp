@@ -13,6 +13,8 @@ h1{font-size:20px;margin:8px 0 4px}p{margin:4px 0 14px;color:#555}
 button{font:inherit;padding:6px 10px;margin:2px;border:1px solid #bbb;border-radius:5px;background:#fff;cursor:pointer}
 #w{display:none;background:#fff8e1;border:1px solid #e6d58a;border-radius:6px;padding:10px}
 .guide{float:right;margin-top:10px;font-size:13px;color:#36c;text-decoration:none}
+.wire{margin-top:14px;background:#fff;border:1px solid #ddd;border-radius:6px;padding:10px}
+.wire span{color:#555;font-size:13px}.wire img{display:block;width:100%;height:auto;margin-top:8px}
 </style></head><body><main>
 <a class="guide" href="https://docs.aymon.ca/PRJHW_reverse/" target="_blank" rel="noopener" title="What this example shows and how it is built">Guide &#8599;</a>
 <h1>A parking sensor</h1>
@@ -26,6 +28,8 @@ button{font:inherit;padding:6px 10px;margin:2px;border:1px solid #bbb;border-rad
 <div id="m"></div>
 <div id="w" style="margin-top:12px"><b>No parts wired: the chips are in memory.</b> Obstacle at <span id="o"></span>.<br>
 <button onclick="go('near')">Nearer</button><button onclick="go('far')">Further</button><button onclick="go('up')">Slope +</button><button onclick="go('down')">Slope -</button></div>
+<div class="wire"><b>The wiring</b> <span>a sketch of the README's table; click for full size</span>
+<a href="/wiring.svg" target="_blank" rel="noopener"><img src="/wiring.svg" alt="The wiring: the MPU6050 on I2C, the MAX7219 on SPI0, the HC-SR04 on GPIO23 and GPIO24 through a divider, the DHT11 on GPIO4, the buzzer on GPIO18"></a></div>
 </main><script>
 var m=document.getElementById('m'),c=[];
 for(var i=0;i<64;i++){var e=document.createElement('i');m.appendChild(e);c.push(e)}

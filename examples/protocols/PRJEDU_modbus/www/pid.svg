@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 450" width="660" height="450" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_modbus: the tank, its points and who reads them</title>
+  <!-- A simple P&ID of what the example simulates; ISA-style symbols, not to scale. -->
+  <defs>
+    <clipPath id="vessel"><rect x="170" y="90" width="100" height="200" rx="22"/></clipPath>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#1d2330"/></marker>
+  </defs>
+  <rect width="660" height="450" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_modbus: the tank and its points</text>
+
+  <!-- process: supply, pump, tank, drain valve -->
+  <g stroke="#1d2330" stroke-width="2.5" fill="none">
+    <path d="M20 130 H74"/><path d="M106 130 H170"/>
+    <path d="M220 290 V330 H300"/><path d="M332 330 H396" marker-end="url(#arr)"/>
+  </g>
+  <text x="20" y="104" font-size="11" fill="#6b7385">from the supply</text>
+  <text x="364" y="322" font-size="11" fill="#6b7385">drain</text>
+  <circle cx="90" cy="130" r="16" fill="#fff" stroke="#1d2330" stroke-width="2"/>
+  <path d="M82 120 L102 130 L82 140 Z" fill="#1d2330"/>
+  <text x="90" y="164" text-anchor="middle" font-weight="600">P-101 pump</text>
+  <text x="90" y="178" text-anchor="middle" font-size="11" fill="#6b7385">runs while filling</text>
+
+  <rect x="172" y="168" width="96" height="124" fill="#cfe4f7" clip-path="url(#vessel)"/>
+  <rect x="170" y="90" width="100" height="200" rx="22" fill="none" stroke="#1d2330" stroke-width="2.5"/>
+  <path d="M176 168 H264" stroke="#3b82c4" stroke-width="1.5"/>
+  <text x="220" y="132" text-anchor="middle" font-weight="600">T-101</text>
+  <text x="220" y="148" text-anchor="middle" font-size="11" fill="#6b7385">tank</text>
+
+  <path d="M300 320 L332 340 V320 L300 340 Z" fill="#fff" stroke="#1d2330" stroke-width="2"/>
+  <path d="M316 330 V314" stroke="#1d2330" stroke-width="1.5"/>
+  <rect x="309" y="304" width="14" height="10" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <text x="316" y="360" text-anchor="middle" font-weight="600">XV-102 drain valve</text>
+  <text x="316" y="374" text-anchor="middle" font-size="11" fill="#6b7385">open while draining</text>
+
+  <!-- field instruments: level and temperature -->
+  <path d="M270 150 H323 M270 240 H323" stroke="#1d2330" stroke-width="1.5"/>
+  <g fill="#fff" stroke="#1d2330" stroke-width="1.5"><circle cx="340" cy="150" r="17"/><circle cx="340" cy="240" r="17"/></g>
+  <g text-anchor="middle" fill="#1d2330">
+    <text x="340" y="148" font-size="11" font-weight="600">LT</text><text x="340" y="160" font-size="10">101</text>
+    <text x="340" y="238" font-size="11" font-weight="600">TT</text><text x="340" y="250" font-size="10">102</text>
+  </g>
+  <text x="340" y="182" text-anchor="middle" font-size="11" fill="#6b7385">level</text>
+  <text x="340" y="272" text-anchor="middle" font-size="11" fill="#6b7385">temperature</text>
+
+  <!-- signals to the PLC -->
+  <path d="M357 150 H430 M357 240 H430" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="6 4"/>
+
+  <!-- the PLC: the Modbus slave -->
+  <rect x="430" y="96" width="214" height="190" rx="6" fill="#f3f5f8" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="442" y="116" font-weight="600" fill="#1d2330">PLC/S00 · Modbus slave</text>
+  <text x="442" y="132" font-size="11" fill="#6b7385">unit 1 · 127.0.0.1:1502</text>
+  <g font-size="11" fill="#1d2330">
+    <text x="442" y="156">HR0 level, tenths of %</text>
+    <text x="442" y="174">HR1 temperature, tenths of °C</text>
+    <text x="442" y="192">HR2 bit 0 pump running</text>
+    <text x="442" y="208" dx="23">bit 1 valve open</text>
+    <text x="442" y="224" dx="23">bit 2 temperature high</text>
+    <text x="442" y="242">HR3 pump hours</text>
+  </g>
+  <text x="442" y="272" font-size="11" fill="#6b7385" font-style="italic">here it simulates the tank too</text>
+
+  <!-- the data link to the master -->
+  <path d="M537 286 V318" stroke="#3b82c4" stroke-width="2"/>
+  <g fill="#fff" stroke="#3b82c4" stroke-width="1.5"><circle cx="537" cy="296" r="3"/><circle cx="537" cy="308" r="3"/></g>
+  <text x="548" y="306" font-size="11" fill="#3b82c4">Modbus TCP, every 1 s</text>
+
+  <!-- the monitoring side: the Modbus master -->
+  <rect x="430" y="318" width="214" height="80" rx="6" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="442" y="338" font-weight="600" fill="#1d2330">MON/S00 · Modbus master</text>
+  <text x="442" y="356" font-size="11" fill="#1d2330">level alarms 5 / 15 / 85 / 95 %</text>
+  <text x="442" y="372" font-size="11" fill="#1d2330">temperature alarms 30 / 33 °C</text>
+  <text x="442" y="389" font-size="11" fill="#6b7385">this page is its page</text>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 426 H40" stroke="#1d2330" stroke-width="2.5"/><text x="46" y="430">process</text>
+    <path d="M100 426 H124" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="6 4"/><text x="130" y="430">signal</text>
+    <path d="M182 426 H210" stroke="#3b82c4" stroke-width="2"/><circle cx="190" cy="426" r="3" fill="#fff" stroke="#3b82c4"/><circle cx="202" cy="426" r="3" fill="#fff" stroke="#3b82c4"/><text x="216" y="430">data link</text>
+    <circle cx="290" cy="426" r="8" fill="#fff" stroke="#1d2330"/><text x="304" y="430">field instrument (LT level, TT temperature)</text>
+  </g>
+</svg>

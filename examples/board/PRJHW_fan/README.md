@@ -35,6 +35,10 @@ The script language keeps the **left** operand's type: `1 / 2.5` is an integer. 
 
 `dtoverlay=pwm-2chan` gives GPIO18 its PWM (and holds GPIO19). The page's world disappears by itself.
 
+![The wiring: the ADC0834 on SPI0 with the thermistor and the knob, the LCD1602 on I2C, the button on GPIO17, the L293D on GPIO18, 23 and 24 driving the fan](www/wiring.svg)
+
+The same sketch is at the bottom of the example's page. The table says it in full:
+
 | Part | Pin | Goes to |
 |---|---|---|
 | ADC0834 CS, CLK | CE0 (GPIO8), SCLK (GPIO11) | SPI0 |

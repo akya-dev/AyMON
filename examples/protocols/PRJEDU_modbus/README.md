@@ -25,6 +25,10 @@ Read `db\db_PLC.xml` first if you are putting AyMON **where a device used
 to be**, `db\db_MON.xml` first if you are **reading a device that already
 exists**. They are the same four levels seen from opposite ends.
 
+![A simple P&ID: the pump P-101 fills the tank T-101, the valve XV-102 drains it, LT 101 and TT 102 measure it; PLC/S00 holds them in four registers and MON/S00 reads them over Modbus TCP](www/pid.svg)
+
+The same drawing is at the bottom of the example's page.
+
 ## What it teaches
 
 * the four levels every AyMON project has — `<con>`, `<dev>`, `<bi>`, `<io>`

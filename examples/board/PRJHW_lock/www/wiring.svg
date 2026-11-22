@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 630" width="660" height="630" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJHW_lock: how the parts are wired to a Raspberry Pi</title>
+  <!-- Drawn from the README's table "With real parts". A wiring sketch, not a circuit diagram. -->
+  <rect width="660" height="630" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJHW_lock: the wiring</text>
+
+  <!-- the Pi: only the pins the example uses -->
+  <rect x="16" y="40" width="158" height="514" rx="8" fill="#eaf4ec" stroke="#2e8b57" stroke-width="1.5"/>
+  <text x="28" y="58" font-weight="600" fill="#1f5f3b">Raspberry Pi</text>
+  <g fill="#1d2330" text-anchor="end">
+    <text x="162" y="76">GPIO2 · SDA</text>
+    <text x="162" y="100">GPIO3 · SCL</text>
+    <text x="162" y="144">GPIO8 · CE0</text>
+    <text x="162" y="168">GPIO11 · SCLK</text>
+    <text x="162" y="192">GPIO10 · MOSI</text>
+    <text x="162" y="216">GPIO9 · MISO</text>
+    <text x="162" y="240">GPIO25</text>
+    <text x="162" y="284">GPIO5</text>
+    <text x="162" y="308">GPIO6</text>
+    <text x="162" y="332">GPIO13</text>
+    <text x="162" y="356">GPIO26</text>
+    <text x="162" y="380">GPIO12</text>
+    <text x="162" y="404">GPIO22</text>
+    <text x="162" y="428">GPIO20</text>
+    <text x="162" y="452">GPIO21</text>
+    <text x="162" y="496">GPIO17</text>
+    <text x="162" y="540">GPIO18 · PWM</text>
+  </g>
+
+  <!-- wires: I2C purple, SPI blue, GPIO / PWM orange -->
+  <g stroke-width="2.5" fill="none">
+    <path d="M174 72 H330 M174 96 H330" stroke="#7a5bc4"/>
+    <path d="M174 140 H330 M174 164 H330 M174 188 H330 M174 212 H330" stroke="#3b82c4"/>
+    <path d="M174 236 H330 M174 280 H330 M174 304 H330 M174 328 H330 M174 352 H330 M174 376 H330 M174 400 H330 M174 424 H330 M174 448 H330 M174 492 H330 M174 536 H330" stroke="#d9731a"/>
+  </g>
+  <g fill="#1d2330">
+    <circle cx="174" cy="72" r="3.5"/><circle cx="174" cy="96" r="3.5"/>
+    <circle cx="174" cy="140" r="3.5"/><circle cx="174" cy="164" r="3.5"/><circle cx="174" cy="188" r="3.5"/><circle cx="174" cy="212" r="3.5"/><circle cx="174" cy="236" r="3.5"/>
+    <circle cx="174" cy="280" r="3.5"/><circle cx="174" cy="304" r="3.5"/><circle cx="174" cy="328" r="3.5"/><circle cx="174" cy="352" r="3.5"/>
+    <circle cx="174" cy="376" r="3.5"/><circle cx="174" cy="400" r="3.5"/><circle cx="174" cy="424" r="3.5"/><circle cx="174" cy="448" r="3.5"/>
+    <circle cx="174" cy="492" r="3.5"/><circle cx="174" cy="536" r="3.5"/>
+  </g>
+
+  <!-- LCD1602 on its I2C backpack -->
+  <text x="330" y="50" font-weight="600" fill="#1d2330">LCD1602 + PCF8574, I²C 0x27</text>
+  <rect x="330" y="56" width="150" height="56" rx="5" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="338" y="76">SDA</text><text x="338" y="100">SCL</text>
+  <rect x="378" y="64" width="94" height="40" rx="3" fill="#2d4a9a"/>
+  <text x="425" y="82" text-anchor="middle" fill="#dfe8ff" font-family="ui-monospace, Consolas, monospace" font-size="10">Code: **</text>
+  <text x="425" y="96" text-anchor="middle" fill="#dfe8ff" font-family="ui-monospace, Consolas, monospace" font-size="10">Locked</text>
+  <text x="490" y="66" fill="#1d2330">VCC 5 V, GND</text>
+  <text x="490" y="81" fill="#c0392b" font-size="11">measure SDA, SCL first:</text>
+  <text x="490" y="94" fill="#c0392b" font-size="11">no 5 V to the Pi</text>
+
+  <!-- the MFRC522 card reader -->
+  <text x="330" y="122" font-weight="600" fill="#1d2330">MFRC522 card reader, SPI0</text>
+  <rect x="330" y="128" width="120" height="120" rx="5" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="338" y="144">SDA (CS)</text><text x="338" y="168">SCK</text><text x="338" y="192">MOSI</text><text x="338" y="216">MISO</text><text x="338" y="240">RST</text>
+  <rect x="408" y="152" width="34" height="58" rx="4" fill="#f3f5f8" stroke="#9aa3b2"/>
+  <path d="M416 168 a9 9 0 0 1 18 0 M412 176 a13 13 0 0 1 26 0" stroke="#3b82c4" stroke-width="1.5" fill="none"/>
+  <text x="425" y="200" text-anchor="middle" font-size="9" fill="#6b7385">card</text>
+  <text x="460" y="144" fill="#c0392b" font-weight="600">3.3 V only</text>
+  <text x="460" y="160" font-size="11" fill="#1d2330">VCC 3.3 V, GND</text>
+  <text x="460" y="240" font-size="11" fill="#6b7385">RST is driven high at start</text>
+
+  <!-- the keypad: four rows, then four columns -->
+  <text x="330" y="262" font-weight="600" fill="#1d2330">4×4 keypad</text>
+  <text x="408" y="262" font-size="11" fill="#6b7385">pins 1-4 rows, 5-8 columns (most keypads)</text>
+  <rect x="330" y="268" width="264" height="192" rx="5" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <g font-size="11">
+    <text x="338" y="284">row 1</text><text x="338" y="308">row 2</text><text x="338" y="332">row 3</text><text x="338" y="356">row 4</text>
+    <text x="338" y="380">col 1</text><text x="338" y="404">col 2</text><text x="338" y="428">col 3</text><text x="338" y="452">col 4</text>
+  </g>
+  <g fill="#f3f5f8" stroke="#9aa3b2">
+    <rect x="404" y="280" width="36" height="36" rx="4"/><rect x="444" y="280" width="36" height="36" rx="4"/><rect x="484" y="280" width="36" height="36" rx="4"/><rect x="524" y="280" width="36" height="36" rx="4"/>
+    <rect x="404" y="320" width="36" height="36" rx="4"/><rect x="444" y="320" width="36" height="36" rx="4"/><rect x="484" y="320" width="36" height="36" rx="4"/><rect x="524" y="320" width="36" height="36" rx="4"/>
+    <rect x="404" y="360" width="36" height="36" rx="4"/><rect x="444" y="360" width="36" height="36" rx="4"/><rect x="484" y="360" width="36" height="36" rx="4"/><rect x="524" y="360" width="36" height="36" rx="4"/>
+    <rect x="404" y="400" width="36" height="36" rx="4"/><rect x="444" y="400" width="36" height="36" rx="4"/><rect x="484" y="400" width="36" height="36" rx="4"/><rect x="524" y="400" width="36" height="36" rx="4"/>
+  </g>
+  <g text-anchor="middle" font-size="13" font-weight="600" fill="#1d2330">
+    <text x="422" y="303">1</text><text x="462" y="303">2</text><text x="502" y="303">3</text><text x="542" y="303">A</text>
+    <text x="422" y="343">4</text><text x="462" y="343">5</text><text x="502" y="343">6</text><text x="542" y="343">B</text>
+    <text x="422" y="383">7</text><text x="462" y="383">8</text><text x="502" y="383">9</text><text x="542" y="383">C</text>
+    <text x="422" y="423">*</text><text x="462" y="423">0</text><text x="502" y="423">#</text><text x="542" y="423">D</text>
+  </g>
+  <text x="404" y="452" font-size="11" fill="#6b7385">wrong keys: swap rows / columns</text>
+
+  <!-- the active buzzer -->
+  <text x="412" y="490" font-weight="600" fill="#1d2330">Active buzzer</text>
+  <text x="412" y="504" font-size="11" fill="#6b7385">through a transistor if it draws over a few mA</text>
+  <circle cx="352" cy="492" r="13" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <text x="352" y="496" text-anchor="middle" font-size="11">+</text>
+  <path d="M330 492 H339 M365 492 H384 V498" stroke="#1d2330" stroke-width="1.5" fill="none"/>
+  <path d="M376 498 H392 M379 502 H389 M382 506 H386" stroke="#444" stroke-width="1.5"/>
+
+  <!-- the servo that moves the bolt -->
+  <rect x="330" y="522" width="74" height="28" rx="4" fill="#fff" stroke="#9aa3b2" stroke-width="1.5"/>
+  <text x="338" y="540">servo</text>
+  <text x="412" y="534" font-weight="600" fill="#1d2330">the bolt</text>
+  <text x="412" y="548" font-size="11" fill="#6b7385">supply from the power module; grounds joined</text>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 582 H40" stroke="#7a5bc4" stroke-width="3"/><text x="46" y="586">I²C</text>
+    <path d="M86 582 H110" stroke="#3b82c4" stroke-width="3"/><text x="116" y="586">SPI</text>
+    <path d="M156 582 H180" stroke="#d9731a" stroke-width="3"/><text x="186" y="586">GPIO, PWM</text>
+    <text x="268" y="586" fill="#c0392b">3.3 V</text><text x="306" y="586">and GND: any of the Pi's 3.3 V and GND pins</text>
+  </g>
+  <text x="16" y="612" font-size="11" fill="#6b7385">A sketch drawn from the README's table; not tried with real parts yet. The Pi's pins take 3.3 V only.</text>
+</svg>

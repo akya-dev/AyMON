@@ -13,6 +13,8 @@ h1{font-size:20px;margin:8px 0 4px}p{margin:4px 0 14px;color:#555}
 button{font:inherit;padding:6px 10px;margin:2px;border:1px solid #bbb;border-radius:5px;background:#fff;cursor:pointer}
 #w{display:none;background:#fff8e1;border:1px solid #e6d58a;border-radius:6px;padding:10px}
 .guide{float:right;margin-top:10px;font-size:13px;color:#36c;text-decoration:none}
+.wire{margin-top:14px;background:#fff;border:1px solid #ddd;border-radius:6px;padding:10px}
+.wire span{color:#555;font-size:13px}.wire img{display:block;width:100%;height:auto;margin-top:8px}
 </style></head><body><main>
 <a class="guide" href="https://docs.aymon.ca/PRJHW_fan/" target="_blank" rel="noopener" title="What this example shows and how it is built">Guide &#8599;</a>
 <h1>A fan that follows the temperature</h1>
@@ -26,6 +28,8 @@ button{font:inherit;padding:6px 10px;margin:2px;border:1px solid #bbb;border-rad
 <div id="w"><b>No parts wired: the chips are in memory.</b> Room <span id="r"></span>, knob <span id="k"></span>.<br>
 <button onclick="go('hot')" id="hot">Heat on</button><button onclick="go('room+')">Room +2</button><button onclick="go('room-')">Room -2</button>
 <button onclick="go('knob+')">Knob +</button><button onclick="go('knob-')">Knob -</button><button onclick="go('button')">Press the button</button></div>
+<div class="wire"><b>The wiring</b> <span>a sketch of the README's table; click for full size</span>
+<a href="/wiring.svg" target="_blank" rel="noopener"><img src="/wiring.svg" alt="The ADC0834 on SPI0 with the thermistor and the knob, the LCD1602 on I2C, the button on GPIO17, the L293D on GPIO18, 23 and 24 driving the fan"></a></div>
 </main><script>
 var a=0,sp=0;
 function show(j){

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 400" width="660" height="400" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12">
+  <title>PRJEDU_pid: the heater block and its control loop</title>
+  <!-- A simple P&ID of what the example simulates; ISA-style symbols, not to scale. -->
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#1d2330"/></marker>
+    <marker id="arrs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#6b7385"/></marker>
+    <marker id="arrh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#d9731a"/></marker>
+  </defs>
+  <rect width="660" height="400" fill="#ffffff"/>
+  <text x="16" y="24" font-size="14" font-weight="600" fill="#1d2330">PRJEDU_pid: the loop</text>
+
+  <!-- the heater block (the plant) -->
+  <rect x="150" y="120" width="180" height="110" rx="6" fill="#e4e7ec" stroke="#6b7385" stroke-width="2"/>
+  <text x="240" y="146" text-anchor="middle" font-weight="600">heater block</text>
+  <text x="240" y="162" text-anchor="middle" font-size="11" fill="#6b7385">PLT/S00</text>
+  <text x="240" y="178" text-anchor="middle" font-size="11" fill="#6b7385">0.6 °C per %, τ 30 s</text>
+  <text x="240" y="192" text-anchor="middle" font-size="11" fill="#6b7385">dead time 3 s</text>
+  <path d="M182 212 l7 -8 l7 16 l7 -16 l7 16 l7 -16 l7 16 l7 -16 l7 16 l7 -16 l7 16 l7 -16 l7 16 l7 -16 l7 8" fill="none" stroke="#c0392b" stroke-width="2"/>
+  <text x="294" y="216" font-size="10" fill="#c0392b">heater</text>
+
+  <!-- heat lost to the room -->
+  <path d="M150 190 H62" stroke="#d9731a" stroke-width="2" marker-end="url(#arrh)"/>
+  <text x="20" y="168" font-size="11" fill="#6b7385">heat lost to the</text>
+  <text x="20" y="182" font-size="11" fill="#6b7385">room, 23 °C</text>
+
+  <!-- the fan: the disturbance -->
+  <circle cx="240" cy="306" r="18" fill="#fff" stroke="#1d2330" stroke-width="2"/>
+  <text x="240" y="311" text-anchor="middle" font-weight="600">M</text>
+  <g stroke="#3b82c4" stroke-width="1.5">
+    <path d="M216 284 V238" marker-end="url(#arrs)"/><path d="M240 284 V238" marker-end="url(#arrs)"/><path d="M264 284 V238" marker-end="url(#arrs)"/>
+  </g>
+  <text x="270" y="300" font-weight="600" fill="#1d2330">fan: the disturbance</text>
+  <text x="270" y="316" font-size="11" fill="#6b7385">1.6 × the heat loss; switched from the page</text>
+
+  <!-- TT 1: the block's temperature -->
+  <path d="M330 175 H403" stroke="#1d2330" stroke-width="1.5"/>
+  <circle cx="420" cy="175" r="17" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <text x="420" y="173" text-anchor="middle" font-size="11" font-weight="600">TT</text>
+  <text x="420" y="185" text-anchor="middle" font-size="10">1</text>
+  <text x="420" y="210" text-anchor="middle" font-size="11" fill="#6b7385">noise 0.05 °C</text>
+
+  <!-- TIC 1: the PID, a function in the engine -->
+  <rect x="502" y="92" width="36" height="36" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <circle cx="520" cy="110" r="17" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <path d="M503 110 H537" stroke="#1d2330" stroke-width="1"/>
+  <text x="520" y="106" text-anchor="middle" font-size="11" font-weight="600">TIC</text>
+  <text x="520" y="123" text-anchor="middle" font-size="10">1</text>
+  <g font-size="11" fill="#1d2330">
+    <text x="470" y="152" font-weight="600">PID in CTL/S00, every 0.5 s</text>
+    <text x="470" y="168">set point, Kp, Ti, Td, MAN / AUTO</text>
+    <text x="470" y="184">anti-windup; trip at 90 °C</text>
+    <text x="470" y="200" fill="#6b7385">a step test suggests a tuning</text>
+  </g>
+
+  <!-- signals: PV to the controller, MV to the heater -->
+  <path d="M420 158 V110 H500" fill="none" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrs)"/>
+  <text x="426" y="104" font-size="11" fill="#6b7385">PV, °C</text>
+  <path d="M520 92 V66 H240 V118" fill="none" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrs)"/>
+  <text x="250" y="60" font-size="11" fill="#6b7385">MV: heater power, 0 - 100 %</text>
+
+  <!-- legend -->
+  <g font-size="11" fill="#1d2330">
+    <path d="M16 372 H40" stroke="#d9731a" stroke-width="2"/><text x="46" y="376">heat</text>
+    <path d="M86 372 H110" stroke="#6b7385" stroke-width="1.5" stroke-dasharray="6 4"/><text x="116" y="376">signal</text>
+    <circle cx="176" cy="372" r="8" fill="#fff" stroke="#1d2330"/><text x="190" y="376">field instrument (TT temperature)</text>
+    <rect x="382" y="364" width="16" height="16" fill="#fff" stroke="#1d2330"/><circle cx="390" cy="372" r="7" fill="#fff" stroke="#1d2330"/><text x="404" y="376">in the engine (TIC controller)</text>
+  </g>
+</svg>
