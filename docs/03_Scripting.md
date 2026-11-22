@@ -247,7 +247,6 @@ remedy, and it still works.
 **8 — The library's names mean something else.** Measured:
 
 ```js
-"aXbXc".replace("X", "-")       // "a-b-c": every match, not the first
 [1].push(5)                     // 0: a result code, not the new length
 [10, 9, 1].sort()               // [1, 9, 10]: by value, not as text
 if (true) { let q = 5; } q      // 5: let has no block scope

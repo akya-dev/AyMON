@@ -254,9 +254,9 @@ function act(evt)
     var cmd = "" + a.cmd;
     if (cmd == "find") {
         var t = ("" + a.txt).trim();
-        t = t.replace("'", "");
-        t = t.replace("{", "");
-        t = t.replace("}", "");
+        t = t.replaceAll("'", "");
+        t = t.replaceAll("{", "");
+        t = t.replaceAll("}", "");
         if (t.length > 40) t = t.substr(0, 40);
         evt.SetValue("id('FIND')/@val", t);
         last(evt, "the names are searched for '" + t + "': the table has no name column");

@@ -594,8 +594,9 @@ String.substr(s, 7, 3)     // "Wor": call form
 ```
 
 **Positions and lengths count characters**, also outside ASCII; only `size` counts
-bytes. `replace` changes every match. Text is a value: `t = s` copies, and no
-function changes `s` itself.
+bytes. `replace` changes the first match and `replaceAll` every match, as in
+JavaScript (from engine 4.4.3.773; before it `replace` changed every match). Text is a
+value: `t = s` copies, and no function changes `s` itself.
 
 The call form reads a number as its text for `length`, `size`, `substr`, `indexOf`,
 `replace`, `padStart`, `toUpperCase` and `toLowerCase` (`String.substr(12345, 1, 2)` is
@@ -775,21 +776,54 @@ anywhere. A position argument is ignored: `"abc".includes("a", 1)` is `1`.
 
 `String.replace(s, find, repl)` / `s.replace(find, repl)` → text
 
-`s` with **every** `find` replaced by `repl` (JavaScript replaces the first). Numbers
-are read as text. Both arguments are needed: with one, or with an empty `find`, the
-result is undefined. There are no regular expressions.
+`s` with the **first** `find` replaced by `repl`, as in JavaScript. Use `replaceAll`
+for every match. Numbers are read as text, `null` is `"null"`.
+
+In `repl`, `$$` is one `$`, `$&` the matched text, `` $` `` the text before it and
+`$'` the text after it; any other `$` stays as written (`$1` too, a text pattern has
+no groups). An empty `find` matches at the start. A missing or undefined `find` is the
+text `"undefined"`; a missing or undefined `repl` inserts nothing (JavaScript would
+insert `"undefined"`; here `"" + undefined` is `""` as well). A function as `repl` is
+refused with an error: no string function can call a script function.
+
+The pattern can be a regular expression literal that holds plain text only:
+`/'/g` and `/\./g` work, a metacharacter (`^ $ . * + ? ( ) [ ] { } |`, `\d`, `\w` ..)
+or a flag other than `g` is a syntax error. `s.replace(/x/g, r)` changes every match
+(it is `replaceAll`), `s.replace(/x/, r)` the first. A regular expression kept in a
+variable has become text by the time it is used, so `s.replace(re, r)` changes the
+first match even when `re` was written with `g`.
 
 ```js
-"aXbXc".replace("X", "-")          // "a-b-c"
-String.replace("a.b.c", ".", "/")  // "a/b/c"
-"a1b1".replace(1, 2)               // "a2b2"
-"ab".replace("", "x")              // undefined
+"aXbXc".replace("X", "-")          // "a-bXc"
+"aXbXc".replace(/X/g, "-")         // "a-b-c"
+String.replace("a.b.c", ".", "/")  // "a/b.c"
+"a1b1".replace(1, 2)               // "a2b1"
+"ab".replace("", "x")              // "xab"
+"a-b".replace("-", "[$&]")         // "a[-]b"
 ```
+
+Before engine 4.4.3.773 `replace` changed every match, and an empty `find` gave
+undefined. A script written for that rule writes one warning line per call site the
+first time such a `replace` meets a text with more than one match: use `replaceAll`
+there.
 
 ### String.replaceAll
 
-`String.replaceAll(s, find, repl)` / `s.replaceAll(find, repl)` → text. The same
-function as `replace`.
+`String.replaceAll(s, find, repl)` / `s.replaceAll(find, repl)` → text
+
+`s` with **every** `find` replaced by `repl`, left to right, without overlap; `repl`
+as for `replace`. An empty `find` matches before every character and at the end.
+Available on every engine since 4.3.4.360 (it was a second name of `replace` until
+4.4.3.773), so a script that has to run on older engines too uses `replaceAll`.
+
+```js
+"aXbXc".replaceAll("X", "-")       // "a-b-c"
+"it's".replaceAll("'", "''")       // "it''s"
+"ab".replaceAll("", "-")           // "-a-b-"
+```
+
+To put a text in literally, whatever `$` it holds (a value a user typed, a password),
+use `split` and `join`: `s.split(find).join(value)`.
 
 ### String.toUpperCase
 

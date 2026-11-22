@@ -44,7 +44,7 @@ function init(evt)
     var str = main.con_str;
     var mac = ["%PRJ%", "%DB%", "%ROOT%", "%BIN%"];
     for (var i = 0; i < mac.length; i++)
-        str = str.replace(mac[i], xdb.normalizePath(mac[i]));
+        str = str.replaceAll(mac[i], xdb.normalizePath(mac[i]));
 
     evt.SetValue("id('CN_SQL')/@con_host", str);
 
