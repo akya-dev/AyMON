@@ -18,6 +18,9 @@ h1 { font-size: 18px; margin: 0; }
 .doc { color: var(--muted); font-weight: 400; font-family: ui-monospace, Consolas, monospace; font-size: 14px; }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .chip { font-size: 12px; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+/* a link in the header, e.g. to the example's guide; opens in a new tab */
+a.chip { color: var(--c1, #3b82c4); border-color: var(--c1, #3b82c4); text-decoration: none; }
+a.chip:hover { background: var(--btn-h, rgba(127, 127, 127, .15)); }
 .chip.ok  { color: var(--ok); border-color: var(--ok); }
 .chip.bad { color: var(--em); border-color: var(--em); }
 

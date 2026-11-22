@@ -32,6 +32,29 @@ SRC = os.path.join(OUT, "src")
 
 REPO_URL = "https://github.com/akya-dev/AyMON"
 BRANCH = "main"
+# The public demo (tools/demo-server): an example listed in its examples.conf runs at
+# https://<label>.demo.aymon.ca/ and its page here links to it.
+DEMO_URL = "https://{}.demo.aymon.ca/"
+DEMO_CONF = os.path.join(ROOT, "tools", "demo-server", "examples.conf")
+
+
+def demo_hosts():
+    """{example folder: [public host label, ..]} from the demo kit's examples.conf (active lines only).
+    A line with roots=ID:label,.. publishes one name per root, not its own label."""
+    out = {}
+    if not os.path.isfile(DEMO_CONF):
+        return out
+    for line in open(DEMO_CONF, encoding="utf-8"):
+        f = line.split()
+        if len(f) < 3 or f[0].startswith("#"):
+            continue
+        roots = [x[6:] for x in f[3:] if x.startswith("roots=")]
+        labels = [r.split(":", 1)[1] for r in roots[0].split(",")] if roots else [f[0]]
+        out[f[1].strip("/")] = labels
+    return out
+
+
+DEMO_HOSTS = demo_hosts()
 
 
 def _tracked():
@@ -171,9 +194,16 @@ def example_banner(repo_path):
     name = os.path.basename(folder)
     if not name.startswith("PRJ"):
         return ""
+    live = ""
+    hosts = DEMO_HOSTS.get(folder.replace("\\", "/"))
+    if hosts:   # opens in a new tab: the reader keeps the guide beside the running example
+        links = " and ".join(f"[{h}.demo.aymon.ca]({DEMO_URL.format(h)}){{ target=_blank rel=noopener }}"
+                             for h in hosts)
+        live = (f"\n    **Try it live** at {links}: a copy running on a small shared server, put back\n"
+                f"    to the repository's copy every few hours.\n")
     return (f"!!! info \"\"\n    Every file of this example — the XML, the scripts, the page — is in\n"
             f"    [**{folder}** on GitHub]({REPO_URL}/tree/{BRANCH}/{folder}).\n"
-            f"    Run it with `run.bat` (Windows) or `./run.sh` (Linux) from that folder.\n\n")
+            f"    Run it with `run.bat` (Windows) or `./run.sh` (Linux) from that folder.\n{live}\n")
 
 
 def stage():

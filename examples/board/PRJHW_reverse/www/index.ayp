@@ -12,7 +12,9 @@ h1{font-size:20px;margin:8px 0 4px}p{margin:4px 0 14px;color:#555}
 #m i{display:block;width:18px;height:18px;border-radius:50%;background:#402020}#m i.on{background:#ff3b30}
 button{font:inherit;padding:6px 10px;margin:2px;border:1px solid #bbb;border-radius:5px;background:#fff;cursor:pointer}
 #w{display:none;background:#fff8e1;border:1px solid #e6d58a;border-radius:6px;padding:10px}
+.guide{float:right;margin-top:10px;font-size:13px;color:#36c;text-decoration:none}
 </style></head><body><main>
+<a class="guide" href="https://docs.aymon.ca/PRJHW_reverse/" target="_blank" rel="noopener" title="What this example shows and how it is built">Guide &#8599;</a>
 <h1>A parking sensor</h1>
 <p>An HC-SR04, a DHT11, a passive buzzer, a MAX7219 matrix and an MPU6050.</p>
 <div class="row">

@@ -1,6 +1,7 @@
 body { font: 15px/1.4 system-ui, sans-serif; margin: 0; color: #222; background: #f6f7f9; }
 header { display: flex; gap: 1.5em; align-items: baseline; padding: .6em 1.2em; background: #2b3a55; color: #fff; }
 header span { color: #cfe0ff; font-size: 13px; }
+header a.guide { margin-left: auto; color: #cfe0ff; font-size: 13px; text-decoration: none; }
 main { padding: 1em 1.2em; max-width: 52em; }
 footer { padding: 1em 1.2em; color: #777; font-size: 12px; }
 h2 { font-size: 1.05em; margin: 1.4em 0 .4em; }

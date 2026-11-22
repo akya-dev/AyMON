@@ -24,6 +24,9 @@ h1 { font-size: 18px; margin: 0; }
 .chip.ok  { color: var(--ok);  border-color: var(--ok); }
 .chip.wrn { color: var(--wrn); border-color: var(--wrn); }
 .chip.bad, .chip.alm { color: var(--alm); border-color: var(--alm); }
+/* a link in the header, e.g. to the example's guide; opens in a new tab */
+a.chip { color: var(--c1); border-color: var(--c1); text-decoration: none; }
+a.chip:hover { background: var(--btn-h); }
 
 main { display: grid; gap: 16px; padding: 16px; max-width: 1150px; margin: 0 auto;
        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }

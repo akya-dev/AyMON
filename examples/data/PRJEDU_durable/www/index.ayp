@@ -22,7 +22,8 @@ var lv = ["normal", "warning", "ALARM", "EMERGENCY"];
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<header><b>Mixer</b> <span>values that come back after a crash</span></header>
+<header><b>Mixer</b> <span>values that come back after a crash</span>
+  <a class="guide" href="https://docs.aymon.ca/PRJEDU_durable/" target="_blank" rel="noopener" title="What this example shows and how it is built">Guide &#8599;</a></header>
 <main>
 <table class="kv">
   <tr><th>Batches since the machine was new</th><td class="num big"><%= s.batches %></td><td class="kept">kept</td></tr>

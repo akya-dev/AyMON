@@ -12,7 +12,9 @@ h1{font-size:20px;margin:8px 0 4px}p{margin:4px 0 14px;color:#555}
 .fan{width:60px;height:60px;border-radius:50%;border:6px dotted #36c;margin:auto}
 button{font:inherit;padding:6px 10px;margin:2px;border:1px solid #bbb;border-radius:5px;background:#fff;cursor:pointer}
 #w{display:none;background:#fff8e1;border:1px solid #e6d58a;border-radius:6px;padding:10px}
+.guide{float:right;margin-top:10px;font-size:13px;color:#36c;text-decoration:none}
 </style></head><body><main>
+<a class="guide" href="https://docs.aymon.ca/PRJHW_fan/" target="_blank" rel="noopener" title="What this example shows and how it is built">Guide &#8599;</a>
 <h1>A fan that follows the temperature</h1>
 <p>An ADC0834, an L293D, an LCD1602 and a button on a board's own pins.</p>
 <div class="lcd" id="lcd">&nbsp;<br>&nbsp;</div>

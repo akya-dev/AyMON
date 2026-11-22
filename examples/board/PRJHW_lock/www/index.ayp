@@ -13,7 +13,9 @@ h1{font-size:20px;margin:8px 0 4px}p{margin:4px 0 14px;color:#555}
 #pad button{height:44px;font-size:18px}
 button{font:inherit;padding:6px 10px;margin:2px;border:1px solid #bbb;border-radius:5px;background:#fff;cursor:pointer}
 #w{display:none;margin-top:8px}
+.guide{float:right;margin-top:10px;font-size:13px;color:#36c;text-decoration:none}
 </style></head><body><main>
+<a class="guide" href="https://docs.aymon.ca/PRJHW_lock/" target="_blank" rel="noopener" title="What this example shows and how it is built">Guide &#8599;</a>
 <h1>A lock with a keypad and a card reader</h1>
 <p>Code 1234, then #. * clears. The known card opens it too. Three wrong codes block it for 30 s.</p>
 <div class="lcd" id="lcd"></div>

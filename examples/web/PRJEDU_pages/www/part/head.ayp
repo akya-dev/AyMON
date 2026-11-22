@@ -19,7 +19,7 @@
 <body>
 <header>
   <b>Tank farm</b>
-  <nav><a href="/">Overview</a> <a href="/access.ayp">Access</a> <a href="/api.ayp">API</a></nav>
+  <nav><a href="/">Overview</a> <a href="/access.ayp">Access</a> <a href="/api.ayp">API</a> <a class="guide" href="https://docs.aymon.ca/PRJEDU_pages/" target="_blank" rel="noopener" title="What this example shows and how it is built">Guide &#8599;</a></nav>
 <% if (ses.user != "") { -%>
   <form class="who" method="post" action="/auth/logoff">
     <%= ses.user %> (role <%= ses.user_role %>)
