@@ -286,6 +286,9 @@ def stage():
         parts += ["", "=" * 78, f"PAGE: {t}", f"URL:  {url(p)}", "=" * 78, "", text.strip(), ""]
     write(os.path.join(SRC, "llms-full.txt"), "\n".join(parts))
     print(f"staged {len(full)} pages into {SRC}")
+    # the CI checkout is sparse: without the demo's list no page gets its live link, and nothing else says so
+    print(f"live demo links: {len(DEMO_HOSTS)} examples" if DEMO_HOSTS else
+          f"live demo links: NONE -- {os.path.relpath(DEMO_CONF, ROOT)} not found")
 
 
 if __name__ == "__main__":

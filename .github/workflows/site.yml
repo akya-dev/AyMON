@@ -15,6 +15,7 @@ on:
       - "docs/**"
       - "examples/**/README.md"
       - "tools/site/**"
+      - "tools/demo-server/examples.conf"
       - ".github/workflows/site.yml"
   workflow_dispatch:
 
@@ -39,6 +40,7 @@ jobs:
             README.md
             docs
             tools/site
+            tools/demo-server/examples.conf
             examples/README.md
             examples/*/README.md
             examples/*/*/README.md
