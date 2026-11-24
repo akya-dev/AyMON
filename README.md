@@ -25,8 +25,8 @@ whatever you change goes back to the repository's copy every 3 hours.
   systems: one of them follows more than 1 800 devices and 270 000 points on
   three nodes. See
   [In the field](docs/08_In_the_Field.md).
-- **Small.** One executable and a few libraries: 3.8 MB for the core on
-  Windows, under 10 MB with every optional module. See
+- **Small.** One executable and a few libraries: 4.3 MB for the core on
+  Windows, 7 MB with every optional module. See
   [what the engine is made of](#what-the-engine-is-made-of).
 - **Free to run.** The FREE edition never expires and allows production use
   within 5 documents, 8 connections, 8 devices and 4 logged-in users.
@@ -259,29 +259,30 @@ with Ctrl-C.
 ## What the engine is made of
 
 `bin/` holds the whole engine: one executable and a few libraries. The core,
-`AyXDB`, `AyDATA` and `AyPRO`, is 4.0 MB on Windows and 5.8 MB on Linux; with
-every optional module it is 6.7 MB on Windows and 10 MB on Linux. A module is
+`AyXDB`, `AyDATA` and `AyPRO`, is 4.3 MB on Windows and 6.2 MB on Linux; with
+every optional module it is 7.0 MB on Windows and 10.6 MB on Linux. A module is
 loaded only when a project uses it.
 
 | File | What it is | Windows x64 | Linux x64 | Lines of code |
 |---|---|---:|---:|---:|
 | `AyXDB` (`.exe`) | the process: loads the engine, runs the console | 47 KB | 95 KB | 999 |
-| `AyDATA` | values and types, the XML document tree with its XPath, JSON | 795 KB | 997 KB | 27 404 |
-| `AyPRO` | the engine: events, threads and queues, connections and protocols, scripting, SQL, cluster and replication, several projects in one process | 3.21 MB | 4.72 MB | 124 470 |
+| `AyDATA` | values and types, the XML document tree with its XPath, JSON | 809 KB | 1.03 MB | 28 029 |
+| `AyPRO` | the engine: events, threads and queues, connections and protocols, scripting, SQL, cluster and replication, several projects in one process | 3.41 MB | 5.09 MB | 129 420 |
 | | shared by `AyXDB` and `AyPRO`: the log, utilities, the thread base | | | 3 580 |
-| `AyLIB_net` | mail, FTP and SFTP, file and ZIP functions | 344 KB | 593 KB | 4 009 |
-| `AyLIB_vision` | cameras and image functions | 482 KB | 835 KB | 8 927 |
+| `AyLIB_net` | mail, FTP and SFTP, file and ZIP functions | 345 KB | 594 KB | 4 056 |
+| `AyLIB_vision` | cameras and image functions | 484 KB | 835 KB | 8 968 |
 | `AyLIB_hw` | a board's GPIO, PWM, I²C and SPI | 120 KB | 273 KB | 3 753 |
 | `AyLIB_Python311` / `313` | Python scripts, one module per Python version | 311 / 317 KB | 523 / 515 KB | 2 246 |
+| `AyLIB_sec` | sealed secrets: passwords and keys kept as tokens in the files, opened only where they are used | 70 KB | 89 KB | 3 433 |
 | `AyPRO_sqlite` | the embedded SQLite database | 1.05 MB | 1.42 MB | 562 |
 | `AyPRO_odbc` | other databases, over ODBC | 25 KB | 36 KB | 927 |
 | `AyPRO_pgsql` | PostgreSQL without ODBC, over libpq | 33 KB | 48 KB | 1 115 |
 | `AyPRO_hid` | USB HID devices | 20 KB | – | 244 |
-| | the interfaces of the modules and plug-ins | | | 603 |
-| **All** | | **6.7 MB** | **10.05 MB** | **178 839** |
+| | the interfaces of the modules and plug-ins | | | 730 |
+| **All** | | **7.0 MB** | **10.55 MB** | **188 062** |
 
-On Windows the files are `.dll`, on Linux `lib….so`. The 64-bit ARM build is the
-same size: 5.3 MB for the core, 9.5 MB in all.
+On Windows the files are `.dll`, on Linux `lib….so`. The 64-bit ARM build is a
+little smaller: 5.6 MB for the core, 9.9 MB in all.
 
 Lines of code are AyMON's own C++, counted from the build projects of the 4.4.3
 sources, without blank and comment-only lines. They leave out the third-party
