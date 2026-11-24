@@ -21,6 +21,7 @@ seen working.
 | [13_Durable_Documents.md](13_Durable_Documents.md) | You want a value to survive a restart without a database. `xdb_dur`, what a crash and a power cut cost, waiting for the disk, an SD card's wear, the newest copy in a cluster. |
 | [14_SQL_Both_Ways.md](14_SQL_Both_Ways.md) | You want the tree and a database in one query. A database table in XDB SQL (`sql()`, named queries `<sqlq>`), a table of the tree in the database's own SQL (`xdb()`), who may do which, the limits, and which bridge to choose. |
 | [15_Many_Projects_One_Engine.md](15_Many_Projects_One_Engine.md) | You want several projects in one engine process. Roots, one port for all of them, the host's `HOST.*`, the rules for different customers in one engine, backup and moving a root, the licence. |
+| [16_Metrics_and_Health.md](16_Metrics_and_Health.md) | You watch it with Prometheus, Grafana or Kubernetes. `/metrics` and its key, every series, the ready-made dashboard, `/health/live`, `/ready`, `/primary`, `/standby`, MQTT `$SYS`, a process with many roots, the cost. |
 | [reference/](reference/README.md) | You need the exact call. Every built-in scope, object and function, every chain function and every connection type and protocol — arguments, results, measured examples — and how to ask the engine itself with `help`. |
 
 ## Suggested order
@@ -51,6 +52,7 @@ PRJEDU_rep      →  10_Two_Engines         →  04_Licensing
 PRJEDU_cluster  →  10_Two_Engines         →  04_Licensing
 PRJEDU_remote   →  10_Two_Engines         →  06_Access_and_Safety
 PRJEDU_sites    →  15_Many_Projects_One_Engine  →  04_Licensing
+PRJEDU_monitor  →  16_Metrics_and_Health  →  12_Keeping_It_Running
 PRJEDU_gauge    →  03_Scripting
 PRJEDU_pycall   →  03_Scripting
 PRJEDU_vision   →  03_Scripting          →  05_Connections_and_Protocols

@@ -1,0 +1,38 @@
+# PRJEDU_monitor: Prometheus + Grafana with the AyMON dashboard, one command:
+#
+#     docker compose up -d        (in this directory, with the engine running: ../run.bat or ../run.sh)
+#
+# Grafana: http://localhost:3000 -- dashboard "AyMON engine" (folder AyMON), anonymous viewers allowed,
+# admin / admin to edit. Prometheus: http://localhost:9090 (Status > Targets: the engine "UP").
+#
+# The engine must be reachable from the containers as host.docker.internal:9464 -- Docker Desktop
+# gives that name itself; Docker Engine on Linux gets it from extra_hosts below. With Docker inside WSL
+# the engine must run inside WSL too (./run.sh): the Windows host is not host.docker.internal there.
+services:
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=2d
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/aymon-engine.json
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped

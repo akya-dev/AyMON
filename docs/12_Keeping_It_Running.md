@@ -2,6 +2,8 @@
 
 How a running engine tells you something is wrong, before someone reads a log. Everything
 here is on by default in every example: `PRJEDU_telnet` is the way in while it runs.
+To watch it from outside — Prometheus, Grafana, Kubernetes probes, MQTT `$SYS` — see
+[16_Metrics_and_Health.md](16_Metrics_and_Health.md).
 
 ---
 
@@ -176,3 +178,4 @@ not stay as an example leaves it.
 4. `alm_adr` is set, so that a health alarm lands where the operator looks.
 5. The log directory has room: `log_cfg`, `log_lnk`.
 6. Someone has read the `stats` line once under real load.
+7. Something outside watches it: `/metrics` scraped, `/health/live` and `/ready` probed ([16](16_Metrics_and_Health.md)).

@@ -1,0 +1,10 @@
+# PRJEDU_monitor: Grafana loads the dashboards of /var/lib/grafana/dashboards into folder "AyMON".
+apiVersion: 1
+providers:
+  - name: aymon
+    folder: AyMON
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

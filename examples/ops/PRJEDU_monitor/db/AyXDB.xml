@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_monitor - watching a running engine from outside.
+
+     THE ROOT DOCUMENT. Besides naming the engine and its one child
+     document, it holds the MANAGEMENT CONNECTION: one HTTP port that serves
+       /metrics           Prometheus text (engine 4.4.3.788 and later)
+       /health/live       is the process stuck?            (4.4.3.789+)
+       /health/ready      started, not stopping?
+       /health/primary    is this node the master of its clustered documents?
+       /health/standby    ... or a spare?
+
+     A separate <con> for management is the advice: monitoring traffic does
+     not share the application's sessions, its logins or its con_acl.
+
+     xdb_lib names the SQLite driver plug-in: MON/S00's CN_SQL is CON.sqlite.
+
+     Path macros: %PRJ% = this project directory, %DB% = this db directory.
+     Run:  run.bat  /  ./run.sh
+     ===================================================================== -->
+<xdb id="MON" xdb_lib="AyPRO, AyPRO_sqlite" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="S01">
+	<config>
+		<doc id="MON/S00" sta="0x0300" src="%DB%/db_MON.xml" desc="a little work to watch: timers, a slow job, an MQTT broker" />
+	</config>
+	<data>
+		<!-- THE MANAGEMENT CONNECTION.
+		     pro_metrics        the path of the Prometheus text
+		     pro_metrics_key    a Bearer key. Without one only this machine
+		                        (loopback) is answered -- Prometheus in a
+		                        container is NOT loopback, so the example sets
+		                        one. Change it; it can be sealed (sealed secrets).
+		     pro_metrics_detail object = the process, every document, thread
+		                        and connection (the default of a project)
+		     pro_metrics_dev    1 = also one series pair per <dev> (off by default)
+		     pro_health         the root of the health endpoints: no key, one
+		                        line of text -- a kubelet's probe carries no key
+		     pro_health_wdt     /health/live answers 503 when the process root's
+		                        thread has not counted a second for this long (s)
+		     con_host 0.0.0.0   every interface: a container must reach it. -->
+		<con id="CN_MON" xdb_fnc="[CON.tcp,PRO.http]" con_host="0.0.0.0" con_port="9464" con_mod="SERVER"
+		     con_ses="8" thr_wrk="0" thr_per="100" con_tmo="5" con_comdly="0" con_rct="0" con_clr="1"
+		     con_rcvlen="8192" con_keeptmo="0" con_idletmo="60" pro_role="SLAVE" pro_tmo="5" pro_try="1"
+		     pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_metrics="/metrics" pro_metrics_key="change-me-metrics-key" pro_metrics_detail="object"
+		     pro_health="/health" pro_health_wdt="30"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+	</data>
+</xdb>

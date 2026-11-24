@@ -1,0 +1,19 @@
+# PRJEDU_monitor: Prometheus scrapes the engine's /metrics.
+#
+# The key is the example's pro_metrics_key (db/AyXDB.xml): change both together.
+# In docker-compose.yml Prometheus runs in a container, so the engine is
+# host.docker.internal; a Prometheus on the same machine uses localhost:9464.
+global:
+  scrape_interval: 10s          # the engine builds the text at most once a second
+  evaluation_interval: 10s
+
+scrape_configs:
+  - job_name: aymon
+    metrics_path: /metrics
+    authorization:
+      type: Bearer
+      credentials: change-me-metrics-key
+    static_configs:
+      - targets: ['host.docker.internal:9464']
+        labels:
+          site: example

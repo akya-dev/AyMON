@@ -1,0 +1,12 @@
+# PRJEDU_monitor: Grafana's Prometheus data source, made when Grafana starts.
+# The dashboard picks its data source from a variable; this uid is its default.
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: aymon-prom
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    jsonData:
+      timeInterval: 10s

@@ -1,0 +1,9 @@
+# Running it in production
+
+| Example | What it shows |
+|---|---|
+| [PRJEDU_monitor](PRJEDU_monitor/) | `/metrics` for Prometheus, a ready-made Grafana dashboard, `/health/live|ready|primary|standby` for Kubernetes and load balancers, MQTT `$SYS` |
+
+The guide: [docs/16_Metrics_and_Health.md](../../docs/16_Metrics_and_Health.md).
+
+[All examples](../README.md)

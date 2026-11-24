@@ -173,6 +173,7 @@ AyMON/
     cluster/         engines together: replication, a cluster that fails over,
                      a document on another node
     hosting/         several projects in one engine, behind one port
+    ops/             running it in production: Prometheus, Grafana, health probes
     labs/            course labs: a PLC program, PID, OEE, a robot arm
     ai-vision/       AI assistants over MCP, Python, machine vision
     hobby/           a drone, the aircraft overhead, your phone (PRJPER_*)
@@ -348,6 +349,12 @@ Run an example from its own folder.
 |---|---|---|
 | [**PRJEDU_sites**](examples/hosting/PRJEDU_sites/) | one engine process, three projects: a host and two sites, each a complete project of its own (`xdb_roots="project"`, a `<doc xdb_root="1">` each) with its own files, page, log and time zone; one port for every page — the door hands a request to the site whose `root_host` is in its `Host` header (http://acme.localhost:8125/, http://beta.localhost:8125/); a bridge between two sites (`doc('SITE@BETA')`, `root_peers` on both sides) and what neither the host nor a site can see of the others; the host's page at http://127.0.0.1:8125/ with `HOST.list()` and buttons that stop, start, back up, add a site from a template, restore a backup as a new site and remove it, writing the process root's file as it goes; measured: a site added in 12–44 ms, a backup suspends it for about a third of a second | nothing; engine 4.4.3.761 or later |
 
+### [Running it in production](examples/ops/)
+
+| Project | What it teaches | Needs |
+|---|---|---|
+| [**PRJEDU_monitor**](examples/ops/PRJEDU_monitor/) | an engine that says how it is doing to the tools operations already use: `/metrics` for Prometheus (with a key), a ready-made Grafana dashboard (`docker compose up` in `monitoring/`: the process, each root, the threads, documents, connections, MQTT and SQL), `/health/live`, `/ready`, `/primary`, `/standby` for Kubernetes probes and load balancers (a sketch in `monitoring/kubernetes/`), and an MQTT broker's `$SYS` topics with Mosquitto's names | nothing; Docker for the dashboard; engine 4.4.3.791 or later |
+
 ### [Course labs](examples/labs/)
 
 | Project | What it teaches | Needs |
@@ -496,6 +503,7 @@ guide:
 | [13_Durable_Documents.md](docs/13_Durable_Documents.md) | values that survive a restart without a database, what a crash and a power cut cost |
 | [14_SQL_Both_Ways.md](docs/14_SQL_Both_Ways.md) | the tree and a database in one query, both ways, and who may run which |
 | [15_Many_Projects_One_Engine.md](docs/15_Many_Projects_One_Engine.md) | several projects in one engine process: one port for all, the host, different customers side by side, backup and moving a project |
+| [16_Metrics_and_Health.md](docs/16_Metrics_and_Health.md) | `/metrics` for Prometheus, a Grafana dashboard, health probes for Kubernetes, MQTT `$SYS` |
 
 [docs/reference/](docs/reference/README.md) is the other half: **every built-in
 scope, object and function** of the script language, every function you put in

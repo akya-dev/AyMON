@@ -10,6 +10,7 @@ Every example runs with one command and needs no licence, no hardware and no dat
 | [Web pages, access and security](web/) | [PRJEDU_web](web/PRJEDU_web/), [PRJEDU_pages](web/PRJEDU_pages/), [PRJEDU_telnet](web/PRJEDU_telnet/), [PRJEDU_hardening](web/PRJEDU_hardening/) |
 | [Two engines](cluster/) | [PRJEDU_rep](cluster/PRJEDU_rep/), [PRJEDU_cluster](cluster/PRJEDU_cluster/), [PRJEDU_remote](cluster/PRJEDU_remote/) |
 | [Several projects in one engine](hosting/) | [PRJEDU_sites](hosting/PRJEDU_sites/) |
+| [Running it in production](ops/) | [PRJEDU_monitor](ops/PRJEDU_monitor/) |
 | [Course labs](labs/) | [PRJEDU_plc](labs/PRJEDU_plc/), [PRJEDU_pid](labs/PRJEDU_pid/), [PRJEDU_oee](labs/PRJEDU_oee/), [PRJEDU_robotarm](labs/PRJEDU_robotarm/) |
 | [AI assistants, Python and vision](ai-vision/) | [PRJEDU_mcp](ai-vision/PRJEDU_mcp/), [PRJEDU_robot_mcp](ai-vision/PRJEDU_robot_mcp/), [PRJEDU_gauge](ai-vision/PRJEDU_gauge/), [PRJEDU_pycall](ai-vision/PRJEDU_pycall/), [PRJEDU_vision](ai-vision/PRJEDU_vision/) |
 | [Hobby projects](hobby/) | [PRJPER_tello](hobby/PRJPER_tello/), [PRJPER_adsb](hobby/PRJPER_adsb/), [PRJPER_phone](hobby/PRJPER_phone/) |

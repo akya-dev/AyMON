@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_monitor / MON/S00 - some work, so the dashboard has something
+     to show:
+       1  <thr>  TH_WORK with two workers: its queue, latency and busy ratio
+                 are on the dashboard (aymon_thread_*)
+       2  <var>  FAST: ten writes a second (aymon_root_events_total)
+       3  <var>  SLOW: a job that takes 1.5 s every 15 s -- the oldest-node
+                 latency of TH_WORK jumps when it runs
+       4  <con>  CN_MQ: an MQTT broker with $SYS (Mosquitto's names) every
+                 10 s, and a retained value published every second
+       5  <con>  CN_SQL: a pool of two SQLite links; a script holds one and
+                 runs a query on the other every second (aymon_sql_links)
+     ===================================================================== -->
+<xdb id="MON/S00" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/MON.log"
+     xdb_start="main.start(evt);" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/db_MON.js" language="JScript"
+		        sta="0x0303" sta_typ="0x142"></script>
+	</config>
+
+	<data>
+		<!-- 1 - A THREAD WITH TWO WORKERS. Its timers' callbacks run on the
+		     workers; /metrics shows the thread and its pool
+		     (aymon_thread_workers, aymon_thread_worker_*). -->
+		<thr id="TH_WORK" xdb_fnc="[THR.cre]" thr_per="50" thr_wrk="2"
+		     sta="0x0303" sta_typ="0x142" sta_fnc="[THR.sta]"/>
+
+		<!-- 2 - TEN WRITES A SECOND. -->
+		<var id="FAST" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="TH_WORK" evt_per="0.1" evt_dly="0" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.fast]" val="0" val_typ="0x0308" desc="a value that moves"/>
+
+		<!-- 3 - A SLOW JOB: 1.5 s every 15 s on TH_WORK. -->
+		<var id="SLOW" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_thr="TH_WORK" evt_per="15" evt_dly="5" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.slow]" val="0" val_typ="0x0208" desc="runs of the slow job"/>
+
+		<!-- 4 - AN MQTT BROKER (port 1886) with $SYS.
+		     pro_mqtt_sys       $SYS/broker/... every 10 s, Mosquitto's names
+		     pro_mqtt_sys_role  who may read them (2 = Monitor)
+		     con_role 2         a client that does not log in gets role 2 here
+		                        (an example: give real brokers con_auth). -->
+		<con id="CN_MQ" xdb_fnc="[CON.tcp,PRO.mqtt]" con_host="127.0.0.1" con_port="1886" con_mod="SERVER"
+		     con_acl="127.0.0.1" con_way="FULL" con_ses="16" con_tmo="5" con_clr="1" con_rcvlen="65536"
+		     con_keeptmo="120.0" con_idletmo="0" thr_wrk="0" pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="1"
+		     pro_typ="0xC412" pro_fnc="[]" pro_cid="MQ_MON" pro_nid="S00" pro_pfx="+/+" pro_getsfx="" pro_setsfx="set"
+		     con_role="2" pro_mqtt_sys="10" pro_mqtt_sys_role="2"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- 5 - A DATABASE POOL: two links to a SQLite file in log\. CON.sqlite
+		     is the SQLite driver plug-in's connection type (named in AyXDB.xml's
+		     xdb_lib); its con_host is the file, with the path macros expanded. -->
+		<con id="CN_SQL" xdb_fnc="[CON.sqlite,PRO.sql]" desc="a little SQLite file"
+		     con_host="%PRJ%/log/monitor.db"
+		     con_mod="CLIENT" con_ses="2" con_clr="1" con_tmo="5" con_comdly="1" con_rcvdly="100" con_rct="2"
+		     con_keeptmo="0" con_idletmo="0" pro_role="MASTER" pro_tmo="10" pro_try="1" pro="1" pro_typ="0x0401" pro_fnc="[]"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+		<var id="SQLJOB" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_per="1" evt_dly="3" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.sql]" val="0" val_typ="0x0208" desc="queries run"/>
+
+		<!-- a retained value on the broker, once a second -->
+		<var id="PUB" xdb_fnc="[XDB.evt]" sta="0x0303" sta_typ="0x142" sta_fnc="[EVT.sta]"
+		     evt="" evt_typ="0x1201" evt_per="1" evt_dly="2" evt_syn="0"
+		     evt_cfg="0x0042" evt_fnc="[main.pub]" val="0" val_typ="0x0208" desc="messages published"/>
+	</data>
+</xdb>

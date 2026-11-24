@@ -1,0 +1,87 @@
+# PRJEDU_monitor: an AyMON engine in Kubernetes -- the probes and the scrape. A sketch to adapt, not a
+# chart: the image, the project volume and the licence are yours.
+#
+#   livenessProbe   /health/live    the process is not stuck (the process root's thread counts its seconds;
+#                                    pro_health_wdt). A device, a database or a root never takes it down:
+#                                    restarting an engine because a PLC went away would be wrong.
+#   readinessProbe  /health/ready   started (every <doc> tried) and not stopping: on SIGTERM it answers 503 at
+#                                    once while the connections still run. A spare node is ready too.
+#   startupProbe    /health/ready   a large project takes a while to load.
+#   /health/primary is for a load balancer that must reach the master of a cluster (or let the clients
+#   choose: PostgreSQL's target_session_attrs, a con_host list).
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: aymon
+spec:
+  serviceName: aymon
+  replicas: 1
+  selector:
+    matchLabels: { app: aymon }
+  template:
+    metadata:
+      labels: { app: aymon }
+    spec:
+      terminationGracePeriodSeconds: 60      # a clean stop flushes the durable log and the record journal
+      containers:
+        - name: aymon
+          image: registry.example.com/aymon:4.4.3     # your image of the engine + the project
+          args: ["-console", "/project/db/AyXDB.xml"]
+          ports:
+            - { name: mgmt, containerPort: 9464 }     # CN_MON: /metrics + /health
+            - { name: mqtt, containerPort: 1886 }
+          livenessProbe:
+            httpGet: { path: /health/live, port: mgmt }
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet: { path: /health/ready, port: mgmt }
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 1
+          startupProbe:
+            httpGet: { path: /health/ready, port: mgmt }
+            periodSeconds: 5
+            failureThreshold: 60                      # up to 5 minutes to load
+          volumeMounts:
+            - { name: project, mountPath: /project }
+  volumeClaimTemplates:
+    - metadata: { name: project }
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources: { requests: { storage: 1Gi } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aymon
+  labels: { app: aymon }
+spec:
+  selector: { app: aymon }
+  ports:
+    - { name: mgmt, port: 9464, targetPort: mgmt }
+    - { name: mqtt, port: 1886, targetPort: mqtt }
+---
+# With the Prometheus Operator: scrape /metrics with the key kept in a Secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aymon-metrics-key
+stringData:
+  key: change-me-metrics-key
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: aymon
+spec:
+  selector:
+    matchLabels: { app: aymon }
+  endpoints:
+    - port: mgmt
+      path: /metrics
+      interval: 10s
+      authorization:
+        type: Bearer
+        credentials: { name: aymon-metrics-key, key: key }
