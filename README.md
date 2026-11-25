@@ -267,7 +267,7 @@ loaded only when a project uses it.
 |---|---|---:|---:|---:|
 | `AyXDB` (`.exe`) | the process: loads the engine, runs the console | 47 KB | 95 KB | 999 |
 | `AyDATA` | values and types, the XML document tree with its XPath, JSON | 814 KB | 1.03 MB | 28 127 |
-| `AyPRO` | the engine: events, threads and queues, connections and protocols, scripting, SQL, cluster and replication, several projects in one process | 2.58 MB | 4.04 MB | 111 460 |
+| `AyPRO` | the engine: events, threads and queues, connections and protocols, scripting, SQL, cluster and replication, several projects in one process | 2.58 MB | 4.04 MB | 111 265 |
 | | shared by `AyXDB` and `AyPRO`: the log, utilities, the thread base | | | 3 580 |
 | `AyLIB_net` | mail, FTP and SFTP, file and ZIP functions | 345 KB | 594 KB | 4 056 |
 | `AyLIB_vision` | cameras and image functions | 484 KB | 835 KB | 8 968 |
@@ -283,7 +283,7 @@ loaded only when a project uses it.
 | `AyPRO_pgsql` | PostgreSQL without ODBC, over libpq | 33 KB | 48 KB | 1 115 |
 | `AyPRO_hid` | USB HID devices | 20 KB | – | 244 |
 | | the interfaces of the modules and plug-ins | | | 1 005 |
-| **All** | | **7.1 MB** | **10.68 MB** | **187 344** |
+| **All** | | **7.1 MB** | **10.68 MB** | **187 149** |
 
 On Windows the files are `.dll`, on Linux `lib….so`. The 64-bit ARM build is a
 little smaller: 4.7 MB for the core, 10.2 MB in all.
