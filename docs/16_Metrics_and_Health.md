@@ -7,35 +7,40 @@ Prometheus and Grafana with the ready-made dashboard.
 [Keeping it running](12_Keeping_It_Running.md) is how the engine shows its health *inside*: alarm bits
 in `sta`, the `stats` line, the log. This page is how it shows it *outside*, to the tools operations
 already run: Prometheus and Grafana, Kubernetes probes, a load balancer, an MQTT monitor. Engine
-4.4.3.788 and later (`/metrics`), 789 (`/health`), 790 (objects), 791 (protocols, `$SYS`).
+4.4.3.788 and later (`/metrics`), 789 (`/health`), 790 (objects), 791 (protocols, `$SYS`); from 4.4.3.805 the
+endpoints are a protocol of their own, `PRO.metrics`.
 
 ---
 
 ## One management connection
 
-Both are mounts on an HTTP connection (`PRO.http`, also `PRO.rest` / `PRO.soap`), like `pro_blob`.
-A connection of its own is the advice — a port in the cluster network or on loopback, so monitoring
-does not share the application's sessions, logins and `con_acl`:
+Both come from one connection of the protocol `PRO.metrics` — its own port (in the cluster network or on
+loopback) and its own `con_acl`, so monitoring shares nothing with the application's sessions and logins.
+Nothing else is served on it: any other path answers 404.
 
 ```xml
-<con id="CN_MON" xdb_fnc="[CON.tcp,PRO.http]" con_host="0.0.0.0" con_port="9464" con_mod="SERVER"
-     con_ses="8" pro_role="SLAVE" sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"
-     pro_metrics="/metrics" pro_metrics_key="..." pro_metrics_detail="object"
-     pro_health="/health" pro_health_wdt="30"/>
+<con id="CN_MON" xdb_fnc="[CON.tcp,PRO.metrics]" con_host="0.0.0.0" con_port="9464" con_mod="SERVER"
+     con_ses="8" sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"
+     pro_metrics_key="..." pro_metrics_detail="object" pro_health_wdt="30"/>
 ```
+
+Up to 4.4.3.804 `pro_metrics` and `pro_health` were written on a `PRO.http` connection; from 4.4.3.805 a
+`PRO.http` connection does not read them (one line in the log says so), so the connection's `xdb_fnc` becomes
+`[CON.tcp,PRO.metrics]`. Behind a shared door (`con_host="#CN_EXT" con_port="/ops"`) the door's path comes
+first: `/ops/metrics`, `/ops/health/live`.
 
 | Attribute | Default | Meaning |
 |---|---|---|
-| `pro_metrics` | none (off) | the path of the Prometheus text |
+| `pro_metrics` | `/metrics` | the path of the Prometheus text; written empty = no metrics |
 | `pro_metrics_key` | none | a Bearer key, compared in constant time, may be sealed. **None = only this machine** (loopback) is answered, anyone else 401. A key that is there but does not open = 401 to everyone |
 | `pro_metrics_detail` | `object` (a project), `root` (a tenant process) | `process`, `root` or `object` (below) |
 | `pro_metrics_roots` | every root | which roots' rows: `R*, ACME` (`*` `?`, case ignored) |
 | `pro_metrics_dev` | `0` | `1` = one series pair per `<dev>` too (DCIM has 519 devices) |
-| `pro_health` | none (off) | the root of the health endpoints |
+| `pro_health` | `/health` | the root of the health endpoints; written empty = none |
 | `pro_health_wdt` | `30` | seconds; `/health/live` fails when the process stands still this long (2..3600) |
 
-A request to either mount counts toward `pro_http_rate`, never toward a root's message quota, and
-`pro_http_auth` is not asked (they have their own rules). GET and HEAD only.
+A request counts toward `pro_http_rate`, never toward a root's message quota, and no login is asked (they
+have their own rules). GET and HEAD only.
 
 ## `/metrics`
 
@@ -155,7 +160,7 @@ AyMON:
 
 ## The cost
 
-Nothing until a mount is configured. Counting costs nothing on the hot path: each MQTT session counts its
+Nothing until a `PRO.metrics` connection is configured. Counting costs nothing on the hot path: each MQTT session counts its
 own traffic, the root meters were counted already. Per scrape: the root list walked once (≈4 µs a row),
 the process's processor and memory read once.
 

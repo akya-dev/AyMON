@@ -4,7 +4,8 @@ An engine that says how it is doing to the tools operations already use: **Prome
 `/metrics`, **Grafana** shows the ready-made dashboard, **Kubernetes** (or any load balancer) asks
 `/health/...`, and an MQTT client reads the broker's **`$SYS`** topics the way it reads Mosquitto's.
 
-Needs engine **4.4.3.791 or later** (`/metrics` 788, `/health` 789, objects 790, MQTT `$SYS` 791).
+Needs engine **4.4.3.805 or later** (`/metrics` 788, `/health` 789, objects 790, MQTT `$SYS` 791, the
+protocol `PRO.metrics` 805).
 
 ```bat
 run.bat
@@ -16,7 +17,7 @@ On Linux: `./run.sh`. Stop with CTRL-C.
 
 | Port | What |
 |---|---|
-| 9464 | `CN_MON`, the management connection: `/metrics` (Bearer key `change-me-metrics-key`) and `/health/...` (no key) |
+| 9464 | `CN_MON`, the management connection (`[CON.tcp,PRO.metrics]`): `/metrics` (Bearer key `change-me-metrics-key`) and `/health/...` (no key) |
 | 1886 | `CN_MQ`, an MQTT broker with `$SYS` every 10 s |
 
 And a little work so the dashboard has something to show: a value written ten times a second, a job
