@@ -259,30 +259,33 @@ with Ctrl-C.
 ## What the engine is made of
 
 `bin/` holds the whole engine: one executable and a few libraries. The core,
-`AyXDB`, `AyDATA` and `AyPRO`, is 4.3 MB on Windows and 6.2 MB on Linux; with
-every optional module it is 7.0 MB on Windows and 10.6 MB on Linux. A module is
+`AyXDB`, `AyDATA` and `AyPRO`, is 3.6 MB on Windows and 5.3 MB on Linux; with
+every optional module it is 7.1 MB on Windows and 10.7 MB on Linux. A module is
 loaded only when a project uses it.
 
 | File | What it is | Windows x64 | Linux x64 | Lines of code |
 |---|---|---:|---:|---:|
 | `AyXDB` (`.exe`) | the process: loads the engine, runs the console | 47 KB | 95 KB | 999 |
-| `AyDATA` | values and types, the XML document tree with its XPath, JSON | 809 KB | 1.03 MB | 28 029 |
-| `AyPRO` | the engine: events, threads and queues, connections and protocols, scripting, SQL, cluster and replication, several projects in one process | 3.41 MB | 5.09 MB | 129 420 |
+| `AyDATA` | values and types, the XML document tree with its XPath, JSON | 814 KB | 1.03 MB | 28 127 |
+| `AyPRO` | the engine: events, threads and queues, connections and protocols, scripting, SQL, cluster and replication, several projects in one process | 2.70 MB | 4.17 MB | 114 464 |
 | | shared by `AyXDB` and `AyPRO`: the log, utilities, the thread base | | | 3 580 |
 | `AyLIB_net` | mail, FTP and SFTP, file and ZIP functions | 345 KB | 594 KB | 4 056 |
 | `AyLIB_vision` | cameras and image functions | 484 KB | 835 KB | 8 968 |
 | `AyLIB_hw` | a board's GPIO, PWM, I²C and SPI | 120 KB | 273 KB | 3 753 |
 | `AyLIB_Python311` / `313` | Python scripts, one module per Python version | 311 / 317 KB | 523 / 515 KB | 2 246 |
-| `AyLIB_sec` | sealed secrets: passwords and keys kept as tokens in the files, opened only where they are used | 70 KB | 89 KB | 3 433 |
+| `AyLIB_sec` | sealed secrets: passwords and keys kept as tokens in the files, opened only where they are used | 70 KB | 89 KB | 759 |
+| `AyLIB_host` | the host of several projects in one process: start, stop, add, remove and back up a project | 89 KB | 109 KB | 1 839 |
+| `AyLIB_opc` | the OPC UA client | 226 KB | 284 KB | 8 928 |
+| `AyLIB_xql` | XDB SQL: the documents asked with SQL, and the statements of PostgreSQL clients | 460 KB | 638 KB | 5 716 |
 | `AyPRO_sqlite` | the embedded SQLite database | 1.05 MB | 1.42 MB | 562 |
 | `AyPRO_odbc` | other databases, over ODBC | 25 KB | 36 KB | 927 |
 | `AyPRO_pgsql` | PostgreSQL without ODBC, over libpq | 33 KB | 48 KB | 1 115 |
 | `AyPRO_hid` | USB HID devices | 20 KB | – | 244 |
-| | the interfaces of the modules and plug-ins | | | 730 |
-| **All** | | **7.0 MB** | **10.55 MB** | **188 062** |
+| | the interfaces of the modules and plug-ins | | | 944 |
+| **All** | | **7.1 MB** | **10.66 MB** | **187 227** |
 
 On Windows the files are `.dll`, on Linux `lib….so`. The 64-bit ARM build is a
-little smaller: 5.6 MB for the core, 9.9 MB in all.
+little smaller: 4.8 MB for the core, 10.1 MB in all.
 
 Lines of code are AyMON's own C++, counted from the build projects of the 4.4.3
 sources, without blank and comment-only lines. They leave out the third-party

@@ -13,6 +13,10 @@ Run [PRJEDU_xdbsql](../examples/data/PRJEDU_xdbsql/) first: two production lines
 SQLite, a page that sends XDB SQL as a Guest, and two PostgreSQL ports any client can open. Everything below is in its
 `db/db_SQL.xml`.
 
+From 4.4.3.802 XDB SQL is an engine module, `AyLIB_xql` (in `bin/`, beside `AyPRO`). Nothing names it: the engine
+loads it the first time an `xdb:` connection, a `CON.xdb` element, a PostgreSQL client or a shell's `sql` needs it. An
+engine without the file runs on and answers every XDB SQL statement with one line naming the module.
+
 ---
 
 ## The picture
