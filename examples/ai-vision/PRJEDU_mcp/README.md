@@ -124,8 +124,8 @@ calling with the old list.
 
 ```
 == tools/list on the READ endpoint (8095) - no write tools at all
-system_info, browse, find_points, read_points, get_alarms, get_events, query_history,
-tree, get_summary, get_metrics, get_connections, aggregate, read_logs, plant_status
+system_info, browse, find_points, read_points, get_alarms, get_events, tree,
+get_summary, get_metrics, get_connections, aggregate, read_logs, plant_status
 
 == tools/list on the WRITE endpoint (8096) - set_value ... and the project's set_setpoint
 ... read_logs, set_value, add_value, xor_value, msk_value, ask_value, api_call, ack_alarm,
@@ -271,10 +271,12 @@ starting with `#` are refused outright — MCP cannot run free-form script.
   `total: 0`, and `plant_status` is how the assistant gets the picture instead.
   On a Modbus or MQTT plant (`PRJEDU_modbus`, `PRJEDU_mqtt`) the points are
   `<io>` and `find_points` works.
-* **`get_alarms`, `get_events` and `query_history`** need an alarm list, an
-  event list and a history database; this example has none of them, so they
-  answer `address not configured` / `sqlcon not configured`
-  (`pro_mcp_alm`, `pro_mcp_evt`, `pro_mcp_sqlcon` on the endpoint name them).
+* **`get_alarms` and `get_events`** need an alarm list and an event list;
+  this example has neither, so they answer `address not configured`
+  (`pro_mcp_alm` and `pro_mcp_evt` on the endpoint name them). There is no
+  built-in history tool (it was removed in 4.4.3.803): a project that wants its
+  history in the assistant declares its own tool, as `plant_status` is declared
+  here.
 * **One identity per key.** Everybody behind the same key is the same role.
   The engine can resolve a person per request (`pro_mcp_onuser` and an
   `X-AyMON-User-Token` header) — that is for a real installation with a login.

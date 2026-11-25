@@ -675,7 +675,7 @@ element carries `mcp_pub="1"` are visible.
 | `pro_mcp_log` | none | 0 … 7: turns `read_logs` on, up to that level |
 | `pro_mcp_tools` | | a script function that declares the project's own tools |
 | `pro_mcp_onuser` | | a script function turning a per-user token into an identity |
-| `pro_mcp_sqlcon`, `pro_mcp_alm`, `pro_mcp_evt`, `pro_mcp_audit` | | the history connection, the alarm list, the event list, the audit address |
+| `pro_mcp_alm`, `pro_mcp_evt`, `pro_mcp_audit` | | the alarm list, the event list, the audit address |
 | `pro_mcp_cors` | | browser origins allowed; a request with another `Origin` is 403 |
 
 ```xml
@@ -688,7 +688,8 @@ element carries `mcp_pub="1"` are visible.
 *Measured:* `initialize` answered `serverInfo` `AyMON 4.4.2.702`; `tools/list` gave 12 tools
 (`system_info browse find_points read_points get_alarms get_events query_history tree
 get_summary get_metrics get_connections aggregate`; `read_logs` joins them with `pro_mcp_log`,
-`set_value add_value xor_value msk_value ask_value api_call ack_alarm` with `pro_mcp_acc="rw"`);
+`set_value add_value xor_value msk_value ask_value api_call ack_alarm` with `pro_mcp_acc="rw"`;
+`query_history` was removed in 4.4.3.803 -- a project declares its own history tool with `pro_mcp_tools`);
 `read_points` for `V1` returned its `val` and `sta`; a `set_value` call on the `ro` connection
 answered `Method not found`. **Licence:** MCP is not in FREE but works on a local connection
 ([Licensing](../04_Licensing.md)). Examples: [PRJEDU_mcp](../../examples/ai-vision/PRJEDU_mcp/),
