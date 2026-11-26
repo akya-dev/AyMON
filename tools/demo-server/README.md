@@ -40,6 +40,7 @@ the certificate, and resets and restarts every example.
 | `10-packages` | nginx, certbot, nftables, fail2ban, unattended-upgrades, git — from the distribution only |
 | `20-host` | SSH by key only, the firewall, fail2ban, nightly security updates (`SKIP_HOST_HARDENING=1`: none of these) |
 | `30-engine` | clones the repository to `/opt/aymon-demo/repo`, the engine of this CPU (`bin/linux-x64` / `bin/linux-arm64`), the EDU licence, one sandboxed unit per example, the reset and check timers |
+| `35-aysvc` | only with `AYSVC_BIN` in `demo.env`: the update agent, below |
 | `40-web` | nginx, one Let's Encrypt certificate for every name, the landing page `https://$DEMO_DOMAIN/` (the examples, then a "This server" table read from the machine -- cores, memory, system, engine version, each example's limits -- plus `DEMO_HOST_NOTE`, so that nobody takes this box's speed for the engine's) |
 
 ## Choices, and why
@@ -172,6 +173,44 @@ sudo nft list ruleset                               # the firewall, fail2ban's t
 | `/opt/aymon-demo/repo`, `/opt/aymon-demo/bin` | the repository at `AYMON_REPO_REF`; the engine (a link into it) |
 | `/var/lib/aymon-demo/run/<PRJ>` | the running copy of each example — the only place it writes |
 | `/var/lib/aymon-demo/lic` | the EDU licence and the engine's `AyMON.lst` |
+
+## The update agent (AySVC)
+
+Without it every example runs the repository's engine and an update is `install.sh` with a
+newer `AYMON_REPO_REF`. With it (`AYSVC_BIN` in `demo.env`, AySVC 4.3.0.34 or later) the
+engine comes from a **signed package**: AySVC, the service `aymon-demo-svc`, keeps versions
+side by side in `/var/lib/aymon-demo/aysvc/versions`, dry-runs every example with a new one
+(`AyXDB -check` as the `aymon` user), switches, watches a probation and rolls back when it
+fails. **Each example stays its own unit with its own sandbox**: AySVC only writes what the
+unit runs, `/etc/systemd/system/aymon-demo@<PRJ>.service.d/50-aysvc.conf` (the version's
+`ExecStart`, its environment, the ready file's directory), and (re)starts the unit. The reset
+and check timers work as before; a unit they stop and start is taken over again.
+
+```sh
+# on your machine: AySVC built for this server, the package keys' PUBLIC keyring, a package
+#   (AyXDBv43/dist/pkg/pkg_engine.ps1 -Platform linux-x64 -BinDir <a Linux build>)
+cat AySVC                             | ssh demo 'cat > /root/aysvc/AySVC; chmod 755 /root/aysvc/AySVC'
+cat pkg_keys.txt                      | ssh demo 'cat > /root/aysvc/keys.txt'
+# /etc/aymon-demo/demo.env: AYSVC_BIN=/root/aysvc/AySVC  AYSVC_KEYS=/root/aysvc/keys.txt
+#                           AYSVC_ALLOW_DEV=1 (a development key)  ENGINE_VER=4.4.3.820
+sudo bash install.sh                  # or just: sudo bash /opt/aymon-demo/kit/steps/35-aysvc.sh
+cat aymon-4.4.3.820-linux-x64.tar.gz  | ssh demo 'cat > /var/lib/aymon-demo/aysvc/staging/new.part &&
+    mv /var/lib/aymon-demo/aysvc/staging/new.part /var/lib/aymon-demo/aysvc/staging/inbox/aymon-4.4.3.820-linux-x64.tar.gz'
+```
+
+A newer version: its package into the inbox, `ENGINE_VER` changed, `35-aysvc.sh` (or
+`install.sh`) again. Until a version is installed the examples run on what they ran.
+
+| Where | What |
+|---|---|
+| `/etc/aymon-demo-svc/aymon-demo-svc.conf` | AySVC's configuration: the kit writes its values (one `[app/<PRJ>]` per example with `unit=aymon-demo@<PRJ>`), AySVC's own lines stay |
+| `/var/log/aymon-demo-svc/` | its log: every switch, dry run, probation, adoption |
+| `/var/lib/aymon-demo/aysvc/` | `versions/`, `staging/inbox/`, `state/`, `ready/<PRJ>/ready.json` |
+| `http://127.0.0.1:8079/api/apps`, `/api/upd` | its state, from this machine only (no password: no commands over the web) |
+
+To take it away: `systemctl disable --now aymon-demo-svc`, `/opt/aymon-demo/aysvc/aymon-demo-svc -remove`,
+`rm /etc/systemd/system/aymon-demo@*.service.d/50-aysvc.conf`, `systemctl daemon-reload`, empty
+`AYSVC_BIN`, `install.sh`: the units run the repository's engine again.
 
 ## A CDN in front
 

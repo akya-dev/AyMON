@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+# aymon-demo-aysvc-conf <conf> [app/<PRJ> ...] < lines
+#
+# Writes the kit's values into AySVC's configuration file and keeps everything else: AySVC writes
+# into the same file (upd_floor, upd_last, a rolled-back ver) and its comments and order stay.
+# stdin: one "section|name|value" per line ("" section = the file's top, before any [section]).
+# The arguments name every [app/..] section that should be there; any other [app/..] section is
+# removed (an example that left examples.conf). Written through <conf>.tmp + rename, mode 0600.
+import os
+import sys
+
+conf = sys.argv[1]
+keep_apps = set(a.lower() for a in sys.argv[2:])
+want = []
+for raw in sys.stdin.read().splitlines():
+    if not raw.strip():
+        continue
+    sect, name, value = raw.split('|', 2)
+    want.append((sect.strip(), name.strip(), value.strip()))
+
+# the file as sections: [(name, [lines])], the top as ""
+secs = [['', []]]
+if os.path.exists(conf):
+    for line in open(conf, encoding='utf-8').read().split('\n'):
+        s = line.strip()
+        if s.startswith('[') and s.endswith(']'):
+            secs.append([s[1:-1], []])
+        else:
+            secs[-1][1].append(line)
+while secs[0][1] and secs[0][1][-1] == '':
+    secs[0][1].pop()
+secs = [x for x in secs if not (x[0].lower().startswith('app/') and x[0].lower() not in keep_apps)]
+
+
+def section(name):
+    for x in secs:
+        if x[0].lower() == name.lower():
+            return x
+    x = [name, []]
+    secs.append(x)
+    return x
+
+
+def quote(v):
+    return '"' + v.replace('\\', '\\\\').replace('"', '\\"') + '"' if v != v.strip() or v.startswith('"') else v
+
+
+for sect, name, value in want:
+    lines = section(sect)[1]
+    new = '%s = %s' % (name, quote(value))
+    for i, l in enumerate(lines):
+        s = l.strip()
+        if s and not s.startswith('#') and '=' in s and s.split('=', 1)[0].strip().lower() == name.lower():
+            lines[i] = new
+            break
+    else:
+        at = len(lines)
+        while at > 0 and lines[at - 1].strip() == '':
+            at -= 1
+        lines.insert(at, new)
+
+out = []
+for name, lines in secs:
+    while lines and lines[-1].strip() == '':
+        lines.pop()
+    if name:
+        if out and out[-1] != '':
+            out.append('')
+        out.append('[%s]' % name)
+    out += lines
+text = '\n'.join(out).strip('\n') + '\n'
+os.makedirs(os.path.dirname(conf), exist_ok=True)
+old = open(conf, encoding='utf-8').read() if os.path.exists(conf) else None
+if text != old:
+    tmp = conf + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        f.write(text)
+    os.chmod(tmp, 0o600)
+    os.replace(tmp, conf)
+    print('aymon-demo: %s written' % conf)

@@ -16,6 +16,8 @@
 #                 fail2ban, automatic security updates       (SKIP_HOST_HARDENING=1: none)
 #   30-engine     the repository, the engine, the EDU licence, one sandboxed unit per
 #                 example, the reset and check timers
+#   35-aysvc      the update agent, when demo.env names one (AYSVC_BIN): each example's
+#                 engine from a signed package, its unit and sandbox kept
 #   40-web        nginx, the certificate, the landing page
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)

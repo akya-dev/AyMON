@@ -238,7 +238,9 @@ srv_os=$( . /etc/os-release 2>/dev/null; echo "${PRETTY_NAME:-$(uname -s)}" )
 srv_cpu=$(nproc 2>/dev/null || echo "?")
 srv_model=$(awk -F': *' '/^model name/ {print $2; exit}' /proc/cpuinfo 2>/dev/null | sed -e 's/ *([^)]*)//g' || true)
 srv_mem=$(awk '/^MemTotal:/ {printf "%.0f", $2 / 1048576}' /proc/meminfo 2>/dev/null || true)
-srv_eng=$( { grep -aoE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]{3,}' "$PREFIX/bin/libAyPRO.so" 2>/dev/null || true; } | head -n 1)
+eng_lib=$PREFIX/bin/libAyPRO.so      # the repository's engine, or the update agent's version
+[ -n "$AYSVC_BIN" ] && [ -f "$AYSVC_HOME/versions/$ENGINE_VER/bin/libAyPRO.so" ] && eng_lib=$AYSVC_HOME/versions/$ENGINE_VER/bin/libAyPRO.so
+srv_eng=$( { grep -aoE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]{3,}' "$eng_lib" 2>/dev/null || true; } | head -n 1)
 srv_unit="$KIT/systemd/$UNIT@.service"
 srv_memmax=$(awk -F= '/^MemoryMax=/ {print $2}' "$srv_unit" 2>/dev/null | sed -e 's/M$/ MB/' -e 's/G$/ GB/' || true)
 srv_cpuq=$(awk -F= '/^CPUQuota=/ {print $2}' "$srv_unit" 2>/dev/null || true)
