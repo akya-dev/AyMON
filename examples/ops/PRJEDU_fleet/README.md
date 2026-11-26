@@ -170,3 +170,9 @@ jobs already done stay done: a node fetches a job file once.
 | `www/repo/` | packages, `packages.idx`; the centre writes `index.txt` and the open rings' job files |
 | `rollout/` | `current.txt` and one directory per rollout |
 | `sample/` | the reports and the `demo` rollout above |
+
+## Read next
+
+[docs/17_Updates_and_the_Fleet.md](../../../docs/17_Updates_and_the_Fleet.md): what a node does with a package and a
+job -- versions side by side, the dry run, the probation, a project merged over a site's edits, a cluster updated
+one node at a time.
