@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     FLEET/S00 - what the centre knows and does.
+
+     ONE PORT, 8090:
+       /             the fleet page (www/index.ayp)
+       /repo/        the package repository the nodes pull from: packages,
+                     job files and index.txt (www/repo; the centre writes
+                     index.txt, the operator puts the packages there)
+       /report       POST: a node's report (CN_REP, main.report in fleet.js)
+
+     The nodes the centre knows are the items of NODES: id = the node's
+     'node' value in AySVC, token = the Bearer token it reports with
+     (AySVC's upd_report_key), ring = informative (a rollout's rings are
+     directories, see rollout/README.txt). The tokens below are EXAMPLES:
+     change them on both sides.
+
+     A rollout is a directory rollout/<name>/ with ring1/, ring2/, .. of
+     signed job files; writing <name> into rollout/current.txt starts it.
+     T_FLEET runs main.tick every 5 s: it opens the next ring when the
+     open one is done, and stops (HALTED) when a node of it failed or
+     refused its job. ROLL keeps where the rollout stands.
+     ===================================================================== -->
+<xdb id="FLEET/S00" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/FLEET.log" sta="0x0300" sta_typ="0x142" thr_wrk="0" thr_per="100">
+	<config>
+		<script id="main" xdb_fnc="[SCR.prs]" src="%DB%/fleet.js" language="JScript"></script>
+	</config>
+	<data>
+		<!-- The web port. con_host 127.0.0.1: only this machine. A real
+		     centre listens where its nodes reach it (an address of this
+		     machine, or 0.0.0.0) -- and then behind TLS (CON.tls + a
+		     certificate), since the report carries a token. -->
+		<con id="CN_WEB" xdb_fnc="[CON.tcp,PRO.http]" desc="the fleet's port"
+		     con_host="127.0.0.1" con_port="8090" con_mod="SERVER" con_ses="16"
+		     con_tmo="5" con_clr="1" con_rcvlen="8192" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD441" pro_fnc="[]"
+		     pro_http_root="%PRJ%/www" pro_http_index="index.ayp"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- The reports: every request under /report goes to main.report.
+		     It does not listen itself: con_host="#CN_WEB" takes the requests
+		     of CN_WEB whose path starts with its con_port. -->
+		<con id="CN_REP" xdb_fnc="[CON.tcp,PRO.rest]" desc="node reports"
+		     con_host="#CN_WEB" con_port="/report" con_mod="SERVER" con_ses="8"
+		     con_tmo="5" con_clr="1" con_rcvlen="65536" con_keeptmo="0" con_idletmo="60"
+		     pro_role="SLAVE" pro_tmo="5" pro_try="1" pro="" pro_typ="0xD401" pro_fnc="[]"
+		     pro_onreq="main.report(exc,msg);"
+		     sta="0x0303" sta_typ="0x1142" sta_fnc="[PRO.sta]"/>
+
+		<!-- The nodes. seen / svc / apps / jobs / jst / raw are written by
+		     main.report from the node's last report: jst = its jobs' states
+		     as JSON ({"J1":"DONE"}), which the ring logic reads; raw = the
+		     whole report. -->
+		<list id="NODES" desc="the nodes of this fleet">
+			<item id="S01" token="example-token-S01-change-me" ring="1" desc="the first ring: one node" seen="" seen_ms="0" svc="" apps="" jobs="" jst="{}" raw=""/>
+			<item id="S02" token="example-token-S02-change-me" ring="2" desc="the second ring" seen="" seen_ms="0" svc="" apps="" jobs="" jst="{}" raw=""/>
+		</list>
+
+		<!-- Where the rollout stands: val = its name (rollout/<name>),
+		     ring = the highest ring opened (0 none), state = one line. -->
+		<var id="ROLL" desc="the rollout" val="" ring="0" state="no rollout (write its name into rollout/current.txt)"/>
+
+		<var id="T_FLEET" xdb_fnc="[XDB.evt]" desc="the ring logic, every 5 s"
+		     sta="0x0303" sta_typ="0x142" evt="" evt_typ="0x1201" evt_per="5" evt_dly="1"
+		     evt_syn="0" evt_cfg="0x0002" evt_fnc="[main.tick]" sta_fnc="[EVT.sta]"/>
+	</data>
+</xdb>

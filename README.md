@@ -359,6 +359,7 @@ Run an example from its own folder.
 | Project | What it teaches | Needs |
 |---|---|---|
 | [**PRJEDU_monitor**](examples/ops/PRJEDU_monitor/) | an engine that says how it is doing to the tools operations already use: `/metrics` for Prometheus (with a key), a ready-made Grafana dashboard (`docker compose up` in `monitoring/`: the process, each root, the threads, documents, connections, MQTT and SQL), `/health/live`, `/ready`, `/primary`, `/standby` for Kubernetes probes and load balancers (a sketch in `monitoring/kubernetes/`), and an MQTT broker's `$SYS` topics with Mosquitto's names | nothing; Docker for the dashboard; engine 4.4.3.791 or later |
+| [**PRJEDU_fleet**](examples/ops/PRJEDU_fleet/) | the centre of a fleet of nodes, as an ordinary project: a package repository the nodes' AySVC pulls engine packages and signed update jobs from, a door each node reports its state to with its own token, and a rollout published ring by ring — ring 2's jobs appear only once every node of ring 1 has done its own, a failed or refused job halts it; the centre holds no key (every node checks the signatures itself); try it with the sample reports and the two-ring `demo` rollout, no node needed | nothing to try it; AySVC 4.3.0.31 or later for real nodes; engine 4.4.3.806 or later |
 
 ### [Course labs](examples/labs/)
 

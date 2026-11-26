@@ -1,0 +1,10 @@
+format=aymon-job/1
+# AN EXAMPLE, NOT SIGNED: a node refuses it. A real job is signed with aymon-lic job-sign.
+job=DEMO-S02
+product=AyMON-engine
+ver=4.4.3.902
+targets=S02/A00
+ring=2
+expires=2099-12-31
+kid=31
+sig=NOT-SIGNED

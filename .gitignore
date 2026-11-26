@@ -47,3 +47,9 @@ examples/hosting/PRJEDU_sites/roots/*
 
 # The documentation site, built by tools/site/build.py
 tools/site/_build/
+
+# PRJEDU_fleet: the operator's packages and rollouts, and what the centre writes from them
+examples/ops/PRJEDU_fleet/www/repo/*
+!examples/ops/PRJEDU_fleet/www/repo/README.txt
+examples/ops/PRJEDU_fleet/rollout/*
+!examples/ops/PRJEDU_fleet/rollout/README.txt

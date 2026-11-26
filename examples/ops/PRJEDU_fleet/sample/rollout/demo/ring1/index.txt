@@ -1,0 +1,2 @@
+format=aymon-index/1
+job=demo-s01.job|12bcec818d16a11234001a5a872aa2b5f3e5a838ac6a3c7426c60d6b4a99b24e

@@ -1,0 +1,49 @@
+<%-- PRJEDU_fleet: the fleet page. It reads FLEET/S00 (the nodes' last reports, the rollout) and refreshes itself. --%>
+<%
+var r = main.rows(evt);
+var roll = "" + evt.GetValue("id('ROLL')/@val");
+var state = "" + evt.GetValue("id('ROLL')/@state");
+%>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="5">
+<title>AyMON fleet</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 16px; color: #222; background: #fafafa; }
+  h1 { font-size: 1.3em; margin: 0 0 4px; }
+  .muted { color: #777; font-size: .9em; }
+  table { border-collapse: collapse; width: 100%; margin-top: 12px; background: #fff; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e3e3e3; vertical-align: top; font-size: .92em; }
+  th { background: #f0f0f0; }
+  .box { background: #fff; border: 1px solid #e3e3e3; padding: 8px 10px; margin-top: 12px; }
+  .bad { color: #b00020; } .good { color: #1b6e20; }
+</style>
+</head>
+<body>
+<h1>AyMON fleet</h1>
+<div class="muted">the nodes' last reports (AySVC upd_report) and the rollout -- refreshed every 5 s</div>
+
+<div class="box">
+  <b>Rollout:</b> <%= roll == "" ? "none" : roll %> --
+  <span class="<%= state.startsWith("HALTED") ? "bad" : (state.startsWith("DONE") ? "good" : "") %>"><%= state %></span>
+</div>
+
+<table>
+  <tr><th>Node</th><th>Ring</th><th>Last report</th><th>AySVC</th><th>Applications (key, version, update state)</th><th>Jobs</th></tr>
+<% for (var i = 0; i < r.length; i++) { %>
+  <tr>
+    <td><b><%= r[i].id %></b></td>
+    <td><%= r[i].ring %></td>
+    <td><%= r[i].seen %></td>
+    <td><%= r[i].svc %></td>
+    <td><%= r[i].apps %></td>
+    <td><%= r[i].jobs %></td>
+  </tr>
+<% } %>
+</table>
+<p class="muted">Packages and jobs: <a href="/repo/index.txt">/repo/index.txt</a></p>
+</body>
+</html>

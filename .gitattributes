@@ -11,3 +11,5 @@ bin/**  binary
 # script), so they count, and XML is shown although GitHub treats it as data by default.
 examples/** linguist-documentation=false
 *.xml linguist-detectable=true
+# PRJEDU_fleet's sample rollout: index.txt holds each job file's SHA-256, so the bytes must not change
+examples/ops/PRJEDU_fleet/sample/rollout/** -text

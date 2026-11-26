@@ -53,6 +53,7 @@ PRJEDU_cluster  →  10_Two_Engines         →  04_Licensing
 PRJEDU_remote   →  10_Two_Engines         →  06_Access_and_Safety
 PRJEDU_sites    →  15_Many_Projects_One_Engine  →  04_Licensing
 PRJEDU_monitor  →  16_Metrics_and_Health  →  12_Keeping_It_Running
+PRJEDU_fleet    →  12_Keeping_It_Running  (its own README: AySVC, packages, jobs)
 PRJEDU_gauge    →  03_Scripting
 PRJEDU_pycall   →  03_Scripting
 PRJEDU_vision   →  03_Scripting          →  05_Connections_and_Protocols

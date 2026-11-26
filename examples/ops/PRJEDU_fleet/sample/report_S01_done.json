@@ -1,0 +1,28 @@
+{
+ "format": "aymon-report/1",
+ "node": "S01",
+ "svc": "4.3.0.32",
+ "platform": "win-x64",
+ "time": "2026-11-25T12:00:00-08:00",
+ "seq": 2,
+ "apps": {
+  "apps": [
+   {
+    "key": "A00",
+    "ver": "4.4.3.902",
+    "ver_run": "4.4.3.902",
+    "upd_state": "COMMITTED",
+    "state": "running"
+   }
+  ]
+ },
+ "upd": {
+  "node": "S01",
+  "jobs": [
+   {
+    "id": "DEMO-S01",
+    "state": "DONE"
+   }
+  ]
+ }
+}

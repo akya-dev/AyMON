@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- =====================================================================
+     PRJEDU_fleet - the centre of a fleet of AyMON nodes.
+
+     Every node runs its engines under AySVC (4.3.0.31 or later), which
+       pulls packages and jobs from this centre   (upd_url    = http://<centre>:8090/repo/)
+       reports its state to it                    (upd_report = http://<centre>:8090/report)
+     The centre publishes an operator's signed jobs ring by ring: ring 2's
+     jobs only once every node of ring 1 has done its job (the job's
+     probation passed there). It holds no key: the operator signs the jobs
+     elsewhere, AySVC checks them against its own keyring.
+
+     THE ROOT DOCUMENT names the engine and its one child document, which
+     does the work (db_FLEET.xml + fleet.js). The page: http://127.0.0.1:8090/
+
+     Path macros: %PRJ% = this project directory, %DB% = this db directory.
+     Run:  run.bat  /  ./run.sh
+     ===================================================================== -->
+<xdb id="FLEET" xdb_lib="AyPRO" xdb_log="4" log_cfg="0x39C0" log_lnk="%PRJ%/log/XDB.log"
+     sta="0x0300" tid="C01">
+	<config>
+		<doc id="FLEET/S00" sta="0x0300" src="%DB%/db_FLEET.xml" desc="the fleet: node reports, rollout rings, the package repository" />
+	</config>
+	<data/>
+</xdb>
