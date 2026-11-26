@@ -120,7 +120,10 @@ keeps one application out of every job.
    ```
 
    `targets` names nodes (each versioned application of the node), `node/app` pairs, or a
-   comma list of both. `window` (optional) is when the node may switch, in its local time.
+   comma list of both. `product=project:<name>` (AySVC 4.3.0.33) carries a project version
+   instead: the files of each application whose `prj` is `<name>` take it, after a dry run
+   and with a probation. If the site edited what the vendor changes, the plan waits on that
+   node for the site's own command `prj`, and the ring waits with it. `window` (optional) is when the node may switch, in its local time.
    `expires` ends the job after that day. `back=1` lets a job take an application to an
    older version; without it a late job never takes a node back. Sign each file
    (`aymon-lic job-sign <file> --key <operator key> --keyring <keyring>`; it appends `sig=`),
